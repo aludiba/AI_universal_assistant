@@ -23,13 +23,27 @@ static NSString * const kCardCellId = @"CardCell";
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.view.backgroundColor = [UIColor colorWithWhite:0.95 alpha:1];
     self.navigationItem.title = @"热门";
-    
     [self setupSearchBar];
     [self setupCategoryScroll];
     [self setupCollectionView];
     [self loadDummyData];
+    [self setupGestureRecognizer];
+}
+
+// 设置收起键盘手势
+- (void)setupGestureRecognizer {
+    // 添加点击手势隐藏键盘
+    UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(dismissKeyboard)];
+    tapGesture.cancelsTouchesInView = NO; // 允许点击事件继续传递给子视图（如按钮等）
+    [self.view addGestureRecognizer:tapGesture];
+    // 滑动手势隐藏键盘
+    UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(dismissKeyboard)];
+    [self.view addGestureRecognizer:pan];
+}
+
+- (void)dismissKeyboard {
+    [self.searchBar resignFirstResponder];
 }
 
 - (void)setupSearchBar {

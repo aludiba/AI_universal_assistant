@@ -15,7 +15,6 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.view.backgroundColor = [UIColor systemBackgroundColor];
     self.navigationItem.title = @"万能写作";
     
     UILabel *label = [[UILabel alloc] initWithFrame:CGRectZero];
