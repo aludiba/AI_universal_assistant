@@ -25,19 +25,19 @@
 - (void)setupViewControllers {
     AIUAHotViewController *hotVC = [[AIUAHotViewController alloc] init];
     UINavigationController *hotNav = [[UINavigationController alloc] initWithRootViewController:hotVC];
-    hotNav.tabBarItem = [[UITabBarItem alloc] initWithTitle:@"热门" image:[UIImage imageNamed:@"hot"] tag:0];
+    hotNav.tabBarItem = [[UITabBarItem alloc] initWithTitle:L(@"tab_hot") image:[UIImage imageNamed:@"hot"] tag:0];
     
     AIUAWriterViewController *writerVC = [[AIUAWriterViewController alloc] init];
     UINavigationController *writerNav = [[UINavigationController alloc] initWithRootViewController:writerVC];
-    writerNav.tabBarItem = [[UITabBarItem alloc] initWithTitle:@"万能写作" image:[UIImage imageNamed:@"write"] tag:1];
+    writerNav.tabBarItem = [[UITabBarItem alloc] initWithTitle:L(@"tab_writer") image:[UIImage imageNamed:@"write"] tag:1];
     
     AIUADocsViewController *docsVC = [[AIUADocsViewController alloc] init];
     UINavigationController *docsNav = [[UINavigationController alloc] initWithRootViewController:docsVC];
-    docsNav.tabBarItem = [[UITabBarItem alloc] initWithTitle:@"文档" image:[UIImage imageNamed:@"docs"] tag:2];
+    docsNav.tabBarItem = [[UITabBarItem alloc] initWithTitle:L(@"tab_docs") image:[UIImage imageNamed:@"docs"] tag:2];
     
     AIUASettingsViewController *settingsVC = [[AIUASettingsViewController alloc] init];
     UINavigationController *settingsNav = [[UINavigationController alloc] initWithRootViewController:settingsVC];
-    settingsNav.tabBarItem = [[UITabBarItem alloc] initWithTitle:@"设置" image:[UIImage imageNamed:@"settings"] tag:3];
+    settingsNav.tabBarItem = [[UITabBarItem alloc] initWithTitle:L(@"tab_settings") image:[UIImage imageNamed:@"settings"] tag:3];
     
     self.viewControllers = @[hotNav, writerNav, docsNav, settingsNav];
     // 可选：自定义 tabBar 外观

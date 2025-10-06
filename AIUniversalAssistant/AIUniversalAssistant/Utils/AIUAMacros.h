@@ -42,7 +42,7 @@
 #define AIUAUIColorFromRGB(r, g, b) AIUAUIColorFromRGBA(r, g, b, 1.0)
 #define AIUA_BACK_COLOR  [UIColor colorWithWhite:0.95 alpha:1]
 
-
+#define L(key) NSLocalizedString((key), nil)
 
 extern BOOL AIUA_isNotchScreen(void);
 

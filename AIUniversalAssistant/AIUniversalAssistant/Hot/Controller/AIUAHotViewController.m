@@ -21,14 +21,16 @@ static NSString * const kCardCellId = @"CardCell";
 
 @implementation AIUAHotViewController
 
-- (void)viewDidLoad {
-    [super viewDidLoad];
-    self.navigationItem.title = @"热门";
+- (void)setupUI {
+    self.navigationItem.title = L(@"tab_hot");
     [self setupSearchBar];
     [self setupCategoryScroll];
     [self setupCollectionView];
-    [self loadDummyData];
     [self setupGestureRecognizer];
+}
+
+- (void)setupData {
+    [self loadDummyData];
 }
 
 // 设置收起键盘手势
@@ -48,7 +50,7 @@ static NSString * const kCardCellId = @"CardCell";
 
 - (void)setupSearchBar {
     self.searchBar = [[UISearchBar alloc] init];
-    self.searchBar.placeholder = @"输入关键字搜索模版";
+    self.searchBar.placeholder = L(@"search_placeholder");
     self.searchBar.delegate = self;
     self.searchBar.searchBarStyle = UISearchBarStyleMinimal;
     self.navigationItem.titleView = self.searchBar;
@@ -67,7 +69,7 @@ static NSString * const kCardCellId = @"CardCell";
         [self.categoryScroll.heightAnchor constraintEqualToConstant:36]
     ]];
     
-    NSArray *categories = @[@"热门", @"社媒", @"校园", @"职场", @"营销", @"生活"];
+    NSArray *categories = @[L(@"tab_hot"), L(@"category_socialMedia"), L(@"category_school"), L(@"category_workplace"), L(@"category_marketing"), L(@"category_life")];
     CGFloat x = 0;
     for (NSString *title in categories) {
         UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
@@ -124,6 +126,10 @@ static NSString * const kCardCellId = @"CardCell";
 }
 
 #pragma mark - UICollectionView dataSource / delegate
+
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView {
+    [self dismissKeyboard];
+}
 
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section {
     return self.items.count;

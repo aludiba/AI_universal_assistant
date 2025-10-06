@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+   AIUAWritingCategories.plist
+   AIUniversalAssistant
+
+   Created by 褚红彪 on 10/6/25.
+   Copyright (c) 2025 ___ORGANIZATIONNAME___. All rights reserved.
+-->
+<plist version="1.0">
+    <array>
+        <dict>
+            <key>title</key>
+            <string>灵感启发</string>
+            <key>items</key>
+            <array>
+                <dict>
+                    <key>title</key>
+                    <string>书籍解读</string>
+                    <key>content</key>
+                    <string>请用简明易懂的方式总结《基督山伯爵》一书的主要观点和内容</string>
+                </dict>
+                <dict>
+                    <key>title</key>
+                    <string>视频文案</string>
+                    <key>content</key>
+                    <string>你是一位拥有百万粉丝的短视频创作者，帮我生成一份讲述父母爱情的短视频文案</string>
+                </dict>
+                <dict>
+                    <key>title</key>
+                    <string>真诚致歉</string>
+                    <key>content</key>
+                    <string>帮忙写个给猫咪的道歉信，原因是我忘了给它铲屎</string>
+                </dict>
+                <dict>
+                    <key>title</key>
+                    <string>走心感悟</string>
+                    <key>content</key>
+                    <string>写一篇社区举办的"关爱留守儿童教育"活动的感悟</string>
+                </dict>
+                <dict>
+                    <key>title</key>
+                    <string>感谢致辞</string>
+                    <key>content</key>
+                    <string>帮我写一段300字的致谢词，包含对导师的感谢</string>
+                </dict>
+            </array>
+        </dict>
+        <dict>
+            <key>title</key>
+            <string>热门创作</string>
+            <key>items</key>
+            <array>
+                <dict>
+                    <key>title</key>
+                    <string>产品广告</string>
+                    <key>content</key>
+                    <string>请帮我为宝宝乐安抚奶嘴生成3条广告文案，每条字数50字以内</string>
+                </dict>
+                <dict>
+                    <key>title</key>
+                    <string>科技新闻</string>
+                    <key>content</key>
+                    <string>写一篇"AR眼镜让虚拟生活与现实相结合"的科技新闻</string>
+                </dict>
+                <dict>
+                    <key>title</key>
+                    <string>影评分享</string>
+                    <key>content</key>
+                    <string>帮我为《肖申克的救赎》写一篇影评，强调电影给我带来的感受</string>
+                </dict>
+                <dict>
+                    <key>title</key>
+                    <string>生日祝福</string>
+                    <key>content</key>
+                    <string>帮我为我的朋友小李写一份真挚的生日祝福</string>
+                </dict>
+                <dict>
+                    <key>title</key>
+                    <string>推荐文书</string>
+                    <key>content</key>
+                    <string>请你做为推荐人为一位优秀的求职者编写一封有力的推荐信</string>
+                </dict>
+            </array>
+        </dict>
+    </array>
+</plist>

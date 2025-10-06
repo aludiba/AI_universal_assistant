@@ -11,6 +11,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface AIUASuperViewController : UIViewController
 
+- (void)setupUI;
+
+- (void)setupData;
+
 @end
 
 NS_ASSUME_NONNULL_END
