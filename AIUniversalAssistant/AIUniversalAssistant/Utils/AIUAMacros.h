@@ -35,14 +35,21 @@
 #define AIUAUIFontLight(size) [UIFont systemFontOfSize:(size) weight:UIFontWeightLight]
 #define AIUAUIFontMedium(size) [UIFont systemFontOfSize:(size) weight:UIFontWeightMedium]
 #define AIUAUIFontSemibold(size) [UIFont systemFontOfSize:(size) weight:UIFontWeightSemibold]
-#define AIUAUIColorFromRGBA(r, g, b, a) [UIColor colorWithRed:(r)/255.0 \
+#define AIUAUIColorSimplifyRGBA(r, g, b, a) [UIColor colorWithRed:(r) \
+                                                    green:(g) \
+                                                     blue:(b) \
+                                                    alpha:(a)]
+#define AIUAUIColorSimplifyRGB(r, g, b) AIUAUIColorSimplifyRGBA(r, g, b, 1.0)
+#define AIUAUIColorRGBA(r, g, b, a) [UIColor colorWithRed:(r)/255.0 \
                                                     green:(g)/255.0 \
                                                      blue:(b)/255.0 \
                                                     alpha:(a)]
-#define AIUAUIColorFromRGB(r, g, b) AIUAUIColorFromRGBA(r, g, b, 1.0)
+#define AIUAUIColorRGB(r, g, b) AIUAUIColorFromRGBA(r, g, b, 1.0)
 #define AIUA_BACK_COLOR  [UIColor colorWithWhite:0.95 alpha:1]
-
+#define AIUA_GRAY_COLOR  [UIColor colorWithRed:0.6 green:0.6 blue:0.6 alpha:1.0]
 #define L(key) NSLocalizedString((key), nil)
+#define WeakSelf(type)  __weak typeof(type) weak##type = type
+#define StrongSelf(type)  __strong typeof(type) strong##type = weak##type
 
 extern BOOL AIUA_isNotchScreen(void);
 

@@ -9,10 +9,11 @@
 "tab_writer" = "Writer";
 "tab_docs" = "Documents";
 "tab_settings" = "Settings";
-
 "search_placeholder" = "Enter keywords to search templates";
 "category_socialMedia" = "social media";
 "category_school" = "Campus";
 "category_workplace" = "workplace";
 "category_life" = "Life";
 "category_marketing" = "Marketing";
+"please_enter" = "Please enter";
+"start_creating" = "Start creating";

@@ -78,7 +78,7 @@ static NSString * const kCardCellId = @"CardCell";
         btn.backgroundColor = [UIColor colorWithWhite:1 alpha:1];
         btn.layer.cornerRadius = 18;
         btn.clipsToBounds = YES;
-        btn.titleLabel.font = [UIFont systemFontOfSize:14];
+        btn.titleLabel.font = AIUAUIFontSystem(14);
         [btn addTarget:self action:@selector(categoryTap:) forControlEvents:UIControlEventTouchUpInside];
         [self.categoryScroll addSubview:btn];
         x += 90;

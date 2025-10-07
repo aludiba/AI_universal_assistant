@@ -26,13 +26,13 @@
         // title
         _titleLabel = [[UILabel alloc] initWithFrame:CGRectZero];
         _titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
-        _titleLabel.font = [UIFont boldSystemFontOfSize:16];
+        _titleLabel.font = AIUAUIFontBold(16);
         [self.contentView addSubview:_titleLabel];
         
         // subtitle
         _subtitleLabel = [[UILabel alloc] initWithFrame:CGRectZero];
         _subtitleLabel.translatesAutoresizingMaskIntoConstraints = NO;
-        _subtitleLabel.font = [UIFont systemFontOfSize:12];
+        _subtitleLabel.font = AIUAUIFontSystem(12);
         _subtitleLabel.textColor = [UIColor darkGrayColor];
         [self.contentView addSubview:_subtitleLabel];
         

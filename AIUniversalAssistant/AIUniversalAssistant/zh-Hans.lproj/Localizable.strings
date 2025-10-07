@@ -9,10 +9,11 @@
 "tab_writer" = "写作";
 "tab_docs" = "文档";
 "tab_settings" = "设置";
-
 "search_placeholder" = "输入关键字搜索模版";
 "category_socialMedia" = "社媒";
 "category_school" = "校园";
 "category_workplace" = "职场";
 "category_life" = "生活";
 "category_marketing" = "营销";
+"please_enter" = "请输入";
+"start_creating" = "开始创作";

@@ -24,25 +24,35 @@
 - (void)setupUI {
     self.backgroundColor = AIUA_BACK_COLOR;
     self.selectionStyle = UITableViewCellSelectionStyleDefault;
-    self.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-    
+    // 使用系统向上箭头图标
+    if (@available(iOS 13.0, *)) {
+        UIImage *chevronUpImage = [UIImage systemImageNamed:@"chevron.up"];
+        UIImageView *accessoryView = [[UIImageView alloc] initWithImage:chevronUpImage];
+        accessoryView.tintColor = AIUA_GRAY_COLOR;
+        self.accessoryView = accessoryView;
+    } else {
+        // iOS 13 以下的备选方案
+        self.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+    }
     // 标题标签
     self.titleLabel = [[UILabel alloc] init];
     self.titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    self.titleLabel.font = [UIFont boldSystemFontOfSize:16];
-    self.titleLabel.textColor = [UIColor colorWithRed:0.2 green:0.4 blue:0.8 alpha:1.0];
+    self.titleLabel.font = AIUAUIFontBold(16);
+    self.titleLabel.textColor = AIUAUIColorSimplifyRGB(0.2, 0.4, 0.8);
     self.titleLabel.numberOfLines = 1;
     [self.contentView addSubview:self.titleLabel];
     
     // 内容标签
     self.contentLabel = [[UILabel alloc] init];
     self.contentLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    self.contentLabel.font = [UIFont systemFontOfSize:14];
+    self.contentLabel.font = AIUAUIFontSystem(14);
     self.contentLabel.textColor = [UIColor darkGrayColor];
     self.contentLabel.numberOfLines = 2;
     [self.contentView addSubview:self.contentLabel];
     
     [self setupConstraints];
+    
+    [self setupTapGesture];
 }
 
 - (void)setupConstraints {
@@ -60,9 +70,30 @@
     ]];
 }
 
+- (void)setupTapGesture {
+    // 添加点击手势
+    UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTap)];
+    [self.contentView addGestureRecognizer:tapGesture];
+}
+
 - (void)configureWithTitle:(NSString *)title content:(NSString *)content {
     self.titleLabel.text = title;
     self.contentLabel.text = content;
+}
+
+- (void)setTapBlock:(AIUACategoryCellTapBlock)tapBlock {
+    _tapBlock = tapBlock;
+}
+
+#pragma mark - 点击处理方法
+
+- (void)handleTap {
+    // 构建完整文本
+    NSString *fullText = [NSString stringWithFormat:@"%@：%@", self.titleLabel.text, self.contentLabel.text];    
+    // 执行回调
+    if (self.tapBlock) {
+        self.tapBlock(fullText);
+    }
 }
 
 @end

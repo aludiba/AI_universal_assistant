@@ -31,12 +31,12 @@
     self.textView.backgroundColor = AIUA_BACK_COLOR;
     self.textView.translatesAutoresizingMaskIntoConstraints = NO;
     self.textView.delegate = self;
-    self.textView.font = [UIFont systemFontOfSize:16];
+    self.textView.font = AIUAUIFontSystem(16);
     self.textView.layer.borderWidth = 1.0;
-    self.textView.layer.borderColor = [UIColor colorWithRed:0.9 green:0.9 blue:0.9 alpha:1.0].CGColor;
+    self.textView.layer.borderColor = AIUAUIColorSimplifyRGB(0.9, 0.9, 0.9).CGColor;
     self.textView.layer.cornerRadius = 8.0;
     self.textView.textContainerInset = UIEdgeInsetsMake(12, 12, 12, 40); // 右侧留出空间给清空按钮
-    self.textView.placeholder = @"请输入";
+    self.textView.placeholder = L(@"please_enter");
     [self.contentView addSubview:self.textView];
     
     // 清空按钮 - 使用系统图标
@@ -49,9 +49,9 @@
     } else {
         // Fallback for earlier versions
         [self.clearButton setTitle:@"×" forState:UIControlStateNormal];
-        self.clearButton.titleLabel.font = [UIFont boldSystemFontOfSize:18];
+        self.clearButton.titleLabel.font = AIUAUIFontBold(18);
     }
-    [self.clearButton setTintColor:[UIColor colorWithRed:0.6 green:0.6 blue:0.6 alpha:1.0]];
+    [self.clearButton setTintColor:AIUA_GRAY_COLOR];
     self.clearButton.backgroundColor = [UIColor clearColor];
     [self.clearButton addTarget:self action:@selector(clearButtonTapped) forControlEvents:UIControlEventTouchUpInside];
     self.clearButton.hidden = YES;
@@ -60,10 +60,10 @@
     // 开始创作按钮
     self.createButton = [UIButton buttonWithType:UIButtonTypeSystem];
     self.createButton.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.createButton setTitle:@"开始创作" forState:UIControlStateNormal];
+    [self.createButton setTitle:L(@"start_creating") forState:UIControlStateNormal];
     [self.createButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
     [self.createButton setTitleColor:[UIColor lightGrayColor] forState:UIControlStateDisabled];
-    self.createButton.backgroundColor = [UIColor colorWithRed:0.8 green:0.8 blue:0.8 alpha:1.0];
+    self.createButton.backgroundColor = AIUAUIColorSimplifyRGB(0.8, 0.8, 0.8);
     self.createButton.layer.cornerRadius = 8.0;
     [self.createButton addTarget:self action:@selector(createButtonTapped) forControlEvents:UIControlEventTouchUpInside];
     self.createButton.enabled = NO;
@@ -101,8 +101,8 @@
     // 更新开始创作按钮状态
     self.createButton.enabled = hasText;
     self.createButton.backgroundColor = hasText ?
-        [UIColor colorWithRed:0.2 green:0.4 blue:0.8 alpha:1.0] :
-        [UIColor colorWithRed:0.8 green:0.8 blue:0.8 alpha:1.0];
+    AIUAUIColorSimplifyRGB(0.2, 0.4, 0.8) :
+    AIUAUIColorSimplifyRGB(0.8, 0.8, 0.8);
 }
 
 #pragma mark - UITextViewDelegate
