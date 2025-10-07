@@ -13,6 +13,7 @@
 @interface AIUAWriterViewController ()<UITableViewDelegate, UITableViewDataSource>
 
 @property (nonatomic, strong) UITableView *tableView;
+@property (nonatomic, strong) AIUAWritingInputCell *inputCell;
 @property (nonatomic, strong) NSArray *writingCategories;
 
 @end
@@ -21,6 +22,7 @@
 
 - (void)setupUI {
     self.title = L(@"tab_writer");
+    [self setupInputCell];
     [self setupTableView];
     [self setupGestureRecognizer];
 }
@@ -31,6 +33,23 @@
     [self.tableView reloadData];
 }
 
+- (void)setupInputCell {
+    self.inputCell = [[AIUAWritingInputCell alloc] init];
+    __weak typeof(self) weakSelf = self;
+    self.inputCell.onTextChange = ^(NSString *text) {
+        // 文本变化处理
+    };
+    self.inputCell.onClearText = ^{
+        // 清空文本处理
+        
+    };
+    __weak typeof(self.inputCell) weakInputCell = self.inputCell;
+    self.inputCell.onStartCreate = ^{
+        // 开始创作处理
+        [weakSelf startCreatingWithText:weakInputCell.textView.text];
+    };
+}
+
 - (void)setupTableView {
     // 创建表格
     self.tableView = [[UITableView alloc] initWithFrame:self.view.bounds style:UITableViewStyleGrouped];
@@ -38,7 +57,6 @@
     self.tableView.dataSource = self;
     self.tableView.showsVerticalScrollIndicator = NO;
     self.tableView.backgroundColor = [UIColor clearColor];
-    [self.tableView registerClass:[AIUAWritingInputCell class] forCellReuseIdentifier:@"AIUAWritingInputCell"];
     [self.tableView registerClass:[AIUAWritingCategoryCell class] forCellReuseIdentifier:@"AIUAWritingCategoryCell"];
     [self.view addSubview:self.tableView];
 }
@@ -77,25 +95,7 @@
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     if (indexPath.section == 0) {
         // 输入框Cell
-        __block AIUAWritingInputCell *cell = [tableView dequeueReusableCellWithIdentifier:@"AIUAWritingInputCell" forIndexPath:indexPath];
-        
-        __weak typeof(self) weakSelf = self;
-        cell.onTextChange = ^(NSString *text) {
-            // 文本变化处理
-        };
-        
-        cell.onClearText = ^{
-            // 清空文本处理
-            [weakSelf.tableView setContentOffset:CGPointZero animated:YES];
-        };
-        
-        __weak typeof(cell) weakCell = cell;
-        cell.onStartCreate = ^{
-            // 开始创作处理
-            [weakSelf startCreatingWithText:weakCell.textView.text];
-        };
-        
-        return cell;
+        return self.inputCell;
     } else {
         // 分类项Cell
         AIUAWritingCategoryCell *cell = [tableView dequeueReusableCellWithIdentifier:@"AIUAWritingCategoryCell" forIndexPath:indexPath];
@@ -120,18 +120,17 @@
     NSDictionary *sectionData = self.writingCategories[indexPath.section - 1];
     NSArray *items = sectionData[@"items"];
     NSDictionary *item = items[indexPath.row];
-    
     // 构建完整文本
     NSString *fullText = [NSString stringWithFormat:@"%@：%@", item[@"title"], item[@"content"]];
-    
-    // 获取输入框Cell并填入文本
-    AIUAWritingInputCell *inputCell = [tableView cellForRowAtIndexPath:[NSIndexPath indexPathForRow:0 inSection:0]];
-    inputCell.textView.text = fullText;
-    [inputCell updateButtonStates];
-    
+    NSLog(@"fullText:%@", fullText);
+    self.inputCell.textView.text = fullText;
+    [self.inputCell updateButtonStates];
     // 滚动到顶部并弹出键盘
-    [inputCell.textView becomeFirstResponder];
+    [self.inputCell.textView becomeFirstResponder];
+    [[NSNotificationCenter defaultCenter] postNotificationName:UITextViewTextDidChangeNotification object:self.inputCell.textView];
+    
     [tableView scrollToRowAtIndexPath:[NSIndexPath indexPathForRow:0 inSection:0] atScrollPosition:UITableViewScrollPositionTop animated:YES];
+    
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
@@ -145,7 +144,7 @@
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
     if (indexPath.section == 0) {
-        return 230; // 输入框Cell的高度
+        return 280; // 输入框Cell的高度
     } else {
         return 80; // 分类项Cell的高度
     }

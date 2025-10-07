@@ -67,7 +67,8 @@ static const void *placeholderLabelKey = &placeholderLabelKey;
     
     CGFloat x = lineFragmentPadding + textContainerInset.left;
     CGFloat y = textContainerInset.top;
-    CGFloat width = CGRectGetWidth(self.bounds) - x - lineFragmentPadding - textContainerInset.right;
+//    CGFloat width = CGRectGetWidth(self.bounds) - x - lineFragmentPadding - textContainerInset.right;
+    CGFloat width = 100;
     CGFloat height = [self.placeholderLabel sizeThatFits:CGSizeMake(width, 0)].height;
     
     self.placeholderLabel.frame = CGRectMake(x, y, width, height);
