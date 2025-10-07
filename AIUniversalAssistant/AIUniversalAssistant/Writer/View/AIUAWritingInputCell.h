@@ -6,11 +6,12 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "AIUASuperTableViewCell.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 // 输入框Cell
-@interface AIUAWritingInputCell : UITableViewCell
+@interface AIUAWritingInputCell : AIUASuperTableViewCell
 
 @property (nonatomic, strong) UITextView *textView;
 @property (nonatomic, strong) UIButton *clearButton;

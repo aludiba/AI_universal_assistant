@@ -14,18 +14,8 @@
 
 @implementation AIUAWritingInputCell
 
-- (instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier {
-    self = [super initWithStyle:style reuseIdentifier:reuseIdentifier];
-    if (self) {
-        [self setupUI];
-    }
-    return self;
-}
-
 - (void)setupUI {
-    self.backgroundColor = AIUA_BACK_COLOR;
-    self.selectionStyle = UITableViewCellSelectionStyleNone;
-    
+    [super setupUI];
     // 输入框
     self.textView = [[UITextView alloc] init];
     self.textView.backgroundColor = AIUA_BACK_COLOR;

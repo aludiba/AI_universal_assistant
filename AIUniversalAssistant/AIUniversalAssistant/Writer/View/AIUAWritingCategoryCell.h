@@ -6,6 +6,7 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "AIUASuperTableViewCell.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -13,7 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 typedef void (^AIUACategoryCellTapBlock)(NSString *fullText);
 
 // 分类项Cell
-@interface AIUAWritingCategoryCell : UITableViewCell
+@interface AIUAWritingCategoryCell : AIUASuperTableViewCell
 
 @property (nonatomic, strong) UILabel *titleLabel;
 @property (nonatomic, strong) UILabel *contentLabel;

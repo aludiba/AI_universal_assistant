@@ -13,17 +13,8 @@
 
 @implementation AIUAWritingCategoryCell
 
-- (instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier {
-    self = [super initWithStyle:style reuseIdentifier:reuseIdentifier];
-    if (self) {
-        [self setupUI];
-    }
-    return self;
-}
-
 - (void)setupUI {
-    self.backgroundColor = AIUA_BACK_COLOR;
-    self.selectionStyle = UITableViewCellSelectionStyleDefault;
+    [super setupUI];
     // 使用系统向上箭头图标
     if (@available(iOS 13.0, *)) {
         UIImage *chevronUpImage = [UIImage systemImageNamed:@"chevron.up"];

@@ -47,7 +47,6 @@
 
 - (void)setupInputCell {
     self.inputCell = [[AIUAWritingInputCell alloc] init];
-    WeakSelf(self);
     self.inputCell.onTextChange = ^(NSString *text) {
         // 文本变化处理
     };
