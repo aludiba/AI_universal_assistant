@@ -21,13 +21,6 @@
 
 @implementation AIUAWriterViewController
 
-- (void)viewDidLoad {
-    [super viewDidLoad];
-    [self setupUI];
-    [self setupData];
-    [self setupKeyboardObservers];
-}
-
 - (void)dealloc {
     // 移除键盘监听
     [[NSNotificationCenter defaultCenter] removeObserver:self];
@@ -37,6 +30,7 @@
     self.title = L(@"tab_writer");
     [self setupInputCell];
     [self setupGestureRecognizer];
+    [self setupKeyboardObservers];
 }
 
 - (void)setupData {
