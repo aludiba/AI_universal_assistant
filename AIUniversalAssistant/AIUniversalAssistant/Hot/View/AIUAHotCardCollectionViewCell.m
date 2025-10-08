@@ -36,7 +36,7 @@
     self.titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
     self.titleLabel.font = AIUAUIFontSemibold(16);
     self.titleLabel.textColor = AIUAUIColorSimplifyRGB(0.2, 0.2, 0.2);
-    self.titleLabel.numberOfLines = 1;
+    self.titleLabel.numberOfLines = 2;
     [self.cardView addSubview:self.titleLabel];
     
     // 副标题
@@ -44,8 +44,20 @@
     self.subtitleLabel.translatesAutoresizingMaskIntoConstraints = NO;
     self.subtitleLabel.font = AIUAUIFontSystem(12);
     self.subtitleLabel.textColor = AIUAUIColorSimplifyRGB(0.6, 0.6, 0.6);
-    self.subtitleLabel.numberOfLines = 2;
+    self.subtitleLabel.numberOfLines = 3;
     [self.cardView addSubview:self.subtitleLabel];
+    
+    // 收藏按钮
+    self.favoriteButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    self.favoriteButton.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.favoriteButton addTarget:self action:@selector(favoriteButtonTapped) forControlEvents:UIControlEventTouchUpInside];
+    self.favoriteButton.backgroundColor = [UIColor whiteColor];
+    self.favoriteButton.layer.cornerRadius = 12;
+    self.favoriteButton.layer.shadowColor = AIUAUIColorSimplifyRGBA(0.0, 0.0, 0.0, 0.1).CGColor;
+    self.favoriteButton.layer.shadowOffset = CGSizeMake(0, 1);
+    self.favoriteButton.layer.shadowRadius = 3;
+    self.favoriteButton.layer.shadowOpacity = 1;
+    [self.cardView addSubview:self.favoriteButton];
     
     [self setupConstraints];
 }
@@ -72,14 +84,19 @@
         
         // 标题
         [self.titleLabel.topAnchor constraintEqualToAnchor:self.gradientView.topAnchor],
-        [self.titleLabel.leadingAnchor constraintEqualToAnchor:self.gradientView.trailingAnchor constant:12],
+        [self.titleLabel.leadingAnchor constraintEqualToAnchor:self.gradientView.trailingAnchor constant:16],
         [self.titleLabel.trailingAnchor constraintEqualToAnchor:self.cardView.trailingAnchor constant:-16],
         
         // 副标题
         [self.subtitleLabel.topAnchor constraintEqualToAnchor:self.titleLabel.bottomAnchor constant:4],
-        [self.subtitleLabel.leadingAnchor constraintEqualToAnchor:self.gradientView.trailingAnchor constant:12],
+        [self.subtitleLabel.leadingAnchor constraintEqualToAnchor:self.gradientView.trailingAnchor constant:16],
         [self.subtitleLabel.trailingAnchor constraintEqualToAnchor:self.cardView.trailingAnchor constant:-16],
-        [self.subtitleLabel.bottomAnchor constraintLessThanOrEqualToAnchor:self.cardView.bottomAnchor constant:-16]
+        
+        // 收藏按钮
+        [self.favoriteButton.leadingAnchor constraintEqualToAnchor:self.cardView.leadingAnchor constant:16],
+        [self.favoriteButton.widthAnchor constraintEqualToConstant:24],
+        [self.favoriteButton.heightAnchor constraintEqualToConstant:24],
+        [self.favoriteButton.bottomAnchor constraintLessThanOrEqualToAnchor:self.cardView.bottomAnchor constant:-16]
     ]];
 }
 
@@ -110,6 +127,29 @@
     } else {
         // iOS 13 以下版本使用自定义图标
         self.iconView.image = [UIImage imageNamed:iconName];
+    }
+}
+
+- (void)setFavorite:(BOOL)isFavorite {
+    if (@available(iOS 13.0, *)) {
+        UIImage *heartImage = [UIImage systemImageNamed:isFavorite ? @"heart.fill" : @"heart"];
+        [self.favoriteButton setImage:heartImage forState:UIControlStateNormal];
+        self.favoriteButton.tintColor = isFavorite ? AIUAUIColorSimplifyRGB(1.0, 0.2, 0.2) : AIUAUIColorSimplifyRGB(0.6, 0.6, 0.6);
+    } else {
+        // iOS 13 以下版本
+        [self.favoriteButton setTitle:isFavorite ? @"❤️" : @"♡" forState:UIControlStateNormal];
+    }
+}
+
+- (void)setFavoriteButtonHidden:(BOOL)hidden {
+    self.favoriteButton.hidden = hidden;
+}
+
+
+- (void)favoriteButtonTapped {
+    // 通过代理处理收藏事件
+    if (self.delegate && [self.delegate respondsToSelector:@selector(cell:favoriteButtonTapped:)]) {
+        [self.delegate cell:self favoriteButtonTapped:self.favoriteButton];
     }
 }
 

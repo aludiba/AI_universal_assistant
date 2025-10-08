@@ -3,8 +3,9 @@
 #import "AIUADataManager.h"
 
 static NSString * const kCardCellId = @"CardCell";
+static NSString * const kEmptyCellId = @"EmptyCell";
 
-@interface AIUAHotViewController () <UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout, UISearchBarDelegate, UIScrollViewDelegate>
+@interface AIUAHotViewController () <UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout, UISearchBarDelegate, UIScrollViewDelegate, AIUAHotCardCollectionViewCellDelegate>
 
 @property (nonatomic, strong) UISearchBar *searchBar;
 @property (nonatomic, strong) UIScrollView *categoryScroll;
@@ -17,6 +18,10 @@ static NSString * const kCardCellId = @"CardCell";
 
 @property (nonatomic, strong) UIView *indicatorView;
 @property (nonatomic, strong) NSMutableArray *categoryButtons;
+
+// 收藏相关数据
+@property (nonatomic, strong) NSArray *favoritesItems;
+@property (nonatomic, strong) NSArray *recentUsedItems;
 
 @end
 
@@ -38,11 +43,18 @@ static NSString * const kCardCellId = @"CardCell";
     
     [self loadCategoryButtons];
     [self updateContentForSelectedCategory];
+    [self refreshFavoritesData];
+    [self refreshRecentUsedData];
 }
 
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
     [self updateCategorySelection];
+    // 每次显示页面时刷新收藏数据
+    [self refreshFavoritesData];
+    if ([self isFavoriteCategorySelected]) {
+        [self updateContentForSelectedCategory];
+    }
 }
 
 - (void)setupSearchBar {
@@ -92,6 +104,8 @@ static NSString * const kCardCellId = @"CardCell";
     self.collectionView.backgroundColor = [UIColor clearColor];
     self.collectionView.showsVerticalScrollIndicator = NO;
     [self.collectionView registerClass:[AIUAHotCardCollectionViewCell class] forCellWithReuseIdentifier:kCardCellId];
+    [self.collectionView registerClass:[UICollectionReusableView class] forSupplementaryViewOfKind:UICollectionElementKindSectionHeader withReuseIdentifier:@"HeaderView"];
+    [self.collectionView registerClass:[UICollectionViewCell class] forCellWithReuseIdentifier:kEmptyCellId];
     self.collectionView.delegate = self;
     self.collectionView.dataSource = self;
     
@@ -186,10 +200,36 @@ static NSString * const kCardCellId = @"CardCell";
 }
 
 - (void)updateContentForSelectedCategory {
-    NSDictionary *selectedCategory = self.categories[self.selectedCategoryIndex];
-    NSString *categoryId = selectedCategory[@"id"];
-    self.currentItems = [[AIUADataManager sharedManager] getItemsForCategory:categoryId];
+    if (self.selectedCategoryIndex < self.categories.count) {
+        NSDictionary *selectedCategory = self.categories[self.selectedCategoryIndex];
+        if ([[AIUADataManager sharedManager] isFavoriteCategory:selectedCategory]) {
+            // 收藏分类 - 使用动态数据
+            self.currentItems = @[];
+        } else {
+            // 常规分类
+            NSString *categoryId = selectedCategory[@"id"];
+            self.currentItems = [[AIUADataManager sharedManager] getItemsForCategory:categoryId];
+        }
+    }
     [self.collectionView reloadData];
+}
+
+- (void)refreshFavoritesData {
+    // 刷新收藏数据
+    self.favoritesItems = [[AIUADataManager sharedManager] loadFavorites];
+}
+
+- (void)refreshRecentUsedData {
+    // 刷新最近使用数据
+    self.recentUsedItems = [[AIUADataManager sharedManager] loadRecentUsed];
+}
+
+- (BOOL)isFavoriteCategorySelected {
+    if (self.selectedCategoryIndex < self.categories.count) {
+        NSDictionary *selectedCategory = self.categories[self.selectedCategoryIndex];
+        return [[AIUADataManager sharedManager] isFavoriteCategory:selectedCategory];
+    }
+    return NO;
 }
 
 #pragma mark - Actions
@@ -230,33 +270,201 @@ static NSString * const kCardCellId = @"CardCell";
 
 #pragma mark - UICollectionView DataSource & Delegate
 
+- (NSInteger)numberOfSectionsInCollectionView:(UICollectionView *)collectionView {
+    if ([self isFavoriteCategorySelected]) {
+        // 收藏页面：我的关注 + 最近使用
+        return 2;
+    } else {
+        // 常规分类页面
+        return 1;
+    }
+}
+
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section {
-    return self.currentItems.count;
+    if ([self isFavoriteCategorySelected]) {
+            // 收藏页面
+            if (section == 0) {
+                return self.favoritesItems.count > 0 ? self.favoritesItems.count : 1;
+            } else {
+                return self.recentUsedItems.count > 0 ? self.recentUsedItems.count : 1;
+            }
+        } else {
+            // 常规分类页面
+            return self.currentItems.count;
+        }
+}
+
+- (UICollectionReusableView *)collectionView:(UICollectionView *)collectionView viewForSupplementaryElementOfKind:(NSString *)kind atIndexPath:(NSIndexPath *)indexPath {
+    if ([kind isEqualToString:UICollectionElementKindSectionHeader] && [self isFavoriteCategorySelected]) {
+        
+        UICollectionReusableView *headerView = [collectionView dequeueReusableSupplementaryViewOfKind:kind withReuseIdentifier:@"HeaderView" forIndexPath:indexPath];
+        
+        // 清空headerView的子视图
+        for (UIView *subview in headerView.subviews) {
+            [subview removeFromSuperview];
+        }
+        
+        UILabel *titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(16, 10, collectionView.bounds.size.width - 32, 30)];
+        if (indexPath.section == 0) {
+            titleLabel.text = @"我的关注";
+        } else {
+            titleLabel.text = @"最近使用";
+        }
+        titleLabel.font = AIUAUIFontBold(18);
+        titleLabel.textColor = AIUAUIColorSimplifyRGB(0.2, 0.2, 0.2);
+        [headerView addSubview:titleLabel];
+        
+        return headerView;
+    }
+    return nil;
+}
+
+// 动态设置header高度
+- (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout referenceSizeForHeaderInSection:(NSInteger)section {
+    if ([self isFavoriteCategorySelected]) {
+        // 收藏页面：两个section都有header，高度50
+        return CGSizeMake(collectionView.bounds.size.width, 50);
+    } else {
+        // 常规分类页面：没有header，高度为0
+        return CGSizeZero;
+    }
 }
 
 - (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
-    AIUAHotCardCollectionViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:kCardCellId forIndexPath:indexPath];
-    
-    NSDictionary *item = self.currentItems[indexPath.item];
-    [cell configureWithTitle:item[@"title"] 
-                   subtitle:item[@"subtitle"] 
-                   iconName:item[@"icon"]];
-    
-    return cell;
+    if ([self isFavoriteCategorySelected]) {
+        // 收藏页面
+        if ((indexPath.section == 0 && self.favoritesItems.count == 0) ||
+            (indexPath.section == 1 && self.recentUsedItems.count == 0)) {
+            // 空状态cell
+            UICollectionViewCell *emptyCell = [collectionView dequeueReusableCellWithReuseIdentifier:kEmptyCellId forIndexPath:indexPath];
+            emptyCell.backgroundColor = [UIColor whiteColor];
+            emptyCell.layer.cornerRadius = 16;
+            
+            // 清空现有子视图
+            for (UIView *subview in emptyCell.contentView.subviews) {
+                [subview removeFromSuperview];
+            }
+            
+            UILabel *emptyLabel = [[UILabel alloc] init];
+            emptyLabel.translatesAutoresizingMaskIntoConstraints = NO;
+            emptyLabel.text = indexPath.section == 0 ? @"暂无收藏内容" : @"暂无最近使用";
+            emptyLabel.font = AIUAUIFontSystem(14);
+            emptyLabel.textColor = AIUAUIColorSimplifyRGB(0.6, 0.6, 0.6);
+            emptyLabel.textAlignment = NSTextAlignmentCenter;
+            [emptyCell.contentView addSubview:emptyLabel];
+            
+            [NSLayoutConstraint activateConstraints:@[
+                [emptyLabel.centerXAnchor constraintEqualToAnchor:emptyCell.contentView.centerXAnchor],
+                [emptyLabel.centerYAnchor constraintEqualToAnchor:emptyCell.contentView.centerYAnchor]
+            ]];
+            
+            return emptyCell;
+        }
+        
+        AIUAHotCardCollectionViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:kCardCellId forIndexPath:indexPath];
+        
+        NSDictionary *item;
+        if (indexPath.section == 0) {
+            item = self.favoritesItems[indexPath.item];
+        } else {
+            item = self.recentUsedItems[indexPath.item];
+        }
+        
+        [cell configureWithTitle:item[@"title"]
+                       subtitle:item[@"subtitle"]
+                       iconName:item[@"icon"]];
+        
+        // 在收藏页面隐藏收藏按钮
+        [cell setFavoriteButtonHidden:YES];
+        
+        return cell;
+        
+    } else {
+        // 常规分类页面
+        AIUAHotCardCollectionViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:kCardCellId forIndexPath:indexPath];
+        
+        NSDictionary *item = self.currentItems[indexPath.item];
+        [cell configureWithTitle:item[@"title"]
+                       subtitle:item[@"subtitle"]
+                       iconName:item[@"icon"]];
+        
+        // 设置收藏状态
+        NSString *itemId = [[AIUADataManager sharedManager] getItemId:item];
+        BOOL isFavorite = [[AIUADataManager sharedManager] isFavorite:itemId];
+        [cell setFavorite:isFavorite];
+        [cell setFavoriteButtonHidden:NO];
+        cell.delegate = self;
+        
+        return cell;
+    }
 }
 
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
-    CGFloat totalPadding = 16 + 16 + 16; // sectionInsets + interitem
+    CGFloat totalPadding = 16 + 16 + 16;
     CGFloat width = (collectionView.bounds.size.width - totalPadding) / 2.0;
+    
+    if ([self isFavoriteCategorySelected] && ((indexPath.section == 0 && self.favoritesItems.count == 0) ||
+                                              (indexPath.section == 1 && self.recentUsedItems.count == 0))) {
+        // 空状态cell占满一行
+        return CGSizeMake(collectionView.bounds.size.width - 32, 80);
+    }
+    
     return CGSizeMake(width, 120);
 }
 
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
-    NSDictionary *item = self.currentItems[indexPath.item];
+    
+    NSDictionary *item;
+    
+    if ([self isFavoriteCategorySelected]) {
+        // 收藏页面
+        if ((indexPath.section == 0 && self.favoritesItems.count == 0) ||
+            (indexPath.section == 1 && self.recentUsedItems.count == 0)) {
+            return; // 空状态cell不处理点击
+        }
+        
+        if (indexPath.section == 0) {
+            item = self.favoritesItems[indexPath.item];
+        } else {
+            item = self.recentUsedItems[indexPath.item];
+        }
+    } else {
+        // 常规分类页面
+        item = self.currentItems[indexPath.item];
+        
+        // 添加到最近使用
+        [[AIUADataManager sharedManager] addRecentUsed:item];
+        // 刷新最近使用数据
+        [self refreshRecentUsedData];
+    }
+    
     NSLog(@"选中模板：%@ - %@", item[@"title"], item[@"type"]);
     
     // TODO: 跳转到对应的写作页面
     // [self navigateToWritingWithType:item[@"type"] title:item[@"title"]];
+}
+
+#pragma mark - AIUACollectionViewCellDelegate
+
+- (void)cell:(AIUAHotCardCollectionViewCell *)cell favoriteButtonTapped:(UIButton *)button {
+    NSIndexPath *indexPath = [self.collectionView indexPathForCell:cell];
+    if (indexPath && ![self isFavoriteCategorySelected]) {
+        NSDictionary *item = self.currentItems[indexPath.item];
+        NSString *itemId = [[AIUADataManager sharedManager] getItemId:item];
+        
+        if ([[AIUADataManager sharedManager] isFavorite:itemId]) {
+            // 取消收藏
+            [[AIUADataManager sharedManager] removeFavorite:itemId];
+            [cell setFavorite:NO];
+        } else {
+            // 添加收藏
+            [[AIUADataManager sharedManager] addFavorite:item];
+            [cell setFavorite:YES];
+        }
+        
+        // 刷新收藏数据
+        [self refreshFavoritesData];
+    }
 }
 
 #pragma mark - UISearchBarDelegate
