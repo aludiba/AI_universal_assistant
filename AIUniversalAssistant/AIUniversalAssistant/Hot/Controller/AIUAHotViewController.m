@@ -3,6 +3,7 @@
 #import "AIUADataManager.h"
 #import "AIUAMBProgressManager.h"
 #import "AIUAAlertHelper.h"
+#import "AIUASearchViewController.h"
 
 static NSString * const kCardCellId = @"CardCell";
 static NSString * const kEmptyCellId = @"EmptyCell";
@@ -69,13 +70,19 @@ static NSString * const kEmptyCellId = @"EmptyCell";
     self.searchBar.layer.cornerRadius = 18;
     self.searchBar.layer.masksToBounds = YES;
     
-    // 设置搜索图标颜色
     UITextField *searchField = self.searchBar.searchTextField;
     searchField.backgroundColor = [UIColor clearColor];
     searchField.layer.cornerRadius = 18;
     searchField.layer.masksToBounds = YES;
     
+    UIView *searchView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width - 120, 36)];
+    searchView.backgroundColor = [UIColor clearColor];
+    [self.searchBar addSubview:searchView];
     self.navigationItem.titleView = self.searchBar;
+    
+    UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(searchBarTapped)];
+    tapGesture.cancelsTouchesInView = NO;
+    [searchView addGestureRecognizer:tapGesture];
 }
 
 - (void)setupCategoryScroll {
@@ -234,6 +241,13 @@ static NSString * const kEmptyCellId = @"EmptyCell";
 
 #pragma mark - Actions
 
+#pragma mark - UISearchBarDelegate
+
+- (void)searchBarTapped {
+    // 跳转到搜索控制器
+    [self.navigationController pushViewController:[[AIUASearchViewController alloc] init] animated:YES];
+}
+    
 - (void)categoryButtonTapped:(UIButton *)sender {
     self.selectedCategoryIndex = sender.tag;
     [self updateCategorySelection];
@@ -479,16 +493,7 @@ static NSString * const kEmptyCellId = @"EmptyCell";
         }
     }
 }
-
-#pragma mark - UISearchBarDelegate
-
-- (void)searchBarSearchButtonClicked:(UISearchBar *)searchBar {
-    NSString *text = searchBar.text;
-    [searchBar resignFirstResponder];
-    NSLog(@"搜索关键词：%@", text);
-    // TODO: 实现搜索功能
-}
-
+    
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
     [self dismissKeyboard];
 }
