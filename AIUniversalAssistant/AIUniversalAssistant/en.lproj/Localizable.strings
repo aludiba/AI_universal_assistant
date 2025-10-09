@@ -22,3 +22,9 @@
 "recently_used" = "Recently Used";
 "no_favorite_content_yet" = "No favorite content yet";
 "no_recent_items" = "No recent items";
+"favorited" = "Favorited";
+"success" = "Success";
+"failure" = "Failure";
+"confirm_unfavorite" = "Are you sure you want to remove from favorites?";
+"think_it_over" = "Think it over";
+"confirm" = "Confirm";

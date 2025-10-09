@@ -1,6 +1,8 @@
 #import "AIUAHotViewController.h"
 #import "AIUAHotCardCollectionViewCell.h"
 #import "AIUADataManager.h"
+#import "AIUAMBProgressManager.h"
+#import "AIUAAlertHelper.h"
 
 static NSString * const kCardCellId = @"CardCell";
 static NSString * const kEmptyCellId = @"EmptyCell";
@@ -451,17 +453,30 @@ static NSString * const kEmptyCellId = @"EmptyCell";
         NSString *itemId = [[AIUADataManager sharedManager] getItemId:item];
         
         if ([[AIUADataManager sharedManager] isFavorite:itemId]) {
-            // 取消收藏
-            [[AIUADataManager sharedManager] removeFavorite:itemId];
-            [cell setFavorite:NO];
+            WeakType(self);
+            WeakType(cell);
+            [AIUAAlertHelper showAlertWithTitle:L(@"confirm_unfavorite")
+                                        message:nil
+                                  cancelBtnText:L(@"think_it_over")
+                                 confirmBtnText:L(@"confirm")
+                                   inController:nil
+                                   cancelAction:nil confirmAction:^{
+                StrongType(self);
+                StrongType(cell);
+                // 取消收藏
+                [[AIUADataManager sharedManager] removeFavorite:itemId];
+                [strongcell setFavorite:NO];
+                // 刷新收藏数据
+                [strongself refreshFavoritesData];
+            }];
         } else {
             // 添加收藏
             [[AIUADataManager sharedManager] addFavorite:item];
             [cell setFavorite:YES];
+            [AIUAMBProgressManager showText:nil withText:L(@"favorited") andSubText:nil isBottom:YES];
+            // 刷新收藏数据
+            [self refreshFavoritesData];
         }
-        
-        // 刷新收藏数据
-        [self refreshFavoritesData];
     }
 }
 

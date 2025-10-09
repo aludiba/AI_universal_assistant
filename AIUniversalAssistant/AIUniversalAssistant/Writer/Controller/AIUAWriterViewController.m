@@ -106,8 +106,8 @@
     [self.view addGestureRecognizer:tapGesture];
     
     // 滑动手势隐藏键盘
-     UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(dismissKeyboard)];
-     [self.view addGestureRecognizer:pan];
+    UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(dismissKeyboard)];
+    [self.view addGestureRecognizer:pan];
 }
 
 - (void)dismissKeyboard {
@@ -160,9 +160,9 @@
         NSDictionary *item = items[indexPath.row];
         [cell configureWithTitle:item[@"title"] content:item[@"content"]];
         // 设置点击回调
-        WeakSelf(self);
+        WeakType(self);
         [cell setTapBlock:^(NSString *fullText) {
-            StrongSelf(self);
+            StrongType(self);
             [strongself handleCategoryCellTapWithText:fullText tableView:tableView];
         }];
         return cell;

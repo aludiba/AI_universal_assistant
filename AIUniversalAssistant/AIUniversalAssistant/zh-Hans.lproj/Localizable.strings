@@ -22,3 +22,9 @@
 "recently_used" = "最近使用";
 "no_favorite_content_yet" = "暂无收藏内容";
 "no_recent_items" = "暂无最近使用";
+"favorited" = "已收藏";
+"success" = "成功";
+"failure" = "失败";
+"confirm_unfavorite" = "确认取消收藏吗？";
+"think_it_over" = "再想想";
+"confirm" = "确认";

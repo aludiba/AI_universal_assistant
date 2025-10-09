@@ -7,6 +7,7 @@
 
 #import <Foundation/Foundation.h>
 #import "UIView+AIUA.h"
+#import "AIUAToolsManager.h"
 
 #define AIUAScreenWidth            [[UIScreen mainScreen] bounds].size.width
 #define AIUAScreenHeight           [[UIScreen mainScreen] bounds].size.height
@@ -14,7 +15,7 @@
 // 宏定义 - 状态栏高度
 #define AIUA_STATUS_BAR_HEIGHT \
 ^CGFloat{ \
-    UIWindow *window = UIApplication.sharedApplication.windows.firstObject; \
+    UIWindow *window = [AIUAToolsManager currentWindow]; \
     return window.windowScene.statusBarManager.statusBarFrame.size.height; \
 }()
 // 宏定义 - 导航栏高度
@@ -44,8 +45,8 @@
 #define AIUA_BACK_COLOR  [UIColor colorWithWhite:0.95 alpha:1]
 #define AIUA_GRAY_COLOR  [UIColor colorWithRed:0.6 green:0.6 blue:0.6 alpha:1.0]
 #define L(key) NSLocalizedString((key), nil)
-#define WeakSelf(type)  __weak typeof(type) weak##type = type
-#define StrongSelf(type)  __strong typeof(type) strong##type = weak##type
+#define WeakType(type)  __weak typeof(type) weak##type = type
+#define StrongType(type)  __strong typeof(type) strong##type = weak##type
 
 extern BOOL AIUA_isNotchScreen(void);
 
