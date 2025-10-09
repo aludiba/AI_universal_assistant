@@ -14,12 +14,8 @@
 // 宏定义 - 状态栏高度
 #define AIUA_STATUS_BAR_HEIGHT \
 ^CGFloat{ \
-    if (@available(iOS 13.0, *)) { \
-        UIWindow *window = UIApplication.sharedApplication.windows.firstObject; \
-        return window.windowScene.statusBarManager.statusBarFrame.size.height; \
-    } else { \
-        return UIApplication.sharedApplication.statusBarFrame.size.height; \
-    } \
+    UIWindow *window = UIApplication.sharedApplication.windows.firstObject; \
+    return window.windowScene.statusBarManager.statusBarFrame.size.height; \
 }()
 // 宏定义 - 导航栏高度
 #define AIUA_NAV_BAR_HEIGHT       44.0

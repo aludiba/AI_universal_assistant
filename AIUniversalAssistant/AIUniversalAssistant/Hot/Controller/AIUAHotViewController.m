@@ -68,12 +68,10 @@ static NSString * const kEmptyCellId = @"EmptyCell";
     self.searchBar.layer.masksToBounds = YES;
     
     // 设置搜索图标颜色
-    UITextField *searchField = [self.searchBar valueForKey:@"searchField"];
-    if (searchField) {
-        searchField.backgroundColor = [UIColor clearColor];
-        searchField.layer.cornerRadius = 18;
-        searchField.layer.masksToBounds = YES;
-    }
+    UITextField *searchField = self.searchBar.searchTextField;
+    searchField.backgroundColor = [UIColor clearColor];
+    searchField.layer.cornerRadius = 18;
+    searchField.layer.masksToBounds = YES;
     
     self.navigationItem.titleView = self.searchBar;
 }
@@ -306,9 +304,9 @@ static NSString * const kEmptyCellId = @"EmptyCell";
         
         UILabel *titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(16, 10, collectionView.bounds.size.width - 32, 30)];
         if (indexPath.section == 0) {
-            titleLabel.text = @"我的关注";
+            titleLabel.text = L(@"my_following");
         } else {
-            titleLabel.text = @"最近使用";
+            titleLabel.text = L(@"recently_used");
         }
         titleLabel.font = AIUAUIFontBold(18);
         titleLabel.textColor = AIUAUIColorSimplifyRGB(0.2, 0.2, 0.2);
@@ -347,7 +345,7 @@ static NSString * const kEmptyCellId = @"EmptyCell";
             
             UILabel *emptyLabel = [[UILabel alloc] init];
             emptyLabel.translatesAutoresizingMaskIntoConstraints = NO;
-            emptyLabel.text = indexPath.section == 0 ? @"暂无收藏内容" : @"暂无最近使用";
+            emptyLabel.text = indexPath.section == 0 ? L(@"no_favorite_content_yet") : L(@"no_recent_items");
             emptyLabel.font = AIUAUIFontSystem(14);
             emptyLabel.textColor = AIUAUIColorSimplifyRGB(0.6, 0.6, 0.6);
             emptyLabel.textAlignment = NSTextAlignmentCenter;

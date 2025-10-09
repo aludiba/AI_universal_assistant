@@ -13,11 +13,9 @@ inline BOOL AIUA_isNotchScreen(void) {
     }
     
     BOOL isNotchScreen = AIUAMAXScreenSide >= 812.0;//((AIUAMAXScreenSide == 812.0) || (AIUAMAXScreenSide == 896));
-    if (@available(iOS 11.0, *)) {
-        UIWindow *window = [[UIApplication sharedApplication].windows firstObject];
-        if (window) {
-            isNotchScreen = window.safeAreaInsets.bottom > 0;
-        }
+    UIWindow *window = [[UIApplication sharedApplication].windows firstObject];
+    if (window) {
+        isNotchScreen = window.safeAreaInsets.bottom > 0;
     }
     return isNotchScreen;
 }

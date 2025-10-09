@@ -18,3 +18,7 @@
 "please_enter" = "Please enter";
 "start_creating" = "Start creating";
 "enter_keywords_to_search_templates" = "Enter keywords to search templates";
+"my_following" = "My Following";
+"recently_used" = "Recently Used";
+"no_favorite_content_yet" = "No favorite content yet";
+"no_recent_items" = "No recent items";

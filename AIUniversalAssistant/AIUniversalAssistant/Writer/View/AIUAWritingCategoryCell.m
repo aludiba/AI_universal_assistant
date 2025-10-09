@@ -16,15 +16,10 @@
 - (void)setupUI {
     [super setupUI];
     // 使用系统向上箭头图标
-    if (@available(iOS 13.0, *)) {
-        UIImage *chevronUpImage = [UIImage systemImageNamed:@"chevron.up"];
-        UIImageView *accessoryView = [[UIImageView alloc] initWithImage:chevronUpImage];
-        accessoryView.tintColor = AIUA_GRAY_COLOR;
-        self.accessoryView = accessoryView;
-    } else {
-        // iOS 13 以下的备选方案
-        self.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-    }
+    UIImage *chevronUpImage = [UIImage systemImageNamed:@"chevron.up"];
+    UIImageView *accessoryView = [[UIImageView alloc] initWithImage:chevronUpImage];
+    accessoryView.tintColor = AIUA_GRAY_COLOR;
+    self.accessoryView = accessoryView;
     // 标题标签
     self.titleLabel = [[UILabel alloc] init];
     self.titleLabel.translatesAutoresizingMaskIntoConstraints = NO;

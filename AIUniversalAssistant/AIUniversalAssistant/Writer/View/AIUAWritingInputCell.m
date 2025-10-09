@@ -33,14 +33,8 @@
     self.clearButton = [UIButton buttonWithType:UIButtonTypeSystem];
     self.clearButton.translatesAutoresizingMaskIntoConstraints = NO;
     // 使用系统图标
-    if (@available(iOS 13.0, *)) {
-        UIImage *clearImage = [UIImage systemImageNamed:@"xmark.circle.fill"];
-        [self.clearButton setImage:clearImage forState:UIControlStateNormal];
-    } else {
-        // Fallback for earlier versions
-        [self.clearButton setTitle:@"×" forState:UIControlStateNormal];
-        self.clearButton.titleLabel.font = AIUAUIFontBold(18);
-    }
+    UIImage *clearImage = [UIImage systemImageNamed:@"xmark.circle.fill"];
+    [self.clearButton setImage:clearImage forState:UIControlStateNormal];
     [self.clearButton setTintColor:AIUA_GRAY_COLOR];
     self.clearButton.backgroundColor = [UIColor clearColor];
     [self.clearButton addTarget:self action:@selector(clearButtonTapped) forControlEvents:UIControlEventTouchUpInside];

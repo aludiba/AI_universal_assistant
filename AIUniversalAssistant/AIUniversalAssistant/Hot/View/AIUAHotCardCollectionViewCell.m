@@ -116,35 +116,24 @@
     self.titleLabel.text = title;
     self.subtitleLabel.text = subtitle;
     
-    // 使用 SF Symbols 或系统图标
-    if (@available(iOS 13.0, *)) {
-        UIImage *iconImage = [UIImage systemImageNamed:iconName];
-        if (!iconImage) {
-            // 如果系统图标不存在，使用默认图标
-            iconImage = [UIImage systemImageNamed:@"doc.text"];
-        }
-        self.iconView.image = iconImage;
-    } else {
-        // iOS 13 以下版本使用自定义图标
-        self.iconView.image = [UIImage imageNamed:iconName];
+    // 使用 SF Symbols
+    UIImage *iconImage = [UIImage systemImageNamed:iconName];
+    if (!iconImage) {
+        // 如果系统图标不存在，使用默认图标
+        iconImage = [UIImage systemImageNamed:@"doc.text"];
     }
+    self.iconView.image = iconImage;
 }
 
 - (void)setFavorite:(BOOL)isFavorite {
-    if (@available(iOS 13.0, *)) {
-        UIImage *heartImage = [UIImage systemImageNamed:isFavorite ? @"heart.fill" : @"heart"];
-        [self.favoriteButton setImage:heartImage forState:UIControlStateNormal];
-        self.favoriteButton.tintColor = isFavorite ? AIUAUIColorSimplifyRGB(1.0, 0.2, 0.2) : AIUAUIColorSimplifyRGB(0.6, 0.6, 0.6);
-    } else {
-        // iOS 13 以下版本
-        [self.favoriteButton setTitle:isFavorite ? @"❤️" : @"♡" forState:UIControlStateNormal];
-    }
+    UIImage *heartImage = [UIImage systemImageNamed:isFavorite ? @"heart.fill" : @"heart"];
+    [self.favoriteButton setImage:heartImage forState:UIControlStateNormal];
+    self.favoriteButton.tintColor = isFavorite ? AIUAUIColorSimplifyRGB(1.0, 0.2, 0.2) : AIUAUIColorSimplifyRGB(0.6, 0.6, 0.6);
 }
 
 - (void)setFavoriteButtonHidden:(BOOL)hidden {
     self.favoriteButton.hidden = hidden;
 }
-
 
 - (void)favoriteButtonTapped {
     // 通过代理处理收藏事件
