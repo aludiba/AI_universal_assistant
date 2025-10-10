@@ -9,4 +9,5 @@ target 'AIUniversalAssistant' do
     pod 'SDWebImage'
     pod 'MJRefresh'
     pod 'MBProgressHUD'
+    pod 'Masonry'
 end

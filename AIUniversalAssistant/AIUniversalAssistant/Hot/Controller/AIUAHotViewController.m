@@ -260,6 +260,7 @@ static NSString * const kEmptyCellId = @"EmptyCell";
 - (AIUASearchViewController *)searchVC {
     if (!_searchVC) {
         _searchVC = [[AIUASearchViewController alloc] init];
+        _searchVC.hidesBottomBarWhenPushed = YES;
     }
     return _searchVC;
 }
