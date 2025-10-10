@@ -75,12 +75,17 @@
 }
 
 - (void)setupSearchBar {
-    self.searchBar = [[UISearchBar alloc] initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width - 120, 36)];
+    // 创建自定义视图作为 titleView，确保垂直居中
+    UIView *titleView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width - 120, 44)];
+    titleView.backgroundColor = [UIColor clearColor];
+    
+    self.searchBar = [[UISearchBar alloc] initWithFrame:CGRectMake(0, 4, titleView.bounds.size.width, 36)];
     self.searchBar.placeholder = L(@"enter_keywords_to_search_templates");
     self.searchBar.delegate = self;
     self.searchBar.searchBarStyle = UISearchBarStyleMinimal;
     self.searchBar.backgroundImage = [[UIImage alloc] init];
     self.searchBar.backgroundColor = AIUA_BACK_COLOR;
+    // 移除搜索框的默认背景
     self.searchBar.layer.cornerRadius = 18;
     self.searchBar.layer.masksToBounds = YES;
     
@@ -88,9 +93,9 @@
     searchField.backgroundColor = [UIColor clearColor];
     searchField.layer.cornerRadius = 18;
     searchField.layer.masksToBounds = YES;
-    
-    self.navigationItem.titleView = self.searchBar;
-    self.navigationItem.titleView.backgroundColor = AIUA_BACK_COLOR;
+
+    [titleView addSubview:self.searchBar];
+    self.navigationItem.titleView = titleView;
 }
 
 
