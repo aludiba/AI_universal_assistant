@@ -33,19 +33,12 @@
     [self loadHistorySearches];
 }
 
+- (void)viewDidAppear:(BOOL)animated {
+    [super viewDidAppear:animated];
+    [self setupSearchBar];
+}
+
 - (void)setupUI {
-    // 搜索栏
-//    self.searchBar = [[UISearchBar alloc] init];
-//    self.searchBar.placeholder = @"搜索模板类型";
-//    self.searchBar.delegate = self;
-//    self.searchBar.backgroundImage = [[UIImage alloc] init];
-//    self.searchBar.backgroundColor = [UIColor whiteColor];
-//    self.searchBar.layer.cornerRadius = 8;
-//    self.searchBar.layer.masksToBounds = YES;
-//    self.searchBar.layer.borderWidth = 1;
-//    self.searchBar.layer.borderColor = [UIColor colorWithWhite:0.9 alpha:1.0].CGColor;
-//    [self.view addSubview:self.searchBar];
-    
     // 表格视图
     self.tableView = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStylePlain];
     self.tableView.dataSource = self;
@@ -81,20 +74,33 @@
     [self setupConstraintsWithEmptyLabel:emptyLabel writerButton:writerButton];
 }
 
+- (void)setupSearchBar {
+    self.searchBar = [[UISearchBar alloc] initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width - 120, 36)];
+    self.searchBar.placeholder = L(@"enter_keywords_to_search_templates");
+    self.searchBar.delegate = self;
+    self.searchBar.searchBarStyle = UISearchBarStyleMinimal;
+    self.searchBar.backgroundImage = [[UIImage alloc] init];
+    self.searchBar.backgroundColor = AIUA_BACK_COLOR;
+    self.searchBar.layer.cornerRadius = 18;
+    self.searchBar.layer.masksToBounds = YES;
+    
+    UITextField *searchField = self.searchBar.searchTextField;
+    searchField.backgroundColor = [UIColor clearColor];
+    searchField.layer.cornerRadius = 18;
+    searchField.layer.masksToBounds = YES;
+    
+    self.navigationItem.titleView = self.searchBar;
+    self.navigationItem.titleView.backgroundColor = AIUA_BACK_COLOR;
+}
+
+
 - (void)setupConstraintsWithEmptyLabel:(UILabel *)emptyLabel writerButton:(UIButton *)writerButton {
-//    self.searchBar.translatesAutoresizingMaskIntoConstraints = NO;
     self.tableView.translatesAutoresizingMaskIntoConstraints = NO;
     self.emptyView.translatesAutoresizingMaskIntoConstraints = NO;
     emptyLabel.translatesAutoresizingMaskIntoConstraints = NO;
     writerButton.translatesAutoresizingMaskIntoConstraints = NO;
     
     [NSLayoutConstraint activateConstraints:@[
-        // 搜索栏约束
-//        [self.searchBar.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor constant:8],
-//        [self.searchBar.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:16],
-//        [self.searchBar.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-16],
-//        [self.searchBar.heightAnchor constraintEqualToConstant:44],
-        
         // 表格视图约束
         [self.tableView.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor constant:8],
         [self.tableView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
@@ -102,7 +108,7 @@
         [self.tableView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor],
         
         // 空状态视图约束
-        [self.emptyView.topAnchor constraintEqualToAnchor:self.tableView.topAnchor],
+        [self.emptyView.topAnchor constraintEqualToAnchor:self.view.topAnchor],
         [self.emptyView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
         [self.emptyView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
         [self.emptyView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor],

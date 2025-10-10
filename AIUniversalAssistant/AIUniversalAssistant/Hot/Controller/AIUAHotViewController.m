@@ -10,7 +10,7 @@ static NSString * const kEmptyCellId = @"EmptyCell";
 
 @interface AIUAHotViewController () <UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout, UISearchBarDelegate, UIScrollViewDelegate, AIUAHotCardCollectionViewCellDelegate>
 
-@property (nonatomic, strong) UISearchBar *searchBar;
+@property (nonatomic, strong) UIButton *searchButton;
 @property (nonatomic, strong) UIScrollView *categoryScroll;
 @property (nonatomic, strong) UICollectionView *collectionView;
 @property (nonatomic, strong) UICollectionViewFlowLayout *collectionLayout;
@@ -26,17 +26,17 @@ static NSString * const kEmptyCellId = @"EmptyCell";
 @property (nonatomic, strong) NSArray *favoritesItems;
 @property (nonatomic, strong) NSArray *recentUsedItems;
 
+@property (nonatomic, strong) AIUASearchViewController *searchVC; // 搜索页
+
 @end
 
 @implementation AIUAHotViewController
 
 - (void)setupUI {
     self.navigationItem.title = L(@"tab_hot");
-    
     [self setupSearchBar];
     [self setupCategoryScroll];
     [self setupCollectionView];
-    [self setupGestureRecognizer];
 }
 
 - (void)setupData {
@@ -61,28 +61,46 @@ static NSString * const kEmptyCellId = @"EmptyCell";
 }
 
 - (void)setupSearchBar {
-    self.searchBar = [[UISearchBar alloc] initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width - 120, 36)];
-    self.searchBar.placeholder = L(@"enter_keywords_to_search_templates");
-    self.searchBar.delegate = self;
-    self.searchBar.searchBarStyle = UISearchBarStyleMinimal;
-    self.searchBar.backgroundImage = [[UIImage alloc] init];
-    self.searchBar.backgroundColor = AIUAUIColorSimplifyRGB(0.98, 0.98, 0.98);
-    self.searchBar.layer.cornerRadius = 18;
-    self.searchBar.layer.masksToBounds = YES;
+    UIButton *searchButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    searchButton.frame = CGRectMake(0, 0, self.view.bounds.size.width - 32, 36);
+    searchButton.tintColor = [UIColor lightGrayColor];
+
+    // 创建配置
+    UIButtonConfiguration *config = [UIButtonConfiguration plainButtonConfiguration];
     
-    UITextField *searchField = self.searchBar.searchTextField;
-    searchField.backgroundColor = [UIColor clearColor];
-    searchField.layer.cornerRadius = 18;
-    searchField.layer.masksToBounds = YES;
+    // 设置标题
+    NSDictionary *attributes = @{
+        NSForegroundColorAttributeName: [UIColor lightGrayColor],
+        NSFontAttributeName: AIUAUIFontSystem(16)
+    };
+    config.attributedTitle = [[NSAttributedString alloc] initWithString:L(@"enter_keywords_to_search_templates") attributes:attributes];
     
-    UIView *searchView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width - 120, 36)];
-    searchView.backgroundColor = [UIColor clearColor];
-    [self.searchBar addSubview:searchView];
-    self.navigationItem.titleView = self.searchBar;
+    // 设置图标 - 修改颜色为灰色
+    UIImage *searchImage = [UIImage systemImageNamed:@"magnifyingglass"];
+    config.image = searchImage;
+    config.imagePlacement = NSDirectionalRectEdgeLeading; // 图标在标题前面
+    config.imagePadding = 8; // 图标和标题之间的间距
     
-    UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(searchBarTapped)];
-    tapGesture.cancelsTouchesInView = NO;
-    [searchView addGestureRecognizer:tapGesture];
+    // 设置内容对齐方式为靠左
+    config.contentInsets = NSDirectionalEdgeInsetsMake(0, 16, 0, 0);
+    
+    // 设置背景
+    config.background.backgroundColor = AIUAUIColorSimplifyRGB(0.98, 0.98, 0.98);
+    config.background.cornerRadius = 18;
+    
+    config.baseForegroundColor = [UIColor lightGrayColor];
+
+    // 应用配置
+    searchButton.configuration = config;
+    
+    // 确保内容靠左对齐
+    searchButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
+    
+    // 添加点击事件
+    [searchButton addTarget:self action:@selector(handleSearchBarTap) forControlEvents:UIControlEventTouchUpInside];
+    
+    self.navigationItem.titleView = searchButton;
+    self.searchButton = searchButton;
 }
 
 - (void)setupCategoryScroll {
@@ -239,13 +257,17 @@ static NSString * const kEmptyCellId = @"EmptyCell";
     return NO;
 }
 
+- (AIUASearchViewController *)searchVC {
+    if (!_searchVC) {
+        _searchVC = [[AIUASearchViewController alloc] init];
+    }
+    return _searchVC;
+}
+
 #pragma mark - Actions
 
-#pragma mark - UISearchBarDelegate
-
-- (void)searchBarTapped {
-    // 跳转到搜索控制器
-    [self.navigationController pushViewController:[[AIUASearchViewController alloc] init] animated:YES];
+- (void)handleSearchBarTap {
+    [self.navigationController pushViewController:self.searchVC animated:YES];
 }
     
 - (void)categoryButtonTapped:(UIButton *)sender {
@@ -270,16 +292,6 @@ static NSString * const kEmptyCellId = @"EmptyCell";
             [self updateContentForSelectedCategory];
         }
     }
-}
-
-- (void)setupGestureRecognizer {
-    UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(dismissKeyboard)];
-    tapGesture.cancelsTouchesInView = NO;
-    [self.view addGestureRecognizer:tapGesture];
-}
-
-- (void)dismissKeyboard {
-    [self.searchBar resignFirstResponder];
 }
 
 #pragma mark - UICollectionView DataSource & Delegate
@@ -492,10 +504,6 @@ static NSString * const kEmptyCellId = @"EmptyCell";
             [self refreshFavoritesData];
         }
     }
-}
-    
-- (void)scrollViewDidScroll:(UIScrollView *)scrollView {
-    [self dismissKeyboard];
 }
 
 @end
