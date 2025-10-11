@@ -44,6 +44,8 @@
 #define AIUAUIColorRGB(r, g, b) AIUAUIColorFromRGBA(r, g, b, 1.0)
 #define AIUA_BACK_COLOR  [UIColor colorWithWhite:0.95 alpha:1]
 #define AIUA_GRAY_COLOR  [UIColor colorWithRed:0.6 green:0.6 blue:0.6 alpha:1.0]
+#define AIUA_DIVIDER_COLOR  [UIColor colorWithWhite:0.9 alpha:1.0]
+#define AIUA_BLUE_COLOR  AIUAUIColorSimplifyRGB(0.2, 0.4, 0.8)
 #define L(key) NSLocalizedString((key), nil)
 #define WeakType(type)  __weak typeof(type) weak##type = type
 #define StrongType(type)  __strong typeof(type) strong##type = weak##type

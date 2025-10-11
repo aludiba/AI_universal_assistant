@@ -185,7 +185,7 @@ static NSString * const kEmptyCellId = @"EmptyCell";
         button.titleLabel.font = AIUAUIFontMedium(15);
         [button setTitle:title forState:UIControlStateNormal];
         [button setTitleColor:AIUAUIColorSimplifyRGB(0.4, 0.4, 0.4) forState:UIControlStateNormal];
-        [button setTitleColor:AIUAUIColorSimplifyRGB(0.2, 0.4, 0.8) forState:UIControlStateSelected];
+        [button setTitleColor:AIUA_BLUE_COLOR forState:UIControlStateSelected];
         [button addTarget:self action:@selector(categoryButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
         button.tag = i;
         
@@ -207,7 +207,7 @@ static NSString * const kEmptyCellId = @"EmptyCell";
         [self.indicatorView removeFromSuperview];
     }
     self.indicatorView = [[UIView alloc] init];
-    self.indicatorView.backgroundColor = AIUAUIColorSimplifyRGB(0.2, 0.4, 0.8);
+    self.indicatorView.backgroundColor = AIUA_BLUE_COLOR;
     self.indicatorView.layer.cornerRadius = 2;
     [self.categoryScroll addSubview:self.indicatorView];
 }

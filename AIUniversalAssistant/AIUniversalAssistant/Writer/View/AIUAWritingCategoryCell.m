@@ -24,7 +24,7 @@
     self.titleLabel = [[UILabel alloc] init];
     self.titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
     self.titleLabel.font = AIUAUIFontBold(16);
-    self.titleLabel.textColor = AIUAUIColorSimplifyRGB(0.2, 0.4, 0.8);
+    self.titleLabel.textColor = AIUA_BLUE_COLOR;
     self.titleLabel.numberOfLines = 1;
     [self.contentView addSubview:self.titleLabel];
     

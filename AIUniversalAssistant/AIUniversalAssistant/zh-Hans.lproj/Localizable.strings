@@ -28,3 +28,6 @@
 "confirm_unfavorite" = "确认取消收藏吗？";
 "think_it_over" = "再想想";
 "confirm" = "确认";
+"no_related_templates_found" = "没有找到相关模板";
+"go_to_writing_module" = "去写作模块看看 →";
+"search_history" = "历史搜索";

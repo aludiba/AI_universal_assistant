@@ -17,25 +17,25 @@
     // 图标
     self.iconImageView = [[UIImageView alloc] init];
     self.iconImageView.contentMode = UIViewContentModeScaleAspectFit;
-    self.iconImageView.tintColor = [UIColor colorWithRed:0.2 green:0.4 blue:0.8 alpha:1.0];
+    self.iconImageView.tintColor = AIUA_BLUE_COLOR;
     [self.contentView addSubview:self.iconImageView];
     
     // 标题标签
     self.titleLabel = [[UILabel alloc] init];
-    self.titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightMedium];
+    self.titleLabel.font = AIUAUIFontMedium(16);
     self.titleLabel.textColor = [UIColor darkTextColor];
     [self.contentView addSubview:self.titleLabel];
     
     // 副标题标签
     self.subtitleLabel = [[UILabel alloc] init];
-    self.subtitleLabel.font = [UIFont systemFontOfSize:13];
+    self.subtitleLabel.font = AIUAUIFontSystem(13);
     self.subtitleLabel.textColor = [UIColor grayColor];
     self.subtitleLabel.numberOfLines = 1;
     [self.contentView addSubview:self.subtitleLabel];
     
     // 分隔线
     self.separatorView = [[UIView alloc] init];
-    self.separatorView.backgroundColor = [UIColor colorWithWhite:0.9 alpha:1.0];
+    self.separatorView.backgroundColor = AIUA_DIVIDER_COLOR;
     [self.contentView addSubview:self.separatorView];
     
     // 设置约束

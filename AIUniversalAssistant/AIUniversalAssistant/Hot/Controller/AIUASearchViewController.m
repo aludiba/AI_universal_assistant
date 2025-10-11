@@ -10,6 +10,7 @@
 #import "AIUAHistorySearchCell.h"
 #import "AIUADataManager.h"
 #import "AIUAToolsManager.h"
+#import "AIUAAlertHelper.h"
 
 @interface AIUASearchViewController () <UISearchBarDelegate, UITableViewDataSource, UITableViewDelegate>
 
@@ -57,16 +58,16 @@
     [self.view addSubview:self.emptyView];
     
     UILabel *emptyLabel = [[UILabel alloc] init];
-    emptyLabel.text = @"没有找到相关模板";
-    emptyLabel.font = [UIFont systemFontOfSize:16];
+    emptyLabel.text = L(@"no_related_templates_found");
+    emptyLabel.font = AIUAUIFontSystem(16);
     emptyLabel.textColor = [UIColor grayColor];
     emptyLabel.textAlignment = NSTextAlignmentCenter;
     [self.emptyView addSubview:emptyLabel];
     
     UIButton *writerButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    [writerButton setTitle:@"去写作模块看看 →" forState:UIControlStateNormal];
-    [writerButton setTitleColor:[UIColor colorWithRed:0.2 green:0.4 blue:0.8 alpha:1.0] forState:UIControlStateNormal];
-    writerButton.titleLabel.font = [UIFont systemFontOfSize:14];
+    [writerButton setTitle:L(@"go_to_writing_module") forState:UIControlStateNormal];
+    [writerButton setTitleColor:AIUA_BLUE_COLOR forState:UIControlStateNormal];
+    writerButton.titleLabel.font = AIUAUIFontSystem(14);
     [writerButton addTarget:self action:@selector(goToWriterModule) forControlEvents:UIControlEventTouchUpInside];
     [self.emptyView addSubview:writerButton];
     
@@ -118,8 +119,8 @@
     headerView.backgroundColor = [UIColor whiteColor];
     
     UILabel *titleLabel = [[UILabel alloc] init];
-    titleLabel.text = @"历史搜索";
-    titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightMedium];
+    titleLabel.text = L(@"search_history");
+    titleLabel.font = AIUAUIFontMedium(16);
     titleLabel.textColor = [UIColor darkTextColor];
     [headerView addSubview:titleLabel];
     
@@ -145,7 +146,7 @@
     
     // 添加底部边框
     UIView *borderView = [[UIView alloc] init];
-    borderView.backgroundColor = [UIColor colorWithWhite:0.9 alpha:1.0];
+    borderView.backgroundColor = AIUA_DIVIDER_COLOR;
     [headerView addSubview:borderView];
     
     borderView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -397,12 +398,8 @@
     // 这里可以处理模板选择后的逻辑
     NSLog(@"选择了模板: %@, 类型: %@", title, type);
     
-    // 示例：显示提示
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"模板选择"
-                                                                   message:[NSString stringWithFormat:@"您选择了: %@", title]
-                                                            preferredStyle:UIAlertControllerStyleAlert];
-    [alert addAction:[UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:nil]];
-    [self presentViewController:alert animated:YES completion:nil];
+    // TODO:示例：显示提示
+    [AIUAAlertHelper showAlertWithTitle:@"模板选择" message:[NSString stringWithFormat:@"您选择了: %@", title] cancelBtnText:nil confirmBtnText:@"确定" inController:self cancelAction:nil confirmAction:nil];
 }
 
 @end

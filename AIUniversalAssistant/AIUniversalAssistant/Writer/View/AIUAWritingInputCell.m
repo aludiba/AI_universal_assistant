@@ -85,7 +85,7 @@
     // 更新开始创作按钮状态
     self.createButton.enabled = hasText;
     self.createButton.backgroundColor = hasText ?
-    AIUAUIColorSimplifyRGB(0.2, 0.4, 0.8) :
+    AIUA_BLUE_COLOR :
     AIUAUIColorSimplifyRGB(0.8, 0.8, 0.8);
 }
 

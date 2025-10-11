@@ -23,13 +23,13 @@
     
     // 标题标签
     self.titleLabel = [[UILabel alloc] init];
-    self.titleLabel.font = [UIFont systemFontOfSize:16];
+    self.titleLabel.font = AIUAUIFontSystem(16);
     self.titleLabel.textColor = [UIColor darkTextColor];
     [self.contentView addSubview:self.titleLabel];
     
     // 分隔线
     self.separatorView = [[UIView alloc] init];
-    self.separatorView.backgroundColor = [UIColor colorWithWhite:0.9 alpha:1.0];
+    self.separatorView.backgroundColor = AIUA_DIVIDER_COLOR;
     [self.contentView addSubview:self.separatorView];
     
     // 设置约束

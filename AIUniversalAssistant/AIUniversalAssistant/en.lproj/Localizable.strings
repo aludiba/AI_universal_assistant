@@ -28,3 +28,6 @@
 "confirm_unfavorite" = "Are you sure you want to remove from favorites?";
 "think_it_over" = "Think it over";
 "confirm" = "Confirm";
+"no_related_templates_found" = "No related templates found";
+"go_to_writing_module" = "Go check out the Writing module →";
+"search_history" = "Search History";

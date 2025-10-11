@@ -102,7 +102,7 @@
 
 - (UIColor *)randomGradientColor {
     NSArray *colors = @[
-        AIUAUIColorSimplifyRGB(0.2, 0.4, 0.8),   // 蓝色
+        AIUA_BLUE_COLOR,   // 蓝色
         AIUAUIColorSimplifyRGB(0.8, 0.4, 0.2),   // 橙色
         AIUAUIColorSimplifyRGB(0.4, 0.6, 0.2),   // 绿色
         AIUAUIColorSimplifyRGB(0.8, 0.2, 0.4),   // 粉色
