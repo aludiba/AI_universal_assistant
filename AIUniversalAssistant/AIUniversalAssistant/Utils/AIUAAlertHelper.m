@@ -60,7 +60,7 @@
     if (controller) {
         [controller presentViewController:alert animated:YES completion:nil];
     } else {
-        [[AIUAToolsManager getTopViewController] presentViewController:alert animated:YES completion:nil];
+        [[AIUAToolsManager topViewController] presentViewController:alert animated:YES completion:nil];
     }
 }
 

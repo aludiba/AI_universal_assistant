@@ -18,6 +18,7 @@
     return sharedInstance;
 }
 
+// “热门”模块数据
 - (NSArray *)loadHotCategories {
     NSString *path = [[NSBundle mainBundle] pathForResource:@"AIUAHotCategories" ofType:@"plist"];
     if (!path) {
@@ -142,6 +143,42 @@
     [[NSArray array] writeToFile:[self recentUsedFilePath] atomically:YES];
 }
 
+#pragma mark - 搜索
+- (NSArray *)loadSearchCategoriesData {
+    NSString *path = [[NSBundle mainBundle] pathForResource:@"AIUAHotCategories" ofType:@"plist"];
+    NSArray *categoriesArray = [NSArray arrayWithContentsOfFile:path];
+    
+    NSMutableArray *allItems = [NSMutableArray array];
+    for (NSDictionary *category in categoriesArray) {
+        NSArray *items = category[@"items"];
+        for (NSDictionary *item in items) {
+            [allItems addObject:item];
+        }
+    }
+    
+    if (allItems.count > 0) {
+        return allItems;
+    }
+    return @[];
+}
+
+- (NSArray *)loadSearchHistorySearches {
+    NSString *documentsPath = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject;
+    NSString *historyPath = [documentsPath stringByAppendingPathComponent:@"SearchHistory.plist"];
+    
+    if ([[NSFileManager defaultManager] fileExistsAtPath:historyPath]) {
+        NSArray *history = [NSArray arrayWithContentsOfFile:historyPath];
+        return history;
+    }
+    return @[];
+}
+
+- (void)saveHistorySearches:(NSArray *)datas {
+    NSString *documentsPath = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject;
+    NSString *historyPath = [documentsPath stringByAppendingPathComponent:@"SearchHistory.plist"];
+    
+    [datas writeToFile:historyPath atomically:YES];
+}
 #pragma mark - 辅助方法
 
 - (NSString *)getItemId:(NSDictionary *)item {

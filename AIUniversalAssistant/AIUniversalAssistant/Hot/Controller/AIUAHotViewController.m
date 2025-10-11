@@ -39,6 +39,18 @@ static NSString * const kEmptyCellId = @"EmptyCell";
     [self setupCollectionView];
 }
 
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+    if (self.navigationItem.title == nil) {
+        self.navigationItem.title = L(@"tab_hot");
+    }
+}
+
+- (void)viewWillDisappear:(BOOL)animated {
+    [super viewWillDisappear:animated];
+    self.navigationItem.title = nil;
+}
+
 - (void)setupData {
     self.categories = [[AIUADataManager sharedManager] loadHotCategories];
     self.categoryButtons = [NSMutableArray array];

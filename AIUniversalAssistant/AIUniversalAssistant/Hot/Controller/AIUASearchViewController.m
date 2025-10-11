@@ -8,9 +8,12 @@
 #import "AIUASearchViewController.h"
 #import "AIUASearchResultCell.h"
 #import "AIUAHistorySearchCell.h"
+#import "AIUADataManager.h"
+#import "AIUAToolsManager.h"
 
 @interface AIUASearchViewController () <UISearchBarDelegate, UITableViewDataSource, UITableViewDelegate>
 
+@property (nonatomic, strong) UIView *titleView;
 @property (nonatomic, strong) UISearchBar *searchBar;
 @property (nonatomic, strong) UITableView *tableView;
 @property (nonatomic, strong) UIView *emptyView;
@@ -26,19 +29,16 @@
 
 @implementation AIUASearchViewController
 
-- (void)viewDidLoad {
-    [super viewDidLoad];
-    self.title = @"搜索";
-    [self loadCategoriesData];
-    [self loadHistorySearches];
-}
 
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
-    [self setupSearchBar];
+    self.navigationItem.titleView = self.titleView;
+    [self.searchBar becomeFirstResponder];
 }
 
 - (void)setupUI {
+    [super setupUI];
+    [self setupSearchBar];
     // 表格视图
     self.tableView = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStylePlain];
     self.tableView.dataSource = self;
@@ -72,32 +72,92 @@
     
     // 设置约束
     [self setupConstraintsWithEmptyLabel:emptyLabel writerButton:writerButton];
+    
+    [self setupGestureRecognizer];
+}
+
+- (void)setupData {
+    [super setupData];
+    self.searchResults = @[];
+    self.historySearches = [NSMutableArray array];
+    self.isSearching = NO;
+    self.showHistory = NO;
+    self.allCategories = [[NSMutableArray alloc] initWithArray:[[AIUADataManager sharedManager] loadSearchCategoriesData]];
+    [self loadHistorySearches];
 }
 
 - (void)setupSearchBar {
     // 创建自定义视图作为 titleView，确保垂直居中
-    UIView *titleView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width - 120, 44)];
-    titleView.backgroundColor = [UIColor clearColor];
+    CGFloat width = self.view.bounds.size.width - 68;
+    if (@available(iOS 26.0, *)) {
+        width = self.view.bounds.size.width - 88;
+    }
+    self.titleView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, width, 44)];
+    self.titleView.backgroundColor = [UIColor clearColor];
     
-    self.searchBar = [[UISearchBar alloc] initWithFrame:CGRectMake(0, 4, titleView.bounds.size.width, 36)];
+    self.searchBar = [[UISearchBar alloc] initWithFrame:CGRectMake(0, 4, self.titleView.bounds.size.width, 36)];
+    self.searchBar.tintColor = [UIColor lightGrayColor];
+    self.searchBar.backgroundColor = [UIColor clearColor];
     self.searchBar.placeholder = L(@"enter_keywords_to_search_templates");
     self.searchBar.delegate = self;
     self.searchBar.searchBarStyle = UISearchBarStyleMinimal;
-    self.searchBar.backgroundImage = [[UIImage alloc] init];
-    self.searchBar.backgroundColor = AIUA_BACK_COLOR;
-    // 移除搜索框的默认背景
     self.searchBar.layer.cornerRadius = 18;
     self.searchBar.layer.masksToBounds = YES;
     
     UITextField *searchField = self.searchBar.searchTextField;
+    searchField.tintColor = [UIColor lightGrayColor];
     searchField.backgroundColor = [UIColor clearColor];
     searchField.layer.cornerRadius = 18;
     searchField.layer.masksToBounds = YES;
-
-    [titleView addSubview:self.searchBar];
-    self.navigationItem.titleView = titleView;
+    
+    [self.titleView addSubview:self.searchBar];
 }
 
+- (UIView *)createHistoryHeaderView {
+    UIView *headerView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, self.view.frame.size.width, 44)];
+    headerView.backgroundColor = [UIColor whiteColor];
+    
+    UILabel *titleLabel = [[UILabel alloc] init];
+    titleLabel.text = @"历史搜索";
+    titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightMedium];
+    titleLabel.textColor = [UIColor darkTextColor];
+    [headerView addSubview:titleLabel];
+    
+    UIButton *clearButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    [clearButton setImage:[UIImage systemImageNamed:@"trash"] forState:UIControlStateNormal];
+    [clearButton setTintColor:[UIColor grayColor]];
+    [clearButton addTarget:self action:@selector(clearAllHistory) forControlEvents:UIControlEventTouchUpInside];
+    [headerView addSubview:clearButton];
+    
+    // 设置约束
+    titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
+    clearButton.translatesAutoresizingMaskIntoConstraints = NO;
+    
+    [NSLayoutConstraint activateConstraints:@[
+        [titleLabel.leadingAnchor constraintEqualToAnchor:headerView.leadingAnchor constant:16],
+        [titleLabel.centerYAnchor constraintEqualToAnchor:headerView.centerYAnchor],
+        
+        [clearButton.trailingAnchor constraintEqualToAnchor:headerView.trailingAnchor constant:-16],
+        [clearButton.centerYAnchor constraintEqualToAnchor:headerView.centerYAnchor],
+        [clearButton.widthAnchor constraintEqualToConstant:24],
+        [clearButton.heightAnchor constraintEqualToConstant:24]
+    ]];
+    
+    // 添加底部边框
+    UIView *borderView = [[UIView alloc] init];
+    borderView.backgroundColor = [UIColor colorWithWhite:0.9 alpha:1.0];
+    [headerView addSubview:borderView];
+    
+    borderView.translatesAutoresizingMaskIntoConstraints = NO;
+    [NSLayoutConstraint activateConstraints:@[
+        [borderView.leadingAnchor constraintEqualToAnchor:headerView.leadingAnchor],
+        [borderView.trailingAnchor constraintEqualToAnchor:headerView.trailingAnchor],
+        [borderView.bottomAnchor constraintEqualToAnchor:headerView.bottomAnchor],
+        [borderView.heightAnchor constraintEqualToConstant:0.5]
+    ]];
+    
+    return headerView;
+}
 
 - (void)setupConstraintsWithEmptyLabel:(UILabel *)emptyLabel writerButton:(UIButton *)writerButton {
     self.tableView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -128,48 +188,20 @@
     ]];
 }
 
-- (void)setupData {
-    [super setupData];
-    self.searchResults = @[];
-    self.historySearches = [NSMutableArray array];
-    self.isSearching = NO;
-    self.showHistory = NO;
-}
-
-- (void)loadCategoriesData {
-    NSString *path = [[NSBundle mainBundle] pathForResource:@"AIUAHotCategories" ofType:@"plist"];
-    NSArray *categoriesArray = [NSArray arrayWithContentsOfFile:path];
-    
-    NSMutableArray *allItems = [NSMutableArray array];
-    for (NSDictionary *category in categoriesArray) {
-        NSArray *items = category[@"items"];
-        for (NSDictionary *item in items) {
-            [allItems addObject:item];
-        }
-    }
-    
-    self.allCategories = [allItems copy];
-}
-
 - (void)loadHistorySearches {
-    NSString *documentsPath = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject;
-    NSString *historyPath = [documentsPath stringByAppendingPathComponent:@"SearchHistory.plist"];
-    
-    if ([[NSFileManager defaultManager] fileExistsAtPath:historyPath]) {
-        NSArray *history = [NSArray arrayWithContentsOfFile:historyPath];
-        self.historySearches = [history mutableCopy];
-    } else {
-        self.historySearches = [NSMutableArray array];
-    }
-    
+    self.historySearches = [NSMutableArray arrayWithArray:[[AIUADataManager sharedManager] loadSearchHistorySearches]];
     self.showHistory = self.historySearches.count > 0;
 }
 
+#pragma mark - actions
+
+// 返回按钮点击事件
+- (void)backButtonTapped {
+    [self.navigationController popViewControllerAnimated:YES];
+}
+
 - (void)saveHistorySearches {
-    NSString *documentsPath = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject;
-    NSString *historyPath = [documentsPath stringByAppendingPathComponent:@"SearchHistory.plist"];
-    
-    [self.historySearches writeToFile:historyPath atomically:YES];
+    [[AIUADataManager sharedManager] saveHistorySearches:self.historySearches];
 }
 
 - (void)addToHistory:(NSString *)searchText {
@@ -225,54 +257,24 @@
 }
 
 - (void)goToWriterModule {
-    // 跳转到写作模块
-
+    // 去写作模块
+    [AIUAToolsManager goToTabBarModule:1];
 }
 
-- (UIView *)createHistoryHeaderView {
-    UIView *headerView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, self.view.frame.size.width, 44)];
-    headerView.backgroundColor = [UIColor whiteColor];
+// 设置收起键盘手势
+- (void)setupGestureRecognizer {
+    // 添加点击手势隐藏键盘
+    UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(dismissKeyboard)];
+    tapGesture.cancelsTouchesInView = NO; // 允许点击事件继续传递给子视图（如按钮等）
+    [self.view addGestureRecognizer:tapGesture];
     
-    UILabel *titleLabel = [[UILabel alloc] init];
-    titleLabel.text = @"历史搜索";
-    titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightMedium];
-    titleLabel.textColor = [UIColor darkTextColor];
-    [headerView addSubview:titleLabel];
-    
-    UIButton *clearButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    [clearButton setImage:[UIImage systemImageNamed:@"trash"] forState:UIControlStateNormal];
-    [clearButton setTintColor:[UIColor grayColor]];
-    [clearButton addTarget:self action:@selector(clearAllHistory) forControlEvents:UIControlEventTouchUpInside];
-    [headerView addSubview:clearButton];
-    
-    // 设置约束
-    titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    clearButton.translatesAutoresizingMaskIntoConstraints = NO;
-    
-    [NSLayoutConstraint activateConstraints:@[
-        [titleLabel.leadingAnchor constraintEqualToAnchor:headerView.leadingAnchor constant:16],
-        [titleLabel.centerYAnchor constraintEqualToAnchor:headerView.centerYAnchor],
-        
-        [clearButton.trailingAnchor constraintEqualToAnchor:headerView.trailingAnchor constant:-16],
-        [clearButton.centerYAnchor constraintEqualToAnchor:headerView.centerYAnchor],
-        [clearButton.widthAnchor constraintEqualToConstant:24],
-        [clearButton.heightAnchor constraintEqualToConstant:24]
-    ]];
-    
-    // 添加底部边框
-    UIView *borderView = [[UIView alloc] init];
-    borderView.backgroundColor = [UIColor colorWithWhite:0.9 alpha:1.0];
-    [headerView addSubview:borderView];
-    
-    borderView.translatesAutoresizingMaskIntoConstraints = NO;
-    [NSLayoutConstraint activateConstraints:@[
-        [borderView.leadingAnchor constraintEqualToAnchor:headerView.leadingAnchor],
-        [borderView.trailingAnchor constraintEqualToAnchor:headerView.trailingAnchor],
-        [borderView.bottomAnchor constraintEqualToAnchor:headerView.bottomAnchor],
-        [borderView.heightAnchor constraintEqualToConstant:0.5]
-    ]];
-    
-    return headerView;
+    // 滑动手势隐藏键盘
+    UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(dismissKeyboard)];
+    [self.view addGestureRecognizer:pan];
+}
+
+- (void)dismissKeyboard {
+    [self.searchBar resignFirstResponder];
 }
 
 #pragma mark - UISearchBarDelegate
@@ -286,6 +288,10 @@
 }
 
 #pragma mark - UITableViewDataSource
+
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView {
+    [self dismissKeyboard];
+}
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
     if (self.isSearching) {
@@ -373,7 +379,7 @@
         NSString *historyText = self.historySearches[indexPath.row];
         self.searchBar.text = historyText;
         [self performSearchWithText:historyText];
-        [self.searchBar resignFirstResponder];
+        [self dismissKeyboard];
     }
 }
 

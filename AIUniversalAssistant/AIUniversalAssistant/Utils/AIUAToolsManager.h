@@ -20,7 +20,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (UIWindow *)currentWindow;
 
-+ (UIViewController *)getTopViewController;
+// 去TabBar的模块
++ (void)goToTabBarModule:(NSUInteger)selectedIndex;
 
 @end
 

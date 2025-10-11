@@ -21,11 +21,28 @@
 }
 
 - (void)setupUI {
+    // 创建黑色返回图标
+    UIImage *backImage = [[UIImage systemImageNamed:@"chevron.left"] imageWithTintColor:[UIColor blackColor] renderingMode:UIImageRenderingModeAlwaysOriginal];
     
+    // 创建UIBarButtonItem
+    UIBarButtonItem *backItem = [[UIBarButtonItem alloc] initWithImage:backImage
+                                                                 style:UIBarButtonItemStylePlain
+                                                                target:self
+                                                                action:@selector(backButtonTapped)];
+    
+    // 设置导航栏左侧按钮
+    self.navigationItem.leftBarButtonItem = backItem;
 }
 
 - (void)setupData {
     
+}
+
+#pragma mark - actions
+
+// 返回按钮点击事件
+- (void)backButtonTapped {
+    [self.navigationController popViewControllerAnimated:YES];
 }
 
 @end

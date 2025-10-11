@@ -23,6 +23,12 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSArray *)loadRecentUsed;
 - (void)addRecentUsed:(NSDictionary *)item;
 - (void)clearRecentUsed;
+// 搜索模块加载所有类别数据
+- (NSArray *)loadSearchCategoriesData;
+// 搜索模块加载历史搜索数据
+- (NSArray *)loadSearchHistorySearches;
+// 搜索模块保存搜索记录
+- (void)saveHistorySearches:(NSArray *)datas;
 - (NSString *)getItemId:(NSDictionary *)item;
 // 判断是否为收藏分类
 - (BOOL)isFavoriteCategory:(NSDictionary *)category;

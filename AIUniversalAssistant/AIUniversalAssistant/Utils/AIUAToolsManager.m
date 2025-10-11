@@ -49,16 +49,31 @@
     return window;
 }
 
-+ (UIViewController *)getTopViewController {
-    UIWindow *keyWindow = [self currentWindow];
-    UIViewController *rootVC = keyWindow.rootViewController;
-    UIViewController *presentingVC = rootVC;
-
-    // 递归查找最顶层的 presentedViewController
-    while (presentingVC.presentedViewController) {
-        presentingVC = presentingVC.presentedViewController;
++ (void)goToTabBarModule:(NSUInteger)selectedIndex {
+    UIViewController *topViewController = [self topViewController];
+    // 跳转到写作模块
+    UITabBarController *tabBarController = [topViewController tabBarController];
+    
+    if (!tabBarController) {
+        // 如果没有 tabBarController，尝试从 appDelegate 获取
+        tabBarController = (UITabBarController *)[UIApplication sharedApplication].delegate.window.rootViewController;
     }
-    return presentingVC;
+    
+    if (tabBarController && [tabBarController isKindOfClass:[UITabBarController class]]) {
+        if (tabBarController.viewControllers.count > selectedIndex) {
+            // 切换到第二个 tab
+            tabBarController.selectedIndex = selectedIndex;
+            
+            // 返回到搜索页面的根视图，这样下次进入搜索时是干净的
+            if (topViewController.navigationController) {
+                [topViewController.navigationController popToRootViewControllerAnimated:NO];
+            }
+        } else {
+            NSLog(@"TabBar 没有足够的视图控制器");
+        }
+    } else {
+        NSLog(@"未找到 TabBarController");
+    }
 }
 
 @end
