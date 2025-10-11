@@ -197,6 +197,7 @@
 
 // 返回按钮点击事件
 - (void)backButtonTapped {
+    [self clearSearchs];
     [self.navigationController popViewControllerAnimated:YES];
 }
 
@@ -257,8 +258,17 @@
 }
 
 - (void)goToWriterModule {
+    [self clearSearchs];
     // 去写作模块
     [AIUAToolsManager goToTabBarModule:1];
+}
+
+- (void)clearSearchs {
+    self.searchBar.searchTextField.text = @"";
+    self.searchResults = @[];
+    self.isSearching = NO;
+    self.showHistory = self.historySearches.count > 0;
+    [self updateUI];
 }
 
 // 设置收起键盘手势
@@ -284,7 +294,7 @@
 }
 
 - (void)searchBarSearchButtonClicked:(UISearchBar *)searchBar {
-    [searchBar resignFirstResponder];
+    [self dismissKeyboard];
 }
 
 #pragma mark - UITableViewDataSource
