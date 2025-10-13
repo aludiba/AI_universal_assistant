@@ -23,32 +23,75 @@
 }
 
 - (void)setupViewControllers {
+    // 热门页面
     AIUAHotViewController *hotVC = [[AIUAHotViewController alloc] init];
     UINavigationController *hotNav = [[UINavigationController alloc] initWithRootViewController:hotVC];
-    hotNav.tabBarItem = [[UITabBarItem alloc] initWithTitle:L(@"tab_hot") image:[UIImage imageNamed:@"hot"] tag:0];
     
+    UIImage *hotImage = [UIImage systemImageNamed:@"flame"];
+    UIImage *hotSelectedImage = [UIImage systemImageNamed:@"flame.fill"];
+    hotNav.tabBarItem = [[UITabBarItem alloc] initWithTitle:L(@"tab_hot")
+                                                       image:hotImage
+                                               selectedImage:hotSelectedImage];
+    
+    // 写作页面
     AIUAWriterViewController *writerVC = [[AIUAWriterViewController alloc] init];
     UINavigationController *writerNav = [[UINavigationController alloc] initWithRootViewController:writerVC];
-    writerNav.tabBarItem = [[UITabBarItem alloc] initWithTitle:L(@"tab_writer") image:[UIImage imageNamed:@"write"] tag:1];
     
+    UIImage *writeImage = [UIImage systemImageNamed:@"pencil"];
+    UIImage *writeSelectedImage = [UIImage systemImageNamed:@"pencil.circle.fill"];
+    writerNav.tabBarItem = [[UITabBarItem alloc] initWithTitle:L(@"tab_writer")
+                                                          image:writeImage
+                                                  selectedImage:writeSelectedImage];
+    
+    // 文档页面
     AIUADocsViewController *docsVC = [[AIUADocsViewController alloc] init];
     UINavigationController *docsNav = [[UINavigationController alloc] initWithRootViewController:docsVC];
-    docsNav.tabBarItem = [[UITabBarItem alloc] initWithTitle:L(@"tab_docs") image:[UIImage imageNamed:@"docs"] tag:2];
     
+    UIImage *docsImage = [UIImage systemImageNamed:@"doc.text"];
+    UIImage *docsSelectedImage = [UIImage systemImageNamed:@"doc.text.fill"];
+    docsNav.tabBarItem = [[UITabBarItem alloc] initWithTitle:L(@"tab_docs")
+                                                        image:docsImage
+                                                selectedImage:docsSelectedImage];
+    
+    // 设置页面
     AIUASettingsViewController *settingsVC = [[AIUASettingsViewController alloc] init];
     UINavigationController *settingsNav = [[UINavigationController alloc] initWithRootViewController:settingsVC];
-    settingsNav.tabBarItem = [[UITabBarItem alloc] initWithTitle:L(@"tab_settings") image:[UIImage imageNamed:@"settings"] tag:3];
+    
+    UIImage *settingsImage = [UIImage systemImageNamed:@"gearshape"];
+    UIImage *settingsSelectedImage = [UIImage systemImageNamed:@"gearshape.fill"];
+    settingsNav.tabBarItem = [[UITabBarItem alloc] initWithTitle:L(@"tab_settings")
+                                                            image:settingsImage
+                                                    selectedImage:settingsSelectedImage];
     
     self.viewControllers = @[hotNav, writerNav, docsNav, settingsNav];
-    // 可选：自定义 tabBar 外观
-    if (@available(iOS 13.0, *)) {
-        UITabBarAppearance *appearance = [[UITabBarAppearance alloc] init];
-        [appearance configureWithDefaultBackground];
-        self.tabBar.standardAppearance = appearance;
-        if (@available(iOS 15.0, *)) {
-            self.tabBar.scrollEdgeAppearance = appearance;
-        }
-    }
+    
+    // 自定义 tabBar 外观
+    [self customizeTabBarAppearance];
+}
+
+- (void)customizeTabBarAppearance {
+    UITabBarAppearance *appearance = [[UITabBarAppearance alloc] init];
+    [appearance configureWithDefaultBackground];
+    
+    // 设置未选中状态的颜色
+    appearance.stackedLayoutAppearance.normal.titleTextAttributes = @{
+        NSForegroundColorAttributeName: AIUA_GRAY_COLOR,
+        NSFontAttributeName: AIUAUIFontMedium(10)
+    };
+    
+    // 设置选中状态的颜色
+    appearance.stackedLayoutAppearance.selected.titleTextAttributes = @{
+        NSForegroundColorAttributeName: AIUA_BLUE_COLOR,
+        NSFontAttributeName: AIUAUIFontSemibold(10)
+    };
+    
+    // 设置图标颜色
+    appearance.stackedLayoutAppearance.normal.iconColor = AIUA_GRAY_COLOR;
+    appearance.stackedLayoutAppearance.selected.iconColor = AIUA_BLUE_COLOR;
+    
+    self.tabBar.standardAppearance = appearance;
+    
+    self.tabBar.scrollEdgeAppearance = appearance;
 }
 
 @end
