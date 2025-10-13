@@ -9,6 +9,7 @@
 #import "AIUAWritingInputCell.h"
 #import "AIUAWritingCategoryCell.h"
 #import "AIUADataManager.h"
+#import "AIUAWritingDetailViewController.h"
 
 @interface AIUAWriterViewController ()<UITableViewDelegate, UITableViewDataSource>
 
@@ -47,9 +48,13 @@
     self.inputCell.onClearText = ^{
         // 清空文本处理
     };
-    self.inputCell.onStartCreate = ^{
+    WeakType(self);
+    self.inputCell.onStartCreate = ^(NSString *text) {
+        AIUAWritingDetailViewController *writingDetailVC = [[AIUAWritingDetailViewController alloc] initWithPrompt:text apiKey:APIKEY];
+        writingDetailVC.hidesBottomBarWhenPushed = YES;
+        StrongType(self);
         // 开始创作处理
-        
+        [strongself.navigationController pushViewController:writingDetailVC animated:YES];
     };
 }
 

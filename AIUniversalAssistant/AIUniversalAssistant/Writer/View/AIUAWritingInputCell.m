@@ -125,7 +125,7 @@
 
 - (void)createButtonTapped {
     if (self.textView.text.length > 0 && self.onStartCreate) {
-        self.onStartCreate();
+        self.onStartCreate(self.textView.text);
     }
 }
 

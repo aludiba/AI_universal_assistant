@@ -18,7 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong) UIButton *createButton;
 @property (nonatomic, copy) void (^onTextChange)(NSString *text);
 @property (nonatomic, copy) void (^onClearText)(void);
-@property (nonatomic, copy) void (^onStartCreate)(void);
+@property (nonatomic, copy) void (^onStartCreate)(NSString *text);
 
 - (void)updateButtonStates;
 

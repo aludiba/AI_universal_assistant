@@ -31,3 +31,5 @@
 "no_related_templates_found" = "No related templates found";
 "go_to_writing_module" = "Go check out the Writing module →";
 "search_history" = "Search History";
+"creation_details" = "Creation Details";
+"stop_generating" = "Stop Generating";

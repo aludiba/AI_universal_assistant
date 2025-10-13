@@ -12,6 +12,9 @@ NS_ASSUME_NONNULL_BEGIN
 @interface AIUADataManager : NSObject
 
 + (instancetype)sharedManager;
+
+#pragma mark - 热门
+
 // 获取“热门”数据
 - (NSArray *)loadHotCategories;
 // 收藏功能
@@ -23,6 +26,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSArray *)loadRecentUsed;
 - (void)addRecentUsed:(NSDictionary *)item;
 - (void)clearRecentUsed;
+
+#pragma mark - 搜索
+
 // 搜索模块加载所有类别数据
 - (NSArray *)loadSearchCategoriesData;
 // 搜索模块加载历史搜索数据
@@ -33,10 +39,24 @@ NS_ASSUME_NONNULL_BEGIN
 // 判断是否为收藏分类
 - (BOOL)isFavoriteCategory:(NSDictionary *)category;
 
+#pragma mark - 写作
+
 // 获取“写作”数据
 - (NSArray *)loadWritingCategories;
 // 获取“写作”分类数据
 - (NSArray *)getItemsForCategory:(NSString *)categoryId;
+
+#pragma mark - 写作详情
+
+// 保存写作详情到plist文件
+- (void)saveWritingToPlist:(NSDictionary *)writingRecord;
+- (NSString *)generateUniqueID;
+- (NSString *)currentTimeString;
+- (NSArray *)loadAllWritings;
+// 根据ID删除写作记录
+- (BOOL)deleteWritingWithID:(NSString *)writingID;
+// 获取plist文件路径
+- (NSString *)getPlistFilePath:(NSString *)fileName;
 
 @end
 

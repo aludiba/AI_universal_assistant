@@ -31,3 +31,5 @@
 "no_related_templates_found" = "没有找到相关模板";
 "go_to_writing_module" = "去写作模块看看 →";
 "search_history" = "历史搜索";
+"creation_details" = "创作详情";
+"stop_generating" = "停止生成";

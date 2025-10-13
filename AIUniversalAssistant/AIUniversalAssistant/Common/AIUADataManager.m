@@ -6,6 +6,7 @@
 //
 
 #import "AIUADataManager.h"
+#import "AIUAMBProgressManager.h"
 
 @implementation AIUADataManager
 
@@ -17,6 +18,8 @@
     });
     return sharedInstance;
 }
+
+#pragma mark - 热门
 
 // “热门”模块数据
 - (NSArray *)loadHotCategories {
@@ -179,7 +182,6 @@
     
     [datas writeToFile:historyPath atomically:YES];
 }
-#pragma mark - 辅助方法
 
 - (NSString *)getItemId:(NSDictionary *)item {
     // 使用 type + title 作为唯一标识
@@ -191,6 +193,8 @@
 - (BOOL)isFavoriteCategory:(NSDictionary *)category {
     return [category[@"isFavoriteCategory"] boolValue];
 }
+
+#pragma mark - 写作
 
 - (NSArray *)loadWritingCategories {
     NSString *path = [[NSBundle mainBundle] pathForResource:@"AIUAWritingCategories" ofType:@"plist"];
@@ -216,6 +220,93 @@
         }
     }
     return @[];
+}
+
+#pragma mark - 写作详情
+
+// 保存写作详情到plist文件
+- (void)saveWritingToPlist:(NSDictionary *)writingRecord {
+    // 获取沙盒Documents目录
+    NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
+    NSString *plistPath = [documentsPath stringByAppendingPathComponent:@"AIUAWritings.plist"];
+    
+    // 读取现有的写作记录
+    NSMutableArray *writingsArray = [NSMutableArray array];
+    if ([[NSFileManager defaultManager] fileExistsAtPath:plistPath]) {
+        NSArray *existingWritings = [NSArray arrayWithContentsOfFile:plistPath];
+        if (existingWritings) {
+            [writingsArray addObjectsFromArray:existingWritings];
+        }
+    }
+    
+    // 添加到数组开头（最新的在最前面）
+    [writingsArray insertObject:writingRecord atIndex:0];
+    
+    // 保存到plist文件
+    BOOL success = [writingsArray writeToFile:plistPath atomically:YES];
+    
+    if (success) {
+        NSLog(@"写作内容已保存到: %@", plistPath);
+        [AIUAMBProgressManager showText:nil withText:@"内容已保存" andSubText:nil isBottom:NO];
+    } else {
+        NSLog(@"保存失败");
+        [AIUAMBProgressManager showText:nil withText:@"保存失败" andSubText:nil isBottom:NO];
+    }
+}
+
+- (NSString *)generateUniqueID {
+    NSTimeInterval timestamp = [[NSDate date] timeIntervalSince1970];
+    return [NSString stringWithFormat:@"%.0f", timestamp * 1000];
+}
+
+- (NSString *)currentTimeString {
+    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+    [formatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+    return [formatter stringFromDate:[NSDate date]];
+}
+
+// 提供类方法用于读取所有写作记录
+- (NSArray *)loadAllWritings {
+    NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
+    NSString *plistPath = [documentsPath stringByAppendingPathComponent:@"AIUAWritings.plist"];
+    
+    if ([[NSFileManager defaultManager] fileExistsAtPath:plistPath]) {
+        NSArray *writings = [NSArray arrayWithContentsOfFile:plistPath];
+        return writings ?: @[];
+    }
+    
+    return @[];
+}
+
+// 根据ID删除写作记录
+- (BOOL)deleteWritingWithID:(NSString *)writingID {
+    NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
+    NSString *plistPath = [documentsPath stringByAppendingPathComponent:@"AIUAWritings.plist"];
+    
+    NSMutableArray *writingsArray = [NSMutableArray arrayWithArray:[self loadAllWritings]];
+    
+    // 查找并删除指定ID的记录
+    NSUInteger indexToDelete = NSNotFound;
+    for (NSUInteger i = 0; i < writingsArray.count; i++) {
+        NSDictionary *writing = writingsArray[i];
+        if ([writing[@"id"] isEqualToString:writingID]) {
+            indexToDelete = i;
+            break;
+        }
+    }
+    
+    if (indexToDelete != NSNotFound) {
+        [writingsArray removeObjectAtIndex:indexToDelete];
+        return [writingsArray writeToFile:plistPath atomically:YES];
+    }
+    
+    return NO;
+}
+
+// 获取plist文件路径
+- (NSString *)getPlistFilePath:(NSString *)fileName {
+    NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
+    return [documentsPath stringByAppendingPathComponent:fileName];
 }
 
 @end
