@@ -1,6 +1,8 @@
 #import "AIUAWritingDetailViewController.h"
 #import "AIUADataManager.h"
 #import "AIUADeepSeekWriter.h"
+#import "AIUAAlertHelper.h"
+#import "AIUAMBProgressManager.h"
 
 @interface AIUAWritingDetailViewController ()
 
@@ -99,13 +101,8 @@
     stopButton.layer.borderWidth = 1;
     stopButton.layer.borderColor = AIUAUIColorRGB(254, 202, 202).CGColor;
     [self.view addSubview:stopButton];
+    [stopButton addTarget:self action:@selector(stopButtonTapped) forControlEvents:UIControlEventTouchUpInside];
     self.stopButton = stopButton;
-
-    // 添加约束确保按钮有足够宽度
-    [NSLayoutConstraint activateConstraints:@[
-        [stopButton.widthAnchor constraintGreaterThanOrEqualToConstant:120], // 最小宽度
-        [stopButton.heightAnchor constraintEqualToConstant:40] // 固定高度
-    ]];
     
     // 底部按钮容器
     self.bottomButtonContainer = [[UIView alloc] init];
@@ -117,22 +114,22 @@
     [self.view addSubview:self.bottomButtonContainer];
     
     // 重新创作按钮（图标）
-    self.rewriteButton = [self createIconButtonWithImageName:@"arrow.clockwise"];
+    self.rewriteButton = [self createIconButtonWithImageName:@"arrow.clockwise" title:L(@"rewrite")];
     [self.rewriteButton addTarget:self action:@selector(rewriteButtonTapped) forControlEvents:UIControlEventTouchUpInside];
     [self.bottomButtonContainer addSubview:self.rewriteButton];
     
     // 复制全文按钮
-    self.duplicateButton = [self createIconButtonWithImageName:@"doc.on.doc"];
+    self.duplicateButton = [self createIconButtonWithImageName:@"doc.on.doc" title:L(@"copy")];
     [self.duplicateButton addTarget:self action:@selector(duplicateButtonTapped) forControlEvents:UIControlEventTouchUpInside];
     [self.bottomButtonContainer addSubview:self.duplicateButton];
     
     // 导出Word按钮
-    self.exportButton = [self createIconButtonWithImageName:@"square.and.arrow.up"];
+    self.exportButton = [self createIconButtonWithImageName:@"square.and.arrow.up" title:L(@"export")];
     [self.exportButton addTarget:self action:@selector(exportButtonTapped) forControlEvents:UIControlEventTouchUpInside];
     [self.bottomButtonContainer addSubview:self.exportButton];
     
     // 智能编辑按钮
-    self.editButton = [self createIconButtonWithImageName:@"pencil"];
+    self.editButton = [self createIconButtonWithImageName:@"pencil" title:L(@"edit")];
     [self.editButton addTarget:self action:@selector(editButtonTapped) forControlEvents:UIControlEventTouchUpInside];
     [self.bottomButtonContainer addSubview:self.editButton];
     
@@ -143,7 +140,13 @@
     [self startWriting];
 }
 
-- (UIButton *)createIconButtonWithImageName:(NSString *)imageName {
+- (void)backButtonTapped {
+    [super backButtonTapped];
+    self.isGenerating = NO;
+    [self.writer cancelCurrentRequest];
+}
+
+- (UIButton *)createIconButtonWithImageName:(NSString *)imageName title:(NSString *)title {
     UIButton *button = [UIButton buttonWithType:UIButtonTypeSystem];
     
     // 设置符号图标大小与颜色
@@ -153,15 +156,13 @@
     image = [image imageWithTintColor:[UIColor grayColor] renderingMode:UIImageRenderingModeAlwaysOriginal];
     
     UIButtonConfiguration *btnConfig = [UIButtonConfiguration plainButtonConfiguration];
+    btnConfig.title = title;
     btnConfig.image = image;
-    btnConfig.contentInsets = NSDirectionalEdgeInsetsMake(0, 0, 0, 0); // 去掉内边距
+    btnConfig.imagePlacement = NSDirectionalRectEdgeTop; // 图标在上方
+    btnConfig.imagePadding = 4; // 图标和标题间距为4
+    btnConfig.baseForegroundColor = [UIColor grayColor]; // 设置图标和标题颜色为灰色
     
     button.configuration = btnConfig;
-    
-    // 让按钮的尺寸和图标一致
-    button.translatesAutoresizingMaskIntoConstraints = NO;
-    [button.widthAnchor constraintEqualToConstant:16].active = YES;
-    [button.heightAnchor constraintEqualToConstant:16].active = YES;
     
     return button;
 }
@@ -180,7 +181,7 @@
 }
 
 - (void)setupConstraints {
-    CGFloat btnPadding = (AIUAScreenWidth - 4 * 16) / 5;
+    CGFloat btnPadding = (AIUAScreenWidth - 4 * 60) / 5;
     
     self.scrollView.translatesAutoresizingMaskIntoConstraints = NO;
     self.contentView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -240,15 +241,23 @@
         // 底部按钮布局
         [self.rewriteButton.leadingAnchor constraintEqualToAnchor:self.bottomButtonContainer.leadingAnchor constant:btnPadding],
         [self.rewriteButton.centerYAnchor constraintEqualToAnchor:self.bottomButtonContainer.centerYAnchor],
+        [self.rewriteButton.widthAnchor constraintEqualToConstant:60],
+        [self.rewriteButton.heightAnchor constraintEqualToConstant:50],
         
         [self.duplicateButton.leadingAnchor constraintEqualToAnchor:self.rewriteButton.trailingAnchor constant:btnPadding],
         [self.duplicateButton.centerYAnchor constraintEqualToAnchor:self.bottomButtonContainer.centerYAnchor],
+        [self.duplicateButton.widthAnchor constraintEqualToConstant:60],
+        [self.duplicateButton.heightAnchor constraintEqualToConstant:50],
         
         [self.exportButton.leadingAnchor constraintEqualToAnchor:self.duplicateButton.trailingAnchor constant:btnPadding],
         [self.exportButton.centerYAnchor constraintEqualToAnchor:self.bottomButtonContainer.centerYAnchor],
+        [self.exportButton.widthAnchor constraintEqualToConstant:60],
+        [self.exportButton.heightAnchor constraintEqualToConstant:50],
         
         [self.editButton.leadingAnchor constraintEqualToAnchor:self.exportButton.trailingAnchor constant:btnPadding],
         [self.editButton.centerYAnchor constraintEqualToAnchor:self.bottomButtonContainer.centerYAnchor],
+        [self.editButton.widthAnchor constraintEqualToConstant:60],
+        [self.editButton.heightAnchor constraintEqualToConstant:50],
         [self.editButton.trailingAnchor constraintLessThanOrEqualToAnchor:self.bottomButtonContainer.trailingAnchor constant:-btnPadding]
     ]];
     
@@ -265,7 +274,7 @@
         // 生成中状态
         self.stopButton.hidden = NO;
         self.bottomButtonContainer.hidden = YES;
-        self.titleLabel.text = @"正在创作中...";
+        self.titleLabel.text = L(@"creating_in_progress");
     } else {
         // 生成完成状态
         self.stopButton.hidden = YES;
@@ -284,7 +293,7 @@
     
     // 开始流式写作
     WeakType(self);
-    [self.writer generateFullStreamWritingWithPrompt:self.prompt
+    [self.writer generateFullStreamWritingWithPrompt:[NSString stringWithFormat:@"%@/n%@:1、%@；2、%@。", self.prompt, L(@"require"), L(@"first_line"), L(@"body_below")]
                                           wordCount:0
                                      streamHandler:^(NSString *chunk, BOOL finished, NSError *error) {
         
@@ -297,7 +306,7 @@
 
 - (void)clearCurrentContent {
     // 清除UI显示的内容
-    self.titleLabel.text = @"正在创作中...";
+    self.titleLabel.text = L(@"creating_in_progress");
     self.contentLabel.text = @"";
     
     // 清除内存中的内容
@@ -310,9 +319,9 @@
         [self writingCompletedWithError:error];
         return;
     }
-    
+    NSLog(@"chunk:%@", chunk);
     if (finished) {
-        [self writingCompletedWithContent:chunk];
+        [self writingCompletedWithContent:self.contentLabel.text];
     } else {
         // 实时更新内容
         NSString *currentContent = self.contentLabel.text ?: @"";
@@ -327,7 +336,6 @@
 
 - (void)writingCompletedWithContent:(NSString *)content {
     self.isGenerating = NO;
-    self.finalContent = content;
     [self updateUIState];
     [self processFinalContent:content];
     // 保存到plist文件
@@ -338,7 +346,7 @@
     self.isGenerating = NO;
     [self updateUIState];
     
-    self.titleLabel.text = @"创作失败";
+    self.titleLabel.text = L(@"creation_failed");
     self.contentLabel.text = [NSString stringWithFormat:@"错误: %@", error.localizedDescription];
     self.contentLabel.textColor = [UIColor redColor];
 }
@@ -382,9 +390,9 @@
         self.finalTitle = title;
         self.finalContent = finalContent;
     } else {
-        self.titleLabel.text = @"创作内容";
+        self.titleLabel.text = L(@"creation_content");
         self.contentLabel.text = content;
-        self.finalTitle = @"创作内容";
+        self.finalTitle = L(@"creation_content");
         self.finalContent = content;
     }
 }
@@ -431,52 +439,37 @@
     if (self.contentLabel.text.length > 0) {
         self.finalContent = self.contentLabel.text;
         if (!self.finalTitle || self.finalTitle.length == 0) {
-            self.finalTitle = @"未完成创作";
+            self.finalTitle = L(@"unfinished_creation");
         }
     }
     [self writingCompletedWithContent:self.contentLabel.text ?: @""];
 }
 
 - (void)rewriteButtonTapped {
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"重新创作"
-                                                                   message:@"确定要重新生成内容吗？"
-                                                            preferredStyle:UIAlertControllerStyleAlert];
-    
-    UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:@"取消" 
-                                                         style:UIAlertActionStyleCancel 
-                                                       handler:nil];
-    
-    UIAlertAction *confirmAction = [UIAlertAction actionWithTitle:@"确定" 
-                                                          style:UIAlertActionStyleDefault 
-                                                        handler:^(UIAlertAction * _Nonnull action) {
-        [self restartWriting];
+    [AIUAAlertHelper showAlertWithTitle:L(@"recreate") message:L(@"confirm_regenerate_content") cancelBtnText:L(@"cancel")  confirmBtnText:L(@"confirm")   inController:self cancelAction:nil confirmAction:^{
+            [self restartWriting];
     }];
-    
-    [alert addAction:cancelAction];
-    [alert addAction:confirmAction];
-    [self presentViewController:alert animated:YES completion:nil];
 }
 
 - (void)duplicateButtonTapped {
     NSString *fullText = [NSString stringWithFormat:@"%@\n%@", self.titleLabel.text, self.contentLabel.text];
     UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
     pasteboard.string = fullText;
-    
-    [self showToastMessage:@"已复制到剪贴板"];
+    [self showToastMessage:L(@"copied_to_clipboard")];
 }
 
 - (void)exportButtonTapped {
     NSString *fullText = [NSString stringWithFormat:@"%@\n\n%@", self.titleLabel.text, self.contentLabel.text];
     
     // 创建临时文件
-    NSString *fileName = [NSString stringWithFormat:@"创作内容_%@.doc", [self currentDateString]];
+    NSString *fileName = [NSString stringWithFormat:@"%@_%@.doc", L(@"creation_content"), [[AIUADataManager sharedManager] currentDateString]];
     NSURL *tempFileURL = [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:fileName]];
     
     NSError *error;
     [fullText writeToURL:tempFileURL atomically:YES encoding:NSUTF8StringEncoding error:&error];
     
     if (error) {
-        [self showToastMessage:@"导出失败"];
+        [self showToastMessage:L(@"export_failed")];
         return;
     }
     
@@ -509,21 +502,7 @@
 #pragma mark - 工具方法
 
 - (void)showToastMessage:(NSString *)message {
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:nil
-                                                                   message:message
-                                                            preferredStyle:UIAlertControllerStyleAlert];
-    
-    [self presentViewController:alert animated:YES completion:^{
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            [alert dismissViewControllerAnimated:YES completion:nil];
-        });
-    }];
-}
-
-- (NSString *)currentDateString {
-    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
-    [formatter setDateFormat:@"yyyyMMdd_HHmmss"];
-    return [formatter stringFromDate:[NSDate date]];
+    [AIUAMBProgressManager showText:nil withText:message andSubText:nil isBottom:YES backColor:[UIColor grayColor]];
 }
 
 #pragma mark - 内存管理

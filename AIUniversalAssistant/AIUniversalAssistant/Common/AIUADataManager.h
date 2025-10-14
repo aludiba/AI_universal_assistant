@@ -35,7 +35,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSArray *)loadSearchHistorySearches;
 // 搜索模块保存搜索记录
 - (void)saveHistorySearches:(NSArray *)datas;
-- (NSString *)getItemId:(NSDictionary *)item;
 // 判断是否为收藏分类
 - (BOOL)isFavoriteCategory:(NSDictionary *)category;
 
@@ -50,13 +49,17 @@ NS_ASSUME_NONNULL_BEGIN
 
 // 保存写作详情到plist文件
 - (void)saveWritingToPlist:(NSDictionary *)writingRecord;
-- (NSString *)generateUniqueID;
-- (NSString *)currentTimeString;
 - (NSArray *)loadAllWritings;
 // 根据ID删除写作记录
 - (BOOL)deleteWritingWithID:(NSString *)writingID;
+
+#pragma mark - 辅助方法
+- (NSString *)getItemId:(NSDictionary *)item;
+- (NSString *)generateUniqueID;
+- (NSString *)currentTimeString;
 // 获取plist文件路径
 - (NSString *)getPlistFilePath:(NSString *)fileName;
+- (NSString *)currentDateString;
 
 @end
 

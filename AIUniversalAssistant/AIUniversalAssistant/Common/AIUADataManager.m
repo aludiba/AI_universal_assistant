@@ -183,13 +183,6 @@
     [datas writeToFile:historyPath atomically:YES];
 }
 
-- (NSString *)getItemId:(NSDictionary *)item {
-    // 使用 type + title 作为唯一标识
-    NSString *type = item[@"type"] ?: @"";
-    NSString *title = item[@"title"] ?: @"";
-    return [NSString stringWithFormat:@"%@_%@", type, title];
-}
-
 - (BOOL)isFavoriteCategory:(NSDictionary *)category {
     return [category[@"isFavoriteCategory"] boolValue];
 }
@@ -226,6 +219,7 @@
 
 // 保存写作详情到plist文件
 - (void)saveWritingToPlist:(NSDictionary *)writingRecord {
+    NSLog(@"saveWritingToPlist-writingRecord:%@", writingRecord[@"content"]);
     // 获取沙盒Documents目录
     NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
     NSString *plistPath = [documentsPath stringByAppendingPathComponent:@"AIUAWritings.plist"];
@@ -242,27 +236,16 @@
     // 添加到数组开头（最新的在最前面）
     [writingsArray insertObject:writingRecord atIndex:0];
     
+    NSData *plistData = [NSPropertyListSerialization dataWithPropertyList:writingsArray format:NSPropertyListXMLFormat_v1_0 options:0 error:nil];
+    
     // 保存到plist文件
-    BOOL success = [writingsArray writeToFile:plistPath atomically:YES];
+    BOOL success = [plistData writeToFile:plistPath atomically:YES];
     
     if (success) {
         NSLog(@"写作内容已保存到: %@", plistPath);
-        [AIUAMBProgressManager showText:nil withText:@"内容已保存" andSubText:nil isBottom:NO];
     } else {
         NSLog(@"保存失败");
-        [AIUAMBProgressManager showText:nil withText:@"保存失败" andSubText:nil isBottom:NO];
     }
-}
-
-- (NSString *)generateUniqueID {
-    NSTimeInterval timestamp = [[NSDate date] timeIntervalSince1970];
-    return [NSString stringWithFormat:@"%.0f", timestamp * 1000];
-}
-
-- (NSString *)currentTimeString {
-    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
-    [formatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
-    return [formatter stringFromDate:[NSDate date]];
 }
 
 // 提供类方法用于读取所有写作记录
@@ -303,10 +286,36 @@
     return NO;
 }
 
+#pragma mark - 辅助方法
+
+- (NSString *)getItemId:(NSDictionary *)item {
+    // 使用 type + title 作为唯一标识
+    NSString *type = item[@"type"] ?: @"";
+    NSString *title = item[@"title"] ?: @"";
+    return [NSString stringWithFormat:@"%@_%@", type, title];
+}
+
+- (NSString *)generateUniqueID {
+    NSTimeInterval timestamp = [[NSDate date] timeIntervalSince1970];
+    return [NSString stringWithFormat:@"%.0f", timestamp * 1000];
+}
+
+- (NSString *)currentTimeString {
+    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+    [formatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+    return [formatter stringFromDate:[NSDate date]];
+}
+
 // 获取plist文件路径
 - (NSString *)getPlistFilePath:(NSString *)fileName {
     NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
     return [documentsPath stringByAppendingPathComponent:fileName];
+}
+
+- (NSString *)currentDateString {
+    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+    [formatter setDateFormat:@"yyyyMMdd_HHmmss"];
+    return [formatter stringFromDate:[NSDate date]];
 }
 
 @end

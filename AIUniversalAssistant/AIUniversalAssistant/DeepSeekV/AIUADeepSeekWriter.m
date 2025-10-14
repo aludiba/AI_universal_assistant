@@ -53,7 +53,7 @@
                        completion:(AIUACompletionHandler)completion {
     [self generateWritingWithPrompt:prompt
                           maxTokens:1000
-                        temperature:0.7
+                        temperature:1.5
                          completion:completion];
 }
 
@@ -83,7 +83,7 @@
     
     [self generateWritingWithPrompt:enhancedPrompt
                           maxTokens:estimatedTokens
-                        temperature:0.7
+                        temperature:1.5
                          completion:completion];
 }
 
@@ -97,7 +97,7 @@
     
     [self generateWritingWithPrompt:enhancedPrompt
                           maxTokens:estimatedTokens
-                        temperature:0.7
+                        temperature:1.5
                          completion:completion];
 }
 
@@ -122,7 +122,7 @@
     
     [self performFullStreamRequestWithPrompt:finalPrompt
                                    maxTokens:maxTokens
-                                 temperature:0.7
+                                 temperature:1.5
                               streamHandler:streamHandler];
 }
 
@@ -133,7 +133,7 @@
     
     [self generateWritingWithMessages:messages
                             maxTokens:1000
-                          temperature:0.7
+                          temperature:1.5
                            completion:completion];
 }
 
@@ -167,7 +167,7 @@
         @"model": self.modelName,
         @"messages": messages,
         @"max_tokens": @(MAX(1, MIN(maxTokens, 4000))),
-        @"temperature": @(MAX(0.0, MIN(temperature, 1.0))),
+        @"temperature": @(MAX(0.0, MIN(temperature, 1.5))),
         @"stream": @NO
     };
     
@@ -183,7 +183,7 @@
         @"model": self.modelName,
         @"messages": messages,
         @"max_tokens": @(MAX(1, MIN(maxTokens, 4000))),
-        @"temperature": @(MAX(0.0, MIN(temperature, 1.0))),
+        @"temperature": @(MAX(0.0, MIN(temperature, 1.5))),
         @"stream": @YES
     };
     
@@ -238,7 +238,7 @@
         @"model": self.modelName,
         @"messages": @[@{@"role": @"user", @"content": prompt}],
         @"max_tokens": @(MAX(1, MIN(maxTokens, 4000))),
-        @"temperature": @(MAX(0.0, MIN(temperature, 1.0))),
+        @"temperature": @(MAX(0.0, MIN(temperature, 1.5))),
         @"stream": @YES
     };
     

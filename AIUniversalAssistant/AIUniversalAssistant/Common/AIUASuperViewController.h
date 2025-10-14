@@ -15,6 +15,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)setupData;
 
+// 返回按钮点击事件
+- (void)backButtonTapped;
+
 @end
 
 NS_ASSUME_NONNULL_END

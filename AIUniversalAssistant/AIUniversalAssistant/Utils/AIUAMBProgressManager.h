@@ -20,6 +20,9 @@ NS_ASSUME_NONNULL_BEGIN
 // 带文字的加载中
 + (void)showTextHUD:(nullable UIView *)view withText:(nullable NSString *)text andSubText:(nullable NSString *)subText;
 
+// 只显示文字（不带加载中）- 可设置背景颜色
++ (void)showText:(nullable UIView *)view withText:(nullable NSString *)text andSubText:(nullable NSString *)subText  isBottom:(BOOL)isBottom backColor:(UIColor *)color;
+
 // 只显示文字（不带加载中）
 + (void)showText:(nullable UIView *)view withText:(nullable NSString *)text andSubText:(nullable NSString *)subText isBottom:(BOOL)isBottom;
 
