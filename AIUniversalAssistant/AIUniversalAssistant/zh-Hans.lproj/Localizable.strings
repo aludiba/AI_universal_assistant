@@ -43,6 +43,7 @@
 "confirm" = "确定";
 "copied_to_clipboard" = "已复制到剪贴板";
 "export_failed" = "导出失败";
+"format" = "格式";
 "require" = "要求";
 "first_line" = "第一行只有标题并且加粗";
 "body_below" = "标题下面是文章的正文";
@@ -50,3 +51,12 @@
 "copy" = "复制";
 "export" = "导出";
 "edit" = "编辑";
+"theme" = "主题";
+"enter_creation_theme" = "请输入创作主题";
+"enter_specific_requirements" = "请输入具体要求";
+"maximum_word_count" = "最大字数";
+"generate" = "生成";
+"unlimited" = "不限";
+"words" = "字";
+"prompt" = "提示";
+"enter_topic" = "请输入主题";

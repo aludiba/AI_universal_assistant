@@ -18,6 +18,10 @@
 				<string>mic</string>
 				<key>type</key>
 				<string>speech</string>
+				<key>categoryId</key>
+				<string>hot</string>
+				<key>categoryTitle</key>
+				<string>热门</string>
 			</dict>
 			<dict>
 				<key>title</key>
@@ -28,6 +32,10 @@
 				<string>heart</string>
 				<key>type</key>
 				<string>experience</string>
+				<key>categoryId</key>
+				<string>hot</string>
+				<key>categoryTitle</key>
+				<string>热门</string>
 			</dict>
 			<dict>
 				<key>title</key>
@@ -38,6 +46,10 @@
 				<string>edit</string>
 				<key>type</key>
 				<string>self_criticism</string>
+				<key>categoryId</key>
+				<string>hot</string>
+				<key>categoryTitle</key>
+				<string>热门</string>
 			</dict>
 			<dict>
 				<key>title</key>
@@ -48,6 +60,10 @@
 				<string>graduationcap</string>
 				<key>type</key>
 				<string>internship</string>
+				<key>categoryId</key>
+				<string>hot</string>
+				<key>categoryTitle</key>
+				<string>热门</string>
 			</dict>
 			<dict>
 				<key>title</key>
@@ -58,6 +74,10 @@
 				<string>square.and.pencil</string>
 				<key>type</key>
 				<string>xiaohongshu</string>
+				<key>categoryId</key>
+				<string>hot</string>
+				<key>categoryTitle</key>
+				<string>热门</string>
 			</dict>
 			<dict>
 				<key>title</key>
@@ -68,6 +88,10 @@
 				<string>book</string>
 				<key>type</key>
 				<string>poetry</string>
+				<key>categoryId</key>
+				<string>hot</string>
+				<key>categoryTitle</key>
+				<string>热门</string>
 			</dict>
 		</array>
 	</dict>
@@ -97,6 +121,10 @@
 				<string>newspaper</string>
 				<key>type</key>
 				<string>toutiao</string>
+				<key>categoryId</key>
+				<string>social</string>
+				<key>categoryTitle</key>
+				<string>社媒</string>
 			</dict>
 			<dict>
 				<key>title</key>
@@ -107,6 +135,10 @@
 				<string>doc.richtext</string>
 				<key>type</key>
 				<string>wechat</string>
+				<key>categoryId</key>
+				<string>social</string>
+				<key>categoryTitle</key>
+				<string>社媒</string>
 			</dict>
 			<dict>
 				<key>title</key>
@@ -117,6 +149,10 @@
 				<string>questionmark</string>
 				<key>type</key>
 				<string>zhihu</string>
+				<key>categoryId</key>
+				<string>social</string>
+				<key>categoryTitle</key>
+				<string>社媒</string>
 			</dict>
 			<dict>
 				<key>title</key>
@@ -127,6 +163,10 @@
 				<string>person.2</string>
 				<key>type</key>
 				<string>moments</string>
+				<key>categoryId</key>
+				<string>social</string>
+				<key>categoryTitle</key>
+				<string>社媒</string>
 			</dict>
 			<dict>
 				<key>title</key>
@@ -137,6 +177,10 @@
 				<string>play.rectangle</string>
 				<key>type</key>
 				<string>video_script</string>
+				<key>categoryId</key>
+				<string>social</string>
+				<key>categoryTitle</key>
+				<string>社媒</string>
 			</dict>
 		</array>
 	</dict>
@@ -156,6 +200,10 @@
 				<string>pencil</string>
 				<key>type</key>
 				<string>composition</string>
+				<key>categoryId</key>
+				<string>campus</string>
+				<key>categoryTitle</key>
+				<string>校园</string>
 			</dict>
 			<dict>
 				<key>title</key>
@@ -166,6 +214,10 @@
 				<string>book.closed</string>
 				<key>type</key>
 				<string>book_review</string>
+				<key>categoryId</key>
+				<string>campus</string>
+				<key>categoryTitle</key>
+				<string>校园</string>
 			</dict>
 			<dict>
 				<key>title</key>
@@ -176,6 +228,10 @@
 				<string>doc.text</string>
 				<key>type</key>
 				<string>research</string>
+				<key>categoryId</key>
+				<string>campus</string>
+				<key>categoryTitle</key>
+				<string>校园</string>
 			</dict>
 			<dict>
 				<key>title</key>
@@ -186,6 +242,10 @@
 				<string>a.square</string>
 				<key>type</key>
 				<string>english</string>
+				<key>categoryId</key>
+				<string>campus</string>
+				<key>categoryTitle</key>
+				<string>校园</string>
 			</dict>
 			<dict>
 				<key>title</key>
@@ -196,6 +256,10 @@
 				<string>lightbulb</string>
 				<key>type</key>
 				<string>gaokao</string>
+				<key>categoryId</key>
+				<string>campus</string>
+				<key>categoryTitle</key>
+				<string>校园</string>
 			</dict>
 		</array>
 	</dict>
@@ -215,6 +279,10 @@
 				<string>calendar</string>
 				<key>type</key>
 				<string>report</string>
+				<key>categoryId</key>
+				<string>workplace</string>
+				<key>categoryTitle</key>
+				<string>职场</string>
 			</dict>
 			<dict>
 				<key>title</key>
@@ -225,6 +293,10 @@
 				<string>chart.bar</string>
 				<key>type</key>
 				<string>year_summary</string>
+				<key>categoryId</key>
+				<string>workplace</string>
+				<key>categoryTitle</key>
+				<string>职场</string>
 			</dict>
 			<dict>
 				<key>title</key>
@@ -235,6 +307,10 @@
 				<string>square.stack</string>
 				<key>type</key>
 				<string>ppt</string>
+				<key>categoryId</key>
+				<string>workplace</string>
+				<key>categoryTitle</key>
+				<string>职场</string>
 			</dict>
 			<dict>
 				<key>title</key>
@@ -245,6 +321,10 @@
 				<string>target</string>
 				<key>type</key>
 				<string>okr</string>
+				<key>categoryId</key>
+				<string>workplace</string>
+				<key>categoryTitle</key>
+				<string>职场</string>
 			</dict>
 			<dict>
 				<key>title</key>
@@ -255,6 +335,10 @@
 				<string>envelope</string>
 				<key>type</key>
 				<string>email</string>
+				<key>categoryId</key>
+				<string>workplace</string>
+				<key>categoryTitle</key>
+				<string>职场</string>
 			</dict>
 		</array>
 	</dict>
@@ -274,6 +358,10 @@
 				<string>quote.bubble</string>
 				<key>type</key>
 				<string>moments_ads</string>
+				<key>categoryId</key>
+				<string>marketing</string>
+				<key>categoryTitle</key>
+				<string>营销</string>
 			</dict>
 			<dict>
 				<key>title</key>
@@ -284,6 +372,10 @@
 				<string>flame</string>
 				<key>type</key>
 				<string>hot_title</string>
+				<key>categoryId</key>
+				<string>marketing</string>
+				<key>categoryTitle</key>
+				<string>营销</string>
 			</dict>
 			<dict>
 				<key>title</key>
@@ -294,6 +386,10 @@
 				<string>megaphone</string>
 				<key>type</key>
 				<string>live_commerce</string>
+				<key>categoryId</key>
+				<string>marketing</string>
+				<key>categoryTitle</key>
+				<string>营销</string>
 			</dict>
 			<dict>
 				<key>title</key>
@@ -304,6 +400,10 @@
 				<string>tag</string>
 				<key>type</key>
 				<string>slogan</string>
+				<key>categoryId</key>
+				<string>marketing</string>
+				<key>categoryTitle</key>
+				<string>营销</string>
 			</dict>
 			<dict>
 				<key>title</key>
@@ -314,6 +414,10 @@
 				<string>party.popper</string>
 				<key>type</key>
 				<string>campaign</string>
+				<key>categoryId</key>
+				<string>marketing</string>
+				<key>categoryTitle</key>
+				<string>营销</string>
 			</dict>
 		</array>
 	</dict>
@@ -333,6 +437,10 @@
 				<string>frying.pan</string>
 				<key>type</key>
 				<string>recipe</string>
+				<key>categoryId</key>
+				<string>life</string>
+				<key>categoryTitle</key>
+				<string>生活</string>
 			</dict>
 			<dict>
 				<key>title</key>
@@ -343,6 +451,10 @@
 				<string>airplane</string>
 				<key>type</key>
 				<string>travel</string>
+				<key>categoryId</key>
+				<string>life</string>
+				<key>categoryTitle</key>
+				<string>生活</string>
 			</dict>
 			<dict>
 				<key>title</key>
@@ -353,6 +465,10 @@
 				<string>heart.text</string>
 				<key>type</key>
 				<string>girlfriend_reply</string>
+				<key>categoryId</key>
+				<string>life</string>
+				<key>categoryTitle</key>
+				<string>生活</string>
 			</dict>
 			<dict>
 				<key>title</key>
@@ -363,6 +479,10 @@
 				<string>hand.raised</string>
 				<key>type</key>
 				<string>apology</string>
+				<key>categoryId</key>
+				<string>life</string>
+				<key>categoryTitle</key>
+				<string>生活</string>
 			</dict>
 			<dict>
 				<key>title</key>
@@ -373,6 +493,10 @@
 				<string>sparkles</string>
 				<key>type</key>
 				<string>horoscope</string>
+				<key>categoryId</key>
+				<string>life</string>
+				<key>categoryTitle</key>
+				<string>生活</string>
 			</dict>
 		</array>
 	</dict>

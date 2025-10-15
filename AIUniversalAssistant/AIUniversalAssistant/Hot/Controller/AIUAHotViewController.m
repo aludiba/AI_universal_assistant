@@ -4,6 +4,7 @@
 #import "AIUAMBProgressManager.h"
 #import "AIUAAlertHelper.h"
 #import "AIUASearchViewController.h"
+#import "AIUAWritingInputViewController.h"
 
 static NSString * const kCardCellId = @"CardCell";
 static NSString * const kEmptyCellId = @"EmptyCell";
@@ -477,10 +478,14 @@ static NSString * const kEmptyCellId = @"EmptyCell";
         [self refreshRecentUsedData];
     }
     
-    NSLog(@"选中模板：%@ - %@", item[@"title"], item[@"type"]);
-    
-    // TODO: 跳转到对应的写作页面
-    // [self navigateToWritingWithType:item[@"type"] title:item[@"title"]];
+    [self navigateToWriting:item];
+}
+
+- (void)navigateToWriting:(NSDictionary *)item {
+    AIUAWritingInputViewController *writingInputVC = [[AIUAWritingInputViewController alloc] initWithTemplateItem:item categoryId:item[@"categoryId"] apiKey:APIKEY];
+    writingInputVC.hidesBottomBarWhenPushed = YES;
+    // 跳转到对应的写作页面
+    [self.navigationController pushViewController:writingInputVC animated:YES];
 }
 
 #pragma mark - AIUACollectionViewCellDelegate

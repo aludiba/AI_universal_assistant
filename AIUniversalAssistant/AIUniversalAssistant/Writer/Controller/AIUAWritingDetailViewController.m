@@ -8,6 +8,8 @@
 
 @property (nonatomic, copy) NSString *prompt;
 @property (nonatomic, copy) NSString *apiKey;
+@property (nonatomic, copy) NSString *type;
+@property (nonatomic, assign) NSInteger wordCount;
 @property (nonatomic, strong) AIUADeepSeekWriter *writer;
 
 // UI Components
@@ -41,6 +43,41 @@
     if (self) {
         _prompt = [prompt copy];
         _apiKey = [apiKey copy];
+        _isGenerating = YES;
+    }
+    return self;
+}
+
+- (instancetype)initWithPrompt:(NSString *)prompt apiKey:(NSString *)apiKey wordCount:(NSInteger)wordCount {
+    self = [super init];
+    if (self) {
+        _prompt = [prompt copy];
+        _apiKey = [apiKey copy];
+        _wordCount = wordCount;
+        _isGenerating = YES;
+        
+    }
+    return self;
+}
+
+- (instancetype)initWithPrompt:(NSString *)prompt apiKey:(NSString *)apiKey type:(NSString *)type {
+    self = [super init];
+    if (self) {
+        _prompt = [prompt copy];
+        _apiKey = [apiKey copy];
+        _type = [type copy];
+        _isGenerating = YES;
+    }
+    return self;
+}
+
+- (instancetype)initWithPrompt:(NSString *)prompt apiKey:(NSString *)apiKey type:(NSString *)type wordCount:(NSInteger)wordCount {
+    self = [super init];
+    if (self) {
+        _prompt = [prompt copy];
+        _apiKey = [apiKey copy];
+        _type = [type copy];
+        _wordCount = wordCount;
         _isGenerating = YES;
     }
     return self;
@@ -288,8 +325,8 @@
     
     // 开始流式写作
     WeakType(self);
-    [self.writer generateFullStreamWritingWithPrompt:[NSString stringWithFormat:@"%@/n%@:1、%@；2、%@。", self.prompt, L(@"require"), L(@"first_line"), L(@"body_below")]
-                                          wordCount:0
+    [self.writer generateFullStreamWritingWithPrompt:[NSString stringWithFormat:@"%@/n%@:1、%@；2、%@。", self.prompt, L(@"format"), L(@"first_line"), L(@"body_below")]
+                                           wordCount:self.wordCount > 0 ? self.wordCount : 0
                                      streamHandler:^(NSString *chunk, BOOL finished, NSError *error) {
         
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -500,7 +537,8 @@
         @"content": self.finalContent ?: @"",
         @"prompt": self.prompt ?: @"",
         @"createTime": [[AIUADataManager sharedManager] currentTimeString],
-        @"wordCount": @(self.finalContent.length)
+        @"type": self.type ?: @"",
+        @"wordCount": @(self.finalContent.length),
     }];
 }
 

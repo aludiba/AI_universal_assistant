@@ -43,6 +43,7 @@
 "confirm" = "Confirm";
 "copied_to_clipboard" = "Copied to Clipboard";
 "export_failed" = "Export Failed";
+"format" = "Format";
 "require" = "require";
 "first_line" = "The first line should contain only the title and be bold";
 "body_below" = "The article body should follow below the title";
@@ -50,3 +51,12 @@
 "copy" = "Copy";
 "export" = "Export";
 "edit" = "Edit";
+"theme" = "Theme";
+"enter_creation_theme" = "Please enter a creation theme";
+"enter_specific_requirements" = "Please enter specific requirements";
+"maximum_word_count" = "Maximum Word Count";
+"generate" = "Generate";
+"unlimited" = "Unlimited";
+"words" = "Words";
+"prompt" = "Prompt";
+"enter_topic" = "Please enter a topic";
