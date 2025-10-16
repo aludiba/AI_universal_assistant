@@ -3,6 +3,7 @@
 #import "AIUAAlertHelper.h"
 #import "AIUADataManager.h"
 #import "AIUAMBProgressManager.h"
+#import "AIUAWritingRecordsViewController.h"
 
 @interface AIUAWritingInputViewController ()<UITextFieldDelegate, UITextViewDelegate>
 
@@ -64,7 +65,8 @@
 
 - (void)setupUI {
     [super setupUI];
-    
+    [self setupNavigationBar];
+
     // 设置自定义标题视图
     [self setupCustomTitleView];
     
@@ -243,6 +245,23 @@
     self.navigationItem.titleView = titleView;
 }
 
+- (void)setupNavigationBar {
+    // 使用文字按钮
+    UIBarButtonItem *recordsButton = [[UIBarButtonItem alloc] initWithTitle:L(@"writing_records")
+                                                                      style:UIBarButtonItemStylePlain
+                                                                     target:self
+                                                                     action:@selector(recordsButtonTapped)];
+    recordsButton.tintColor = [UIColor grayColor];
+    self.navigationItem.rightBarButtonItem = recordsButton;
+}
+
+- (void)recordsButtonTapped {
+    AIUAWritingRecordsViewController *recordsVC = [[AIUAWritingRecordsViewController alloc] init];
+    recordsVC.type = self.type;
+    recordsVC.hidesBottomBarWhenPushed = YES;
+    [self.navigationController pushViewController:recordsVC animated:YES];
+}
+
 - (void)createWordCountButtons {
     NSArray *titles = @[L(@"unlimited"), [NSString stringWithFormat:@"100%@",L(@"words")], [NSString stringWithFormat:@"300%@",L(@"words")], [NSString stringWithFormat:@"600%@",L(@"words")], [NSString stringWithFormat:@"1000%@",L(@"words")]];
     
@@ -419,8 +438,8 @@
         CGFloat buttonWidth = (AIUAScreenWidth - 32 - 32 - 16) / 5; // 屏幕宽度 - 左右边距 - 容器边距 - 按钮间距
         
         [NSLayoutConstraint activateConstraints:@[
-            [button.topAnchor constraintEqualToAnchor:self.wordCountContainer.topAnchor],
-            [button.bottomAnchor constraintEqualToAnchor:self.wordCountContainer.bottomAnchor],
+            // 移除按钮的高度约束，或者改为 centerY 约束
+            [button.centerYAnchor constraintEqualToAnchor:self.wordCountContainer.centerYAnchor],
             [button.widthAnchor constraintEqualToConstant:buttonWidth],
             [button.heightAnchor constraintEqualToConstant:36]
         ]];

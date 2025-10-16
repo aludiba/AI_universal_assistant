@@ -351,7 +351,6 @@
         [self writingCompletedWithError:error];
         return;
     }
-    NSLog(@"chunk:%@", chunk);
     
     if (finished) {
         [self writingCompletedWithContent:self.contentTextView.attributedText.string];

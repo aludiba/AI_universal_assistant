@@ -60,3 +60,11 @@
 "words" = "字";
 "prompt" = "提示";
 "enter_topic" = "请输入主题";
+"writing_records" = "创作记录";
+"no_writing_records" = "暂无写作记录";
+"confirm_delete" = "确认删除";
+"delete_writing_confirm" = "确定要删除这条写作记录吗？";
+"delete" = "删除";
+"deleted_success" = "删除成功";
+"delete_failed" = "删除失败";
+"no_title" = "无标题";

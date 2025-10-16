@@ -45,13 +45,21 @@ NS_ASSUME_NONNULL_BEGIN
 // 获取“写作”分类数据
 - (NSArray *)getItemsForCategory:(NSString *)categoryId;
 
-#pragma mark - 写作详情
+#pragma mark - 写作
 
 // 保存写作详情到plist文件
 - (void)saveWritingToPlist:(NSDictionary *)writingRecord;
 - (NSArray *)loadAllWritings;
+// 根据类型加载写作记录
+- (NSArray *)loadWritingsByType:(NSString *)type;
 // 根据ID删除写作记录
 - (BOOL)deleteWritingWithID:(NSString *)writingID;
+
+#pragma mark - 提示词处理
+- (NSString *)extractRequirementFromPrompt:(NSString *)prompt;
+- (NSString *)extractReasonablePartFromPrompt:(NSString *)prompt;
+- (NSString *)truncateRequirementIfNeeded:(NSString *)requirement;
+- (NSString *)extractThemeFromPrompt:(NSString *)prompt;
 
 #pragma mark - 辅助方法
 - (NSString *)getItemId:(NSDictionary *)item;

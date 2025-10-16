@@ -10,6 +10,7 @@
 #import "AIUAWritingCategoryCell.h"
 #import "AIUADataManager.h"
 #import "AIUAWritingDetailViewController.h"
+#import "AIUAWritingRecordsViewController.h"
 
 @interface AIUAWriterViewController ()<UITableViewDelegate, UITableViewDataSource>
 
@@ -32,6 +33,23 @@
     [self setupInputCell];
     [self setupGestureRecognizer];
     [self setupKeyboardObservers];
+    [self setupNavigationBar];
+}
+
+- (void)setupNavigationBar {
+    // 使用文字按钮
+    UIBarButtonItem *recordsButton = [[UIBarButtonItem alloc] initWithTitle:L(@"writing_records")
+                                                                      style:UIBarButtonItemStylePlain
+                                                                     target:self
+                                                                     action:@selector(recordsButtonTapped)];
+    recordsButton.tintColor = [UIColor grayColor];
+    self.navigationItem.rightBarButtonItem = recordsButton;
+}
+
+- (void)recordsButtonTapped {
+    AIUAWritingRecordsViewController *recordsVC = [[AIUAWritingRecordsViewController alloc] init];
+    recordsVC.hidesBottomBarWhenPushed = YES;
+    [self.navigationController pushViewController:recordsVC animated:YES];
 }
 
 - (void)setupData {

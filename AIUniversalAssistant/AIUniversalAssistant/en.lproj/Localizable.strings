@@ -60,3 +60,11 @@
 "words" = "Words";
 "prompt" = "Prompt";
 "enter_topic" = "Please enter a topic";
+"writing_records" = "Writing Records";
+"no_writing_records" = "No writing records yet";
+"confirm_delete" = "Confirm Deletion";
+"delete_writing_confirm" = "Are you sure you want to delete this writing record?";
+"delete" = "Delete";
+"deleted_success" = "Deleted successfully";
+"delete_failed" = "Failed to delete";
+"no_title" = "Untitled";
