@@ -45,6 +45,18 @@ static NSString * const kEmptyCellId = @"EmptyCell";
     if (self.navigationItem.title == nil) {
         self.navigationItem.title = L(@"tab_hot");
     }
+    // 每次显示页面时刷新收藏数据
+    [self refreshFavoritesData];
+    if ([self isFavoriteCategorySelected]) {
+        [self updateContentForSelectedCategory];
+    } else {
+        [self.collectionView reloadData];
+    }
+}
+
+- (void)viewDidAppear:(BOOL)animated {
+    [super viewDidAppear:animated];
+    [self updateCategorySelection];
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
@@ -61,16 +73,6 @@ static NSString * const kEmptyCellId = @"EmptyCell";
     [self updateContentForSelectedCategory];
     [self refreshFavoritesData];
     [self refreshRecentUsedData];
-}
-
-- (void)viewDidAppear:(BOOL)animated {
-    [super viewDidAppear:animated];
-    [self updateCategorySelection];
-    // 每次显示页面时刷新收藏数据
-    [self refreshFavoritesData];
-    if ([self isFavoriteCategorySelected]) {
-        [self updateContentForSelectedCategory];
-    }
 }
 
 - (void)setupSearchBar {

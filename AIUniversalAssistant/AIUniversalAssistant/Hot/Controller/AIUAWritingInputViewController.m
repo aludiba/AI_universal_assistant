@@ -1,6 +1,8 @@
 #import "AIUAWritingInputViewController.h"
 #import "AIUAWritingDetailViewController.h"
 #import "AIUAAlertHelper.h"
+#import "AIUADataManager.h"
+#import "AIUAMBProgressManager.h"
 
 @interface AIUAWritingInputViewController ()<UITextFieldDelegate, UITextViewDelegate>
 
@@ -178,7 +180,10 @@
     self.favoriteButton = [UIButton buttonWithType:UIButtonTypeSystem];
     [self.favoriteButton setImage:[UIImage systemImageNamed:@"star"] forState:UIControlStateNormal];
     [self.favoriteButton setImage:[UIImage systemImageNamed:@"star.fill"] forState:UIControlStateSelected];
-    self.favoriteButton.tintColor = AIUAUIColorRGB(156, 163, 175);
+    NSString *itemId = [[AIUADataManager sharedManager] getItemId:self.templateItem];
+    BOOL isFavorite = [[AIUADataManager sharedManager] isFavorite:itemId];
+    [self.favoriteButton setSelected:isFavorite];
+    self.favoriteButton.tintColor = isFavorite ? AIUAUIColorSimplifyRGB(1.0, 0.2, 0.2) : AIUAUIColorSimplifyRGB(0.6, 0.6, 0.6);
     self.favoriteButton.backgroundColor = [UIColor whiteColor];
     self.favoriteButton.layer.cornerRadius = 12;
     self.favoriteButton.layer.masksToBounds = YES;
@@ -484,14 +489,28 @@
 }
 
 - (void)favoriteButtonTapped {
-    self.favoriteButton.selected = !self.favoriteButton.selected;
-    
-    if (self.favoriteButton.selected) {
-        self.favoriteButton.tintColor = AIUAUIColorRGB(245, 158, 11); // 黄色
-        // 添加到收藏的逻辑
+    BOOL isFavorite = !self.favoriteButton.selected;
+    NSString *itemId = [[AIUADataManager sharedManager] getItemId:self.templateItem];
+    if ([[AIUADataManager sharedManager] isFavorite:itemId]) {
+        WeakType(self);
+        [AIUAAlertHelper showAlertWithTitle:L(@"confirm_unfavorite")
+                                    message:nil
+                              cancelBtnText:L(@"think_it_over")
+                             confirmBtnText:L(@"confirm")
+                               inController:nil
+                               cancelAction:nil confirmAction:^{
+            StrongType(self);
+            strongself.favoriteButton.tintColor = AIUAUIColorSimplifyRGB(0.6, 0.6, 0.6); // 灰色
+            // 取消收藏
+            [[AIUADataManager sharedManager] removeFavorite:itemId];
+            self.favoriteButton.selected = isFavorite;
+        }];
     } else {
-        self.favoriteButton.tintColor = AIUAUIColorRGB(156, 163, 175); // 灰色
-        // 从收藏移除的逻辑
+        self.favoriteButton.tintColor = AIUAUIColorSimplifyRGB(1.0, 0.2, 0.2);
+        // 添加收藏
+        [[AIUADataManager sharedManager] addFavorite:self.templateItem];
+        [AIUAMBProgressManager showText:nil withText:L(@"favorited") andSubText:nil isBottom:YES];
+        self.favoriteButton.selected = isFavorite;
     }
 }
 
