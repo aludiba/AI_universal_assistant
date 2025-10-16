@@ -191,7 +191,7 @@
     self.generateButton = [UIButton buttonWithType:UIButtonTypeSystem];
     [self.generateButton setTitle:L(@"generate") forState:UIControlStateNormal];
     [self.generateButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-    self.generateButton.titleLabel.font = AIUAUIFontSystem(16);
+    self.generateButton.titleLabel.font = AIUAUIFontSystem(18);
     self.generateButton.backgroundColor = AIUAUIColorRGB(59, 130, 246);
     self.generateButton.layer.cornerRadius = 12;
     self.generateButton.layer.masksToBounds = YES;
@@ -530,11 +530,25 @@
     self.themeClearButton.alpha = textField.text.length > 0 ? 1 : 0;
     return YES;
 }
+
+- (void)textFieldDidEndEditing:(UITextField *)textField {
+    self.themeClearButton.alpha = 0;
+}
+
 #pragma mark - UITextViewDelegate
+
+- (BOOL)textViewShouldBeginEditing:(UITextView *)textView {
+    self.requirementClearButton.alpha = textView.text.length > 0 ? 1 : 0;
+    return YES;
+}
 
 - (void)textViewDidChange:(UITextView *)textView {
     self.requirementPlaceholder.hidden = textView.text.length > 0;
     self.requirementClearButton.alpha = textView.text.length > 0 ? 1 : 0;
+}
+
+- (void)textViewDidEndEditing:(UITextView *)textView {
+    self.requirementClearButton.alpha = 0;
 }
 
 #pragma mark - 键盘处理
