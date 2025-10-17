@@ -455,10 +455,6 @@
 - (void)writingCompletedWithError:(NSError *)error {
     self.isGenerating = NO;
     [self updateUIState];
-    
-    self.titleLabel.text = L(@"creation_failed");
-    self.contentTextView.text = [NSString stringWithFormat:@"错误: %@", error.localizedDescription];
-    self.contentTextView.textColor = [UIColor redColor];
 }
 
 - (void)tryExtractTitleFromContent:(NSString *)content {
