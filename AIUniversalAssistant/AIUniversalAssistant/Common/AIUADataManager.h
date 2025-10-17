@@ -68,7 +68,7 @@ NS_ASSUME_NONNULL_BEGIN
 // 获取plist文件路径
 - (NSString *)getPlistFilePath:(NSString *)fileName;
 - (NSString *)currentDateString;
-
+- (void)exportDocument:(NSString *)title withContent:(NSString *)content;
 @end
 
 NS_ASSUME_NONNULL_END

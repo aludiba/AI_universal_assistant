@@ -8,7 +8,7 @@
 #import "AIUATabBarController.h"
 #import "AIUAHotViewController.h"
 #import "AIUAWriterViewController.h"
-#import "AIUADocsViewController.h"
+#import "AIUADocumentsViewController.h"
 #import "AIUASettingsViewController.h"
 
 @interface AIUATabBarController ()
@@ -44,7 +44,7 @@
                                                   selectedImage:writeSelectedImage];
     
     // 文档页面
-    AIUADocsViewController *docsVC = [[AIUADocsViewController alloc] init];
+    AIUADocumentsViewController *docsVC = [[AIUADocumentsViewController alloc] init];
     UINavigationController *docsNav = [[UINavigationController alloc] initWithRootViewController:docsVC];
     
     UIImage *docsImage = [UIImage systemImageNamed:@"doc.text"];

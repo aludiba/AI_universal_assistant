@@ -68,3 +68,15 @@
 "deleted_success" = "Deleted successfully";
 "delete_failed" = "Failed to delete";
 "no_title" = "Untitled";
+"new_document" = "New Document";
+"my_documents" = "My Documents";
+"no_documents" = "No documents yet";
+"export_document" = "Export Document";
+"copy_full_text" = "Copy Full Text";
+"delete_document" = "Delete Document";
+"copied_to_clipboard" = "Copied to clipboard";
+"empty_document" = "Document content is empty";
+"confirm_delete_document" = "Are you sure you want to delete this document?";
+"untitled_document" = "Untitled Document";
+"today" = "Today";
+"yesterday" = "Yesterday";

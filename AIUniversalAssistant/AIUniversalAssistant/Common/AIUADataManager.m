@@ -7,6 +7,7 @@
 
 #import "AIUADataManager.h"
 #import "AIUAMBProgressManager.h"
+#import "AIUAToolsManager.h"
 
 @implementation AIUADataManager
 
@@ -465,6 +466,27 @@
     NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
     [formatter setDateFormat:@"yyyyMMdd_HHmmss"];
     return [formatter stringFromDate:[NSDate date]];
+}
+
+- (void)exportDocument:(NSString *)title withContent:(NSString *)content {
+    NSString *fullText = [NSString stringWithFormat:@"%@\n\n%@", title, content];
+    
+    // 创建临时文件
+    NSString *fileName = [NSString stringWithFormat:@"%@_%@.doc", L(@"creation_content"), [[AIUADataManager sharedManager] currentDateString]];
+    NSURL *tempFileURL = [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:fileName]];
+    
+    NSError *error;
+    [fullText writeToURL:tempFileURL atomically:YES encoding:NSUTF8StringEncoding error:&error];
+    
+    if (error) {
+        [AIUAMBProgressManager showTextHUD:nil withText:L(@"export_failed") andSubText:nil];
+        return;
+    }
+    
+    // 调用系统分享
+    UIActivityViewController *activityVC = [[UIActivityViewController alloc] initWithActivityItems:@[tempFileURL] applicationActivities:nil];
+    
+    [[AIUAToolsManager topViewController] presentViewController:activityVC animated:YES completion:nil];
 }
 
 @end

@@ -1,5 +1,5 @@
 //
-//  AIUADocsViewController.h
+//  AIUADocumentsViewController.h
 //  AIUniversalAssistant
 //
 //  Created by 褚红彪 on 10/3/25.
@@ -9,7 +9,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface AIUADocsViewController : AIUASuperViewController
+@interface AIUADocumentsViewController : AIUASuperViewController
 
 @end
 

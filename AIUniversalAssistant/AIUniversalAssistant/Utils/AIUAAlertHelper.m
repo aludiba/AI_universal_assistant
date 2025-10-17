@@ -64,4 +64,38 @@
     }
 }
 
++ (void)showActionSheetWithTitle:(nullable NSString *)title
+                         message:(nullable NSString *)message
+                         actions:(nullable NSArray *)actions
+                   inController:(nullable UIViewController *)controller
+                   actionHandler:(nullable  void(^)(NSString *actionTitle))handler {
+    
+    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:title
+                                                                             message:message
+                                                                      preferredStyle:UIAlertControllerStyleActionSheet];
+    
+    for (NSDictionary *actionDict in actions) {
+        NSString *actionTitle = actionDict[@"title"];
+        NSNumber *styleNumber = actionDict[@"style"];
+        UIAlertActionStyle style = (UIAlertActionStyle)[styleNumber integerValue];
+        
+        UIAlertAction *action = [UIAlertAction actionWithTitle:actionTitle
+                                                         style:style
+                                                       handler:^(UIAlertAction * _Nonnull action) {
+            if (handler) {
+                handler(actionTitle);
+            }
+        }];
+        [alertController addAction:action];
+    }
+    
+    // 添加取消按钮
+    UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:L(@"cancel")
+                                                           style:UIAlertActionStyleCancel
+                                                         handler:nil];
+    [alertController addAction:cancelAction];
+    
+    [controller presentViewController:alertController animated:YES completion:nil];
+}
+
 @end

@@ -68,3 +68,15 @@
 "deleted_success" = "删除成功";
 "delete_failed" = "删除失败";
 "no_title" = "无标题";
+"new_document" = "新建文档";
+"my_documents" = "我的文档";
+"no_documents" = "暂无文档";
+"export_document" = "导出文档";
+"copy_full_text" = "全文复制";
+"delete_document" = "删除文档";
+"copied_to_clipboard" = "已复制到剪贴板";
+"empty_document" = "文档内容为空";
+"confirm_delete_document" = "确定要删除这篇文档吗？";
+"untitled_document" = "未命名文档";
+"today" = "今天";
+"yesterday" = "昨天";

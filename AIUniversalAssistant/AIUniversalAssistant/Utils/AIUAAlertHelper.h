@@ -23,6 +23,12 @@ typedef void(^AIUAAlertActionBlock)(void);
                cancelAction:(nullable AIUAAlertActionBlock)cancelAction
               confirmAction:(nullable AIUAAlertActionBlock)confirmAction;
 
++ (void)showActionSheetWithTitle:(nullable NSString *)title
+                         message:(nullable NSString *)message
+                         actions:(nullable NSArray *)actions
+                   inController:(nullable UIViewController *)controller
+                   actionHandler:(nullable  void(^)(NSString *actionTitle))handler;
+
 @end
 
 NS_ASSUME_NONNULL_END

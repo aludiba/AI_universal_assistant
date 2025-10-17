@@ -573,24 +573,7 @@
 }
 
 - (void)exportButtonTapped {
-    NSString *fullText = [NSString stringWithFormat:@"%@\n\n%@", self.titleLabel.text, self.contentTextView.text];
-    
-    // 创建临时文件
-    NSString *fileName = [NSString stringWithFormat:@"%@_%@.doc", L(@"creation_content"), [[AIUADataManager sharedManager] currentDateString]];
-    NSURL *tempFileURL = [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:fileName]];
-    
-    NSError *error;
-    [fullText writeToURL:tempFileURL atomically:YES encoding:NSUTF8StringEncoding error:&error];
-    
-    if (error) {
-        [self showToastMessage:L(@"export_failed")];
-        return;
-    }
-    
-    // 调用系统分享
-    UIActivityViewController *activityVC = [[UIActivityViewController alloc] initWithActivityItems:@[tempFileURL] applicationActivities:nil];
-    
-    [self presentViewController:activityVC animated:YES completion:nil];
+    [[AIUADataManager sharedManager] exportDocument:self.titleLabel.text withContent:self.contentTextView.text];
 }
 
 - (void)editButtonTapped {
