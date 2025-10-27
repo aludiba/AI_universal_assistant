@@ -6,6 +6,7 @@
 #import "AIUADataManager.h"
 #import "AIUAAlertHelper.h"
 #import "AIUAMBProgressManager.h"
+#import "AIUADocDetailViewController.h"
 
 @interface AIUADocumentsViewController () <UITableViewDelegate, UITableViewDataSource>
 
@@ -80,8 +81,9 @@
 #pragma mark - 按钮事件
 
 - (void)createDocumentTapped {
-    // TODO:新建文档功能，这里可以跳转到写作页面
-    [AIUAMBProgressManager showText:nil withText:@"新建文档功能开发中" andSubText:nil isBottom:YES];
+    AIUADocDetailViewController *docDetailVC = [[AIUADocDetailViewController alloc] initWithNewDocument];
+    docDetailVC.hidesBottomBarWhenPushed = YES;
+    [self.navigationController pushViewController:docDetailVC animated:YES];
 }
 
 #pragma mark - UITableViewDataSource
@@ -153,6 +155,9 @@
         NSDictionary *document = self.documents[indexPath.row];
         // 这里可以添加点击cell查看文档详情的功能
         NSLog(@"Selected document: %@", document[@"title"]);
+        AIUADocDetailViewController *docDetailVC = [[AIUADocDetailViewController alloc] initWithWritingItem:document];
+        docDetailVC.hidesBottomBarWhenPushed = YES;
+        [self.navigationController pushViewController:docDetailVC animated:YES];
     }
 }
 
