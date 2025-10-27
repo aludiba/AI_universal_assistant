@@ -88,12 +88,6 @@
     }
 }
 
-- (void)viewDidLoad {
-    [super viewDidLoad];
-    [self setupUI];
-    [self registerKeyboardNotifications];
-}
-
 - (void)viewWillDisappear:(BOOL)animated {
     [super viewWillDisappear:animated];
     [self saveDocumentIfNeeded];
@@ -118,6 +112,7 @@
     [self setupGenerationView];
     [self setupNavigationBar];
     [self setupGestureRecognizer];
+    [self registerKeyboardNotifications];
 }
 
 - (void)setupTableView {
@@ -790,9 +785,14 @@
 
 // 设置收起键盘手势
 - (void)setupGestureRecognizer {
+    // 添加点击手势隐藏键盘
     UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(dismissKeyboard)];
-    tapGesture.cancelsTouchesInView = NO;
+    tapGesture.cancelsTouchesInView = NO; // 允许点击事件继续传递给子视图（如按钮等）
     [self.view addGestureRecognizer:tapGesture];
+    
+    // 滑动手势隐藏键盘
+    UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(dismissKeyboard)];
+    [self.view addGestureRecognizer:pan];
 }
 
 - (void)dismissKeyboard {
@@ -965,12 +965,6 @@
     writingRecord[@"wordCount"] = @(content.length);
     
     [[AIUADataManager sharedManager] saveWritingToPlist:writingRecord];
-}
-
-- (void)backButtonTapped {
-    [self saveDocumentIfNeeded];
-    [self cancelCurrentGeneration];
-    [self.navigationController popViewControllerAnimated:YES];
 }
 
 @end
