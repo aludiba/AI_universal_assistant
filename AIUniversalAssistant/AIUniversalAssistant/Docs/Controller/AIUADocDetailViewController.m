@@ -20,6 +20,7 @@
 @property (nonatomic, copy) NSString *currentTitle;
 @property (nonatomic, copy) NSString *currentContent;
 
+@property (nonatomic, strong) NSMutableArray *toolbarButtonsArray;
 // 编辑工具栏按钮
 @property (nonatomic, strong) UIButton *continueWriteBtn;
 @property (nonatomic, strong) UIButton *rewriteBtn;
@@ -183,6 +184,7 @@
 }
 
 - (void)createToolbarButtons {
+    self.toolbarButtonsArray = [[NSMutableArray alloc] init];
     NSArray *buttonTitles = @[@"续写", @"改写", @"扩写", @"翻译"];
     NSArray *buttonIcons = @[@"pencil", @"pencil.tip", @"text.badge.plus", @"character"];
     
@@ -215,7 +217,7 @@
         
         [button addTarget:self action:@selector(toolbarButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
         [stackView addArrangedSubview:button];
-        
+        [self.toolbarButtonsArray addObject:button];
         // 保存按钮引用
         switch (i) {
             case 0: self.continueWriteBtn = button; break;
@@ -663,6 +665,17 @@
                               cancelAction:nil
                              confirmAction:nil];
         return;
+    }
+    
+    for (int i = 0; i < self.toolbarButtonsArray.count; i++) {
+        UIButton *button = self.toolbarButtonsArray[i];
+        if (sender.tag == button.tag) {
+            [button setTitleColor:[UIColor systemBlueColor] forState:UIControlStateNormal];
+            button.tintColor = [UIColor systemBlueColor];
+        } else {
+            [button setTitleColor:[UIColor colorWithRed:0.2 green:0.2 blue:0.2 alpha:1.0] forState:UIControlStateNormal];
+            button.tintColor = [UIColor colorWithRed:0.2 green:0.2 blue:0.2 alpha:1.0];
+        }
     }
     
     self.currentEditType = (AIUAWritingEditType)sender.tag;

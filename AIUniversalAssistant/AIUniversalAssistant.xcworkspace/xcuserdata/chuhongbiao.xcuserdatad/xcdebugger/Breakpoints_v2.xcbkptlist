@@ -26,8 +26,8 @@
             filePath = "AIUniversalAssistant/Docs/Controller/AIUADocDetailViewController.m"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "496"
-            endingLineNumber = "496"
+            startingLineNumber = "498"
+            endingLineNumber = "498"
             landmarkName = "-setupResultButtonsForType:"
             landmarkType = "7">
          </BreakpointContent>
@@ -36,6 +36,22 @@
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
             uuid = "730954F2-7763-4419-A391-DBED1BF718FD"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "AIUniversalAssistant/Docs/Controller/AIUADocDetailViewController.m"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "488"
+            endingLineNumber = "488"
+            landmarkName = "-setupResultButtonsForType:"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "59C33F60-DDF5-4157-9A47-99EAB5FEBD0A"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
@@ -51,52 +67,6 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "59C33F60-DDF5-4157-9A47-99EAB5FEBD0A"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "AIUniversalAssistant/Docs/Controller/AIUADocDetailViewController.m"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "484"
-            endingLineNumber = "484"
-            landmarkName = "-setupResultButtonsForType:"
-            landmarkType = "7">
-            <Locations>
-               <Location
-                  uuid = "59C33F60-DDF5-4157-9A47-99EAB5FEBD0A - 536a0a0e045d40ab"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "-[AIUADocDetailViewController setupResultButtonsForType:]"
-                  moduleName = "AIUniversalAssistant.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/chuhongbiao/Desktop/aludiba/AI_universal_assistant/AIUniversalAssistant/AIUniversalAssistant/Docs/Controller/AIUADocDetailViewController.m"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "484"
-                  endingLineNumber = "484">
-               </Location>
-               <Location
-                  uuid = "59C33F60-DDF5-4157-9A47-99EAB5FEBD0A - 536a0a0e045d40ab"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "-[AIUADocDetailViewController setupResultButtonsForType:]"
-                  moduleName = "AIUniversalAssistant.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/chuhongbiao/Desktop/aludiba/AI_universal_assistant/AIUniversalAssistant/AIUniversalAssistant/Docs/Controller/AIUADocDetailViewController.m"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "484"
-                  endingLineNumber = "484">
-               </Location>
-            </Locations>
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
             uuid = "29A175C6-8FF5-4A38-87EB-04ED23EA6811"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
@@ -104,8 +74,8 @@
             filePath = "AIUniversalAssistant/Docs/Controller/AIUADocDetailViewController.m"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "671"
-            endingLineNumber = "671"
+            startingLineNumber = "684"
+            endingLineNumber = "684"
             landmarkName = "-toolbarButtonTapped:"
             landmarkType = "7">
          </BreakpointContent>
@@ -120,8 +90,8 @@
             filePath = "AIUniversalAssistant/Docs/Controller/AIUADocDetailViewController.m"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "674"
-            endingLineNumber = "674"
+            startingLineNumber = "687"
+            endingLineNumber = "687"
             landmarkName = "-toolbarButtonTapped:"
             landmarkType = "7">
          </BreakpointContent>
