@@ -240,16 +240,38 @@
         make.height.equalTo(@160);
     }];
     
-    // 风格选择标题
+    // 创建标题容器
+    UIView *titleContainer = [[UIView alloc] init];
+    [self.styleSelectionView addSubview:titleContainer];
+    
+    [titleContainer mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.equalTo(self.styleSelectionView).offset(8);
+        make.left.right.equalTo(self.styleSelectionView);
+        make.height.equalTo(@30);
+    }];
+    
+    // 添加返回按钮
+    UIButton *backButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    [backButton setImage:[UIImage systemImageNamed:@"chevron.left"] forState:UIControlStateNormal];
+    [backButton setTintColor:[UIColor systemGrayColor]];
+    [backButton addTarget:self action:@selector(hideStyleSelectionView) forControlEvents:UIControlEventTouchUpInside];
+    [titleContainer addSubview:backButton];
+    
+    [backButton mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.equalTo(titleContainer).offset(16);
+        make.centerY.equalTo(titleContainer);
+        make.width.height.equalTo(@24);
+    }];
+    
+    // 添加标题
     UILabel *titleLabel = [[UILabel alloc] init];
-    titleLabel.text = @"选择风格";
     titleLabel.font = [UIFont systemFontOfSize:14];
     titleLabel.textColor = [UIColor darkGrayColor];
-    [self.styleSelectionView addSubview:titleLabel];
+    [titleContainer addSubview:titleLabel];
     
     [titleLabel mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.styleSelectionView).offset(8);
-        make.left.equalTo(self.styleSelectionView).offset(16);
+        make.left.equalTo(backButton.mas_right).offset(8);
+        make.centerY.equalTo(titleContainer);
     }];
     
     // 风格选择容器
@@ -356,11 +378,12 @@
 }
 
 - (void)updateStyleSelectionForType:(AIUAWritingEditType)type {
+    UIView *titleContainer = self.styleSelectionView.subviews[0];
     // 根据类型更新风格选择界面
     UIView *styleContainer = self.styleSelectionView.subviews[1]; // 获取风格容器
     if (type == AIUAWritingEditTypeExpand) {
         // 扩写模式：显示扩写长度选择
-        UILabel *titleLabel = self.styleSelectionView.subviews[0];
+        UILabel *titleLabel = titleContainer.subviews[1];
         titleLabel.text = @"扩写长度";
         // 移除原有风格按钮
         for (UIView *subview in styleContainer.subviews) {
@@ -397,7 +420,7 @@
         
     } else if (type == AIUAWritingEditTypeTranslate) {
         // 翻译模式：显示目标语言选择
-        UILabel *titleLabel = self.styleSelectionView.subviews[0];
+        UILabel *titleLabel = titleContainer.subviews[1];
         titleLabel.text = @"目标语言";
         // 移除原有风格按钮
         for (UIView *subview in styleContainer.subviews) {
@@ -434,7 +457,7 @@
         
     } else {
         // 其他模式：显示风格选择
-        UILabel *titleLabel = self.styleSelectionView.subviews[0];
+        UILabel *titleLabel = titleContainer.subviews[1];
         NSString *title = @"选择风格";
         if (type == AIUAWritingEditTypeContinue) {
             title = @"续写风格";
@@ -771,6 +794,11 @@
         }];
         [self.view layoutIfNeeded];
     } completion:^(BOOL finished) {
+        for (int i = 0; i < self.toolbarButtonsArray.count; i++) {
+            UIButton *button = self.toolbarButtonsArray[i];
+            [button setTitleColor:[UIColor colorWithRed:0.2 green:0.2 blue:0.2 alpha:1.0] forState:UIControlStateNormal];
+            button.tintColor = [UIColor colorWithRed:0.2 green:0.2 blue:0.2 alpha:1.0];
+        }
         self.styleSelectionView.hidden = YES;
     }];
 }
