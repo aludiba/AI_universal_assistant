@@ -358,17 +358,14 @@
 - (void)updateStyleSelectionForType:(AIUAWritingEditType)type {
     // 根据类型更新风格选择界面
     UIView *styleContainer = self.styleSelectionView.subviews[1]; // 获取风格容器
-    
     if (type == AIUAWritingEditTypeExpand) {
         // 扩写模式：显示扩写长度选择
         UILabel *titleLabel = self.styleSelectionView.subviews[0];
         titleLabel.text = @"扩写长度";
-        
         // 移除原有风格按钮
         for (UIView *subview in styleContainer.subviews) {
             [subview removeFromSuperview];
         }
-        
         // 添加扩写长度选择
         NSArray *lengths = @[@"适中", @"较长"];
         UIStackView *lengthStackView = [[UIStackView alloc] init];
@@ -377,11 +374,9 @@
         lengthStackView.alignment = UIStackViewAlignmentCenter;
         lengthStackView.spacing = 8;
         [styleContainer addSubview:lengthStackView];
-        
         [lengthStackView mas_makeConstraints:^(MASConstraintMaker *make) {
             make.edges.equalTo(styleContainer).insets(UIEdgeInsetsMake(0, 16, 0, 16));
         }];
-        
         for (NSString *length in lengths) {
             UIButton *lengthButton = [UIButton buttonWithType:UIButtonTypeSystem];
             [lengthButton setTitle:length forState:UIControlStateNormal];
@@ -404,12 +399,10 @@
         // 翻译模式：显示目标语言选择
         UILabel *titleLabel = self.styleSelectionView.subviews[0];
         titleLabel.text = @"目标语言";
-        
         // 移除原有风格按钮
         for (UIView *subview in styleContainer.subviews) {
             [subview removeFromSuperview];
         }
-        
         // 添加语言选择
         NSArray *languages = @[@"英文", @"中文", @"日文"];
         UIStackView *languageStackView = [[UIStackView alloc] init];
@@ -418,11 +411,9 @@
         languageStackView.alignment = UIStackViewAlignmentCenter;
         languageStackView.spacing = 8;
         [styleContainer addSubview:languageStackView];
-        
         [languageStackView mas_makeConstraints:^(MASConstraintMaker *make) {
             make.edges.equalTo(styleContainer).insets(UIEdgeInsetsMake(0, 16, 0, 16));
         }];
-        
         for (NSString *language in languages) {
             UIButton *languageButton = [UIButton buttonWithType:UIButtonTypeSystem];
             [languageButton setTitle:language forState:UIControlStateNormal];
@@ -444,51 +435,63 @@
     } else {
         // 其他模式：显示风格选择
         UILabel *titleLabel = self.styleSelectionView.subviews[0];
-        titleLabel.text = @"选择风格";
-        
+        NSString *title = @"选择风格";
+        if (type == AIUAWritingEditTypeContinue) {
+            title = @"续写风格";
+        } else if (type == AIUAWritingEditTypeRewrite) {
+            title = @"改写风格";
+        }
+        titleLabel.text = title;
+        for (UIView *subview in styleContainer.subviews) {
+            [subview removeFromSuperview];
+        }
         // 如果已经移除，重新创建风格选择
-        if (styleContainer.subviews.count == 0) {
-            NSArray *styles = @[@"通用", @"新闻", @"学术", @"公务", @"小说", @"作文"];
-            UIStackView *styleStackView = [[UIStackView alloc] init];
-            styleStackView.axis = UILayoutConstraintAxisHorizontal;
-            styleStackView.distribution = UIStackViewDistributionFillEqually;
-            styleStackView.alignment = UIStackViewAlignmentCenter;
-            styleStackView.spacing = 8;
-            [styleContainer addSubview:styleStackView];
-            
-            [styleStackView mas_makeConstraints:^(MASConstraintMaker *make) {
-                make.edges.equalTo(styleContainer).insets(UIEdgeInsetsMake(0, 16, 0, 16));
-            }];
-            
-            for (NSString *style in styles) {
-                UIButton *styleButton = [UIButton buttonWithType:UIButtonTypeSystem];
-                [styleButton setTitle:style forState:UIControlStateNormal];
-                [styleButton setTitleColor:[UIColor darkGrayColor] forState:UIControlStateNormal];
-                styleButton.titleLabel.font = [UIFont systemFontOfSize:14];
-                styleButton.backgroundColor = [UIColor whiteColor];
-                styleButton.layer.cornerRadius = 6;
-                styleButton.layer.borderWidth = 1;
-                styleButton.layer.borderColor = [UIColor colorWithWhite:0.9 alpha:1.0].CGColor;
-                [styleButton addTarget:self action:@selector(styleButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
-                [styleStackView addArrangedSubview:styleButton];
-                
-                // 默认选中第一个
-                if ([style isEqualToString:@"通用"]) {
-                    [self styleButtonTapped:styleButton];
-                }
+        NSArray *styles = @[@"通用", @"新闻", @"学术", @"公务", @"小说", @"作文"];
+        UIStackView *styleStackView = [[UIStackView alloc] init];
+        styleStackView.axis = UILayoutConstraintAxisHorizontal;
+        styleStackView.distribution = UIStackViewDistributionFillEqually;
+        styleStackView.alignment = UIStackViewAlignmentCenter;
+        styleStackView.spacing = 8;
+        [styleContainer addSubview:styleStackView];
+        [styleStackView mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.edges.equalTo(styleContainer).insets(UIEdgeInsetsMake(0, 16, 0, 16));
+        }];
+        for (NSString *style in styles) {
+            UIButton *styleButton = [UIButton buttonWithType:UIButtonTypeSystem];
+            [styleButton setTitle:style forState:UIControlStateNormal];
+            [styleButton setTitleColor:[UIColor darkGrayColor] forState:UIControlStateNormal];
+            styleButton.titleLabel.font = [UIFont systemFontOfSize:14];
+            styleButton.backgroundColor = [UIColor whiteColor];
+            styleButton.layer.cornerRadius = 6;
+            styleButton.layer.borderWidth = 1;
+            styleButton.layer.borderColor = [UIColor colorWithWhite:0.9 alpha:1.0].CGColor;
+            [styleButton addTarget:self action:@selector(styleButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
+            [styleStackView addArrangedSubview:styleButton];
+            // 默认选中第一个
+            if ([style isEqualToString:@"通用"]) {
+                [self styleButtonTapped:styleButton];
             }
         }
     }
 }
 
-- (void)setupResultButtonsForType:(AIUAWritingEditType)type {
+- (void)removeResultButtons {
+    UIStackView *stack = nil;
     // 移除原有按钮
     for (UIView *subview in self.generationView.subviews) {
-        if ([subview isKindOfClass:[UIButton class]]) {
+        if ([subview isKindOfClass:[UIStackView  class]]) {
+            stack = (UIStackView *)subview;
+            break;
+        }
+    }
+    for (UIView *subview in stack.arrangedSubviews) {
+        if ([subview isKindOfClass:[UIButton  class]]) {
             [subview removeFromSuperview];
         }
     }
-    
+}
+
+- (void)setupResultButtonsForType:(AIUAWritingEditType)type {
     // 创建新的操作按钮
     UIStackView *buttonStack = [[UIStackView alloc] init];
     buttonStack.axis = UILayoutConstraintAxisHorizontal;
@@ -743,6 +746,7 @@
 
 - (void)startGeneration {
     [self hideStyleSelectionView];
+    [self removeResultButtons];
     [self showGenerationView];
     [self performAIGenerationWithType:self.currentEditType];
 }
@@ -772,7 +776,6 @@
 }
 
 - (void)showGenerationView {
-    self.styleSelectionView.hidden = YES;
     self.generationView.hidden = NO;
     [self.generationView.superview layoutIfNeeded];
     
@@ -861,7 +864,6 @@
             if (finished) {
                 [AIUAMBProgressManager hideHUD:self.view];
                 self.isGenerating = NO;
-                
                 // 显示结果操作按钮
                 [self setupResultButtonsForType:type];
             }
