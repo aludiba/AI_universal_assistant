@@ -29,6 +29,7 @@
 
 // 风格选择
 @property (nonatomic, strong) UIView *styleSelectionView;
+@property (nonatomic, strong) NSArray *selectionStyles;
 @property (nonatomic, assign) AIUAWritingEditType currentEditType;
 @property (nonatomic, copy) NSString *selectedStyle;
 @property (nonatomic, copy) NSString *selectedLength; // 扩写长度
@@ -54,9 +55,9 @@
         _hasUserEdited = NO;
         _currentTitle = @"";
         _currentContent = @"";
-        _selectedStyle = @"通用";
-        _selectedLength = @"适中";
-        _selectedLanguage = @"英文";
+        _selectedStyle = L(@"general");
+        _selectedLength = L(@"medium");
+        _selectedLanguage = L(@"english");
         [self setupDeepSeekWriter];
     }
     return self;
@@ -70,9 +71,9 @@
         _hasUserEdited = NO;
         _currentTitle = writingItem[@"title"] ?: @"";
         _currentContent = writingItem[@"content"] ?: @"";
-        _selectedStyle = @"通用";
-        _selectedLength = @"适中";
-        _selectedLanguage = @"英文";
+        _selectedStyle = L(@"general");
+        _selectedLength = L(@"medium");
+        _selectedLanguage = L(@"english");
         [self setupDeepSeekWriter];
     }
     return self;
@@ -98,9 +99,9 @@
 
 - (void)setupNavigationBar {
     if (self.isNewDocument) {
-        self.navigationItem.title = @"新建文档";
+        self.navigationItem.title = L(@"new_document");
     } else {
-        self.navigationItem.title = @"文档详情";
+        self.navigationItem.title = L(@"document_details");
     }
 }
 
@@ -137,13 +138,13 @@
     
     // 标题输入框
     self.titleTextView = [[UITextView alloc] init];
-    self.titleTextView.font = [UIFont boldSystemFontOfSize:20];
+    self.titleTextView.font = AIUAUIFontBold(20);
     self.titleTextView.textColor = [UIColor blackColor];
     self.titleTextView.backgroundColor = [UIColor clearColor];
     self.titleTextView.scrollEnabled = YES;
     self.titleTextView.delegate = self;
     self.titleTextView.text = self.currentTitle;
-    self.titleTextView.placeholder = @"请输入标题";
+    self.titleTextView.placeholder = L(@"enter_title");
     self.titleTextView.placeholderColor = [UIColor lightGrayColor];
     [self.headerView addSubview:self.titleTextView];
     
@@ -156,7 +157,7 @@
     
     // 分隔线
     UIView *separator = [[UIView alloc] init];
-    separator.backgroundColor = [UIColor colorWithWhite:0.9 alpha:1.0];
+    separator.backgroundColor = AIUA_DIVIDER_COLOR;
     [self.headerView addSubview:separator];
     
     [separator mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -171,7 +172,7 @@
 
 - (void)setupToolbarView {
     self.toolbarView = [[UIView alloc] init];
-    self.toolbarView.backgroundColor = [UIColor colorWithRed:0.95 green:0.95 blue:0.95 alpha:1.0];
+    self.toolbarView.backgroundColor = AIUAUIColorSimplifyRGB(0.95, 0.95, 0.95);
     [self.view addSubview:self.toolbarView];
     
     [self.toolbarView mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -185,7 +186,7 @@
 
 - (void)createToolbarButtons {
     self.toolbarButtonsArray = [[NSMutableArray alloc] init];
-    NSArray *buttonTitles = @[@"续写", @"改写", @"扩写", @"翻译"];
+    NSArray *buttonTitles = @[L(@"continue_writing"), L(@"rewrite"), L(@"expand_writing"), L(@"translate")];
     NSArray *buttonIcons = @[@"pencil", @"pencil.tip", @"text.badge.plus", @"character"];
     
     UIStackView *stackView = [[UIStackView alloc] init];
@@ -203,13 +204,13 @@
         UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
         button.tag = i;
         [button setTitle:buttonTitles[i] forState:UIControlStateNormal];
-        [button setTitleColor:[UIColor colorWithRed:0.2 green:0.2 blue:0.2 alpha:1.0] forState:UIControlStateNormal];
-        button.titleLabel.font = [UIFont systemFontOfSize:12];
+        [button setTitleColor:AIUAUIColorSimplifyRGB(0.2, 0.2, 0.2) forState:UIControlStateNormal];
+        button.titleLabel.font = AIUAUIFontSystem(12);
         
         // 设置图标
         UIImage *icon = [UIImage systemImageNamed:buttonIcons[i]];
         [button setImage:icon forState:UIControlStateNormal];
-        button.tintColor = [UIColor colorWithRed:0.2 green:0.2 blue:0.2 alpha:1.0];
+        button.tintColor = AIUAUIColorSimplifyRGB(0.2, 0.2, 0.2);
         
         // 调整图片和文字的位置
         button.imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 4);
@@ -230,7 +231,7 @@
 
 - (void)setupStyleSelectionView {
     self.styleSelectionView = [[UIView alloc] init];
-    self.styleSelectionView.backgroundColor = [UIColor colorWithRed:0.98 green:0.98 blue:0.98 alpha:1.0];
+    self.styleSelectionView.backgroundColor = AIUAUIColorSimplifyRGB(0.98, 0.98, 0.98);
     self.styleSelectionView.hidden = YES;
     [self.view addSubview:self.styleSelectionView];
     
@@ -265,7 +266,7 @@
     
     // 添加标题
     UILabel *titleLabel = [[UILabel alloc] init];
-    titleLabel.font = [UIFont systemFontOfSize:14];
+    titleLabel.font = AIUAUIFontSystem(14);
     titleLabel.textColor = [UIColor darkGrayColor];
     [titleContainer addSubview:titleLabel];
     
@@ -285,7 +286,7 @@
     }];
     
     // 风格选择按钮
-    NSArray *styles = @[@"通用", @"新闻", @"学术", @"公务", @"小说", @"作文"];
+    self.selectionStyles = @[L(@"general"), L(@"news"), L(@"academic"), L(@"official"), L(@"novel"), L(@"essay")];
     UIStackView *styleStackView = [[UIStackView alloc] init];
     styleStackView.axis = UILayoutConstraintAxisHorizontal;
     styleStackView.distribution = UIStackViewDistributionFillEqually;
@@ -297,31 +298,31 @@
         make.edges.equalTo(styleContainer).insets(UIEdgeInsetsMake(0, 16, 0, 16));
     }];
     
-    for (NSString *style in styles) {
+    for (NSString *style in self.selectionStyles) {
         UIButton *styleButton = [UIButton buttonWithType:UIButtonTypeSystem];
         [styleButton setTitle:style forState:UIControlStateNormal];
         [styleButton setTitleColor:[UIColor darkGrayColor] forState:UIControlStateNormal];
-        styleButton.titleLabel.font = [UIFont systemFontOfSize:14];
+        styleButton.titleLabel.font = AIUAUIFontSystem(14);
         styleButton.backgroundColor = [UIColor whiteColor];
         styleButton.layer.cornerRadius = 6;
         styleButton.layer.borderWidth = 1;
-        styleButton.layer.borderColor = [UIColor colorWithWhite:0.9 alpha:1.0].CGColor;
+        styleButton.layer.borderColor = AIUA_DIVIDER_COLOR.CGColor;
         [styleButton addTarget:self action:@selector(styleButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
         [styleStackView addArrangedSubview:styleButton];
         
         // 默认选中第一个
-        if ([style isEqualToString:@"通用"]) {
+        if ([style isEqualToString:L(@"general")]) {
             [self styleButtonTapped:styleButton];
         }
     }
     
     // 开始按钮
     UIButton *startButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    [startButton setTitle:@"开始生成" forState:UIControlStateNormal];
+    [startButton setTitle:L(@"start_generating") forState:UIControlStateNormal];
     [startButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
     startButton.backgroundColor = [UIColor systemBlueColor];
     startButton.layer.cornerRadius = 6;
-    startButton.titleLabel.font = [UIFont boldSystemFontOfSize:16];
+    startButton.titleLabel.font = AIUAUIFontBold(16);
     [startButton addTarget:self action:@selector(startGeneration) forControlEvents:UIControlEventTouchUpInside];
     [self.styleSelectionView addSubview:startButton];
     
@@ -335,7 +336,7 @@
 
 - (void)setupGenerationView {
     self.generationView = [[UIView alloc] init];
-    self.generationView.backgroundColor = [UIColor colorWithRed:0.98 green:0.98 blue:0.98 alpha:1.0];
+    self.generationView.backgroundColor = AIUAUIColorSimplifyRGB(0.98, 0.98, 0.98);
     self.generationView.hidden = YES;
     [self.view addSubview:self.generationView];
     
@@ -347,8 +348,8 @@
     
     // 生成内容标题
     UILabel *titleLabel = [[UILabel alloc] init];
-    titleLabel.text = @"生成内容";
-    titleLabel.font = [UIFont systemFontOfSize:14];
+    titleLabel.text = L(@"generated_content");
+    titleLabel.font = AIUAUIFontSystem(14);
     titleLabel.textColor = [UIColor darkGrayColor];
     [self.generationView addSubview:titleLabel];
     
@@ -359,12 +360,12 @@
     
     // 生成内容文本框
     self.generationTextView = [[UITextView alloc] init];
-    self.generationTextView.font = [UIFont systemFontOfSize:14];
+    self.generationTextView.font = AIUAUIFontSystem(14);
     self.generationTextView.textColor = [UIColor darkGrayColor];
     self.generationTextView.backgroundColor = [UIColor whiteColor];
     self.generationTextView.layer.cornerRadius = 6;
     self.generationTextView.layer.borderWidth = 1;
-    self.generationTextView.layer.borderColor = [UIColor colorWithWhite:0.9 alpha:1.0].CGColor;
+    self.generationTextView.layer.borderColor = AIUA_DIVIDER_COLOR.CGColor;
     self.generationTextView.editable = NO;
     self.generationTextView.scrollEnabled = YES;
     [self.generationView addSubview:self.generationTextView];
@@ -384,13 +385,13 @@
     if (type == AIUAWritingEditTypeExpand) {
         // 扩写模式：显示扩写长度选择
         UILabel *titleLabel = titleContainer.subviews[1];
-        titleLabel.text = @"扩写长度";
+        titleLabel.text = L(@"expansion_length");
         // 移除原有风格按钮
         for (UIView *subview in styleContainer.subviews) {
             [subview removeFromSuperview];
         }
         // 添加扩写长度选择
-        NSArray *lengths = @[@"适中", @"较长"];
+        NSArray *lengths = @[L(@"medium"), L(@"longer")];
         UIStackView *lengthStackView = [[UIStackView alloc] init];
         lengthStackView.axis = UILayoutConstraintAxisHorizontal;
         lengthStackView.distribution = UIStackViewDistributionFillEqually;
@@ -404,16 +405,16 @@
             UIButton *lengthButton = [UIButton buttonWithType:UIButtonTypeSystem];
             [lengthButton setTitle:length forState:UIControlStateNormal];
             [lengthButton setTitleColor:[UIColor darkGrayColor] forState:UIControlStateNormal];
-            lengthButton.titleLabel.font = [UIFont systemFontOfSize:14];
+            lengthButton.titleLabel.font = AIUAUIFontSystem(14);
             lengthButton.backgroundColor = [UIColor whiteColor];
             lengthButton.layer.cornerRadius = 6;
             lengthButton.layer.borderWidth = 1;
-            lengthButton.layer.borderColor = [UIColor colorWithWhite:0.9 alpha:1.0].CGColor;
+            lengthButton.layer.borderColor = AIUA_DIVIDER_COLOR.CGColor;
             [lengthButton addTarget:self action:@selector(lengthButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
             [lengthStackView addArrangedSubview:lengthButton];
             
             // 默认选中第一个
-            if ([length isEqualToString:@"适中"]) {
+            if ([length isEqualToString:L(@"medium")]) {
                 [self lengthButtonTapped:lengthButton];
             }
         }
@@ -421,13 +422,13 @@
     } else if (type == AIUAWritingEditTypeTranslate) {
         // 翻译模式：显示目标语言选择
         UILabel *titleLabel = titleContainer.subviews[1];
-        titleLabel.text = @"目标语言";
+        titleLabel.text = L(@"target_language");
         // 移除原有风格按钮
         for (UIView *subview in styleContainer.subviews) {
             [subview removeFromSuperview];
         }
         // 添加语言选择
-        NSArray *languages = @[@"英文", @"中文", @"日文"];
+        NSArray *languages = @[L(@"english"), L(@"chinese"), L(@"japanese")];
         UIStackView *languageStackView = [[UIStackView alloc] init];
         languageStackView.axis = UILayoutConstraintAxisHorizontal;
         languageStackView.distribution = UIStackViewDistributionFillEqually;
@@ -441,16 +442,16 @@
             UIButton *languageButton = [UIButton buttonWithType:UIButtonTypeSystem];
             [languageButton setTitle:language forState:UIControlStateNormal];
             [languageButton setTitleColor:[UIColor darkGrayColor] forState:UIControlStateNormal];
-            languageButton.titleLabel.font = [UIFont systemFontOfSize:14];
+            languageButton.titleLabel.font = AIUAUIFontSystem(14);
             languageButton.backgroundColor = [UIColor whiteColor];
             languageButton.layer.cornerRadius = 6;
             languageButton.layer.borderWidth = 1;
-            languageButton.layer.borderColor = [UIColor colorWithWhite:0.9 alpha:1.0].CGColor;
+            languageButton.layer.borderColor = AIUA_DIVIDER_COLOR.CGColor;
             [languageButton addTarget:self action:@selector(languageButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
             [languageStackView addArrangedSubview:languageButton];
             
             // 默认选中第一个
-            if ([language isEqualToString:@"英文"]) {
+            if ([language isEqualToString:L(@"english")]) {
                 [self languageButtonTapped:languageButton];
             }
         }
@@ -469,7 +470,6 @@
             [subview removeFromSuperview];
         }
         // 如果已经移除，重新创建风格选择
-        NSArray *styles = @[@"通用", @"新闻", @"学术", @"公务", @"小说", @"作文"];
         UIStackView *styleStackView = [[UIStackView alloc] init];
         styleStackView.axis = UILayoutConstraintAxisHorizontal;
         styleStackView.distribution = UIStackViewDistributionFillEqually;
@@ -479,19 +479,19 @@
         [styleStackView mas_makeConstraints:^(MASConstraintMaker *make) {
             make.edges.equalTo(styleContainer).insets(UIEdgeInsetsMake(0, 16, 0, 16));
         }];
-        for (NSString *style in styles) {
+        for (NSString *style in self.selectionStyles) {
             UIButton *styleButton = [UIButton buttonWithType:UIButtonTypeSystem];
             [styleButton setTitle:style forState:UIControlStateNormal];
             [styleButton setTitleColor:[UIColor darkGrayColor] forState:UIControlStateNormal];
-            styleButton.titleLabel.font = [UIFont systemFontOfSize:14];
+            styleButton.titleLabel.font = AIUAUIFontSystem(14);
             styleButton.backgroundColor = [UIColor whiteColor];
             styleButton.layer.cornerRadius = 6;
             styleButton.layer.borderWidth = 1;
-            styleButton.layer.borderColor = [UIColor colorWithWhite:0.9 alpha:1.0].CGColor;
+            styleButton.layer.borderColor = AIUA_DIVIDER_COLOR.CGColor;
             [styleButton addTarget:self action:@selector(styleButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
             [styleStackView addArrangedSubview:styleButton];
             // 默认选中第一个
-            if ([style isEqualToString:@"通用"]) {
+            if ([style isEqualToString:L(@"general")]) {
                 [self styleButtonTapped:styleButton];
             }
         }
@@ -581,7 +581,7 @@
         
         // 内容输入框
         self.contentTextView = [[UITextView alloc] init];
-        self.contentTextView.font = [UIFont systemFontOfSize:16];
+        self.contentTextView.font = AIUAUIFontSystem(16);
         self.contentTextView.textColor = [UIColor darkGrayColor];
         self.contentTextView.backgroundColor = [UIColor clearColor];
         self.contentTextView.delegate = self;
@@ -699,8 +699,8 @@
             [button setTitleColor:[UIColor systemBlueColor] forState:UIControlStateNormal];
             button.tintColor = [UIColor systemBlueColor];
         } else {
-            [button setTitleColor:[UIColor colorWithRed:0.2 green:0.2 blue:0.2 alpha:1.0] forState:UIControlStateNormal];
-            button.tintColor = [UIColor colorWithRed:0.2 green:0.2 blue:0.2 alpha:1.0];
+            [button setTitleColor:AIUAUIColorSimplifyRGB(0.2, 0.2, 0.2) forState:UIControlStateNormal];
+            button.tintColor = AIUAUIColorSimplifyRGB(0.2, 0.2, 0.2);
         }
     }
     
@@ -796,8 +796,8 @@
     } completion:^(BOOL finished) {
         for (int i = 0; i < self.toolbarButtonsArray.count; i++) {
             UIButton *button = self.toolbarButtonsArray[i];
-            [button setTitleColor:[UIColor colorWithRed:0.2 green:0.2 blue:0.2 alpha:1.0] forState:UIControlStateNormal];
-            button.tintColor = [UIColor colorWithRed:0.2 green:0.2 blue:0.2 alpha:1.0];
+            [button setTitleColor:AIUAUIColorSimplifyRGB(0.2, 0.2, 0.2) forState:UIControlStateNormal];
+            button.tintColor = AIUAUIColorSimplifyRGB(0.2, 0.2, 0.2);
         }
         self.styleSelectionView.hidden = YES;
     }];
