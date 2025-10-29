@@ -10,6 +10,7 @@
 @property (nonatomic, strong) UITableView *tableView;
 @property (nonatomic, strong) UITextView *titleTextView;
 @property (nonatomic, strong) UITextView *contentTextView;
+@property (nonatomic, assign) CGFloat ContentTextViewHeight;
 @property (nonatomic, strong) UIView *headerView;
 @property (nonatomic, strong) UIView *toolbarView;
 
@@ -109,6 +110,7 @@
     [super setupUI];
     [self setupTableView];
     [self setupHeaderView];
+    [self setupContentTextView];
     [self setupToolbarView];
     [self setupStyleSelectionView];
     [self setupGenerationView];
@@ -168,6 +170,19 @@
     }];
     
     self.tableView.tableHeaderView = self.headerView;
+}
+
+- (void)setupContentTextView  {
+    self.contentTextView = [[UITextView alloc] init];
+    self.contentTextView.font = AIUAUIFontSystem(16);
+    self.contentTextView.textColor = [UIColor darkGrayColor];
+    self.contentTextView.backgroundColor = [UIColor clearColor];
+    self.contentTextView.delegate = self;
+    self.contentTextView.text = self.currentContent;
+    self.contentTextView.placeholder = L(@"enter_main_text");
+    self.contentTextView.placeholderColor = [UIColor lightGrayColor];
+    self.contentTextView.scrollEnabled = NO;
+    self.ContentTextViewHeight = [self getContentTextViewHeight];
 }
 
 - (void)setupToolbarView {
@@ -579,15 +594,6 @@
         cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"ContentCell"];
         cell.selectionStyle = UITableViewCellSelectionStyleNone;
         
-        // 内容输入框
-        self.contentTextView = [[UITextView alloc] init];
-        self.contentTextView.font = AIUAUIFontSystem(16);
-        self.contentTextView.textColor = [UIColor darkGrayColor];
-        self.contentTextView.backgroundColor = [UIColor clearColor];
-        self.contentTextView.delegate = self;
-        self.contentTextView.text = self.currentContent;
-        self.contentTextView.placeholder = L(@"enter_main_text");
-        self.contentTextView.placeholderColor = [UIColor lightGrayColor];
         [cell.contentView addSubview:self.contentTextView];
         
         [self.contentTextView mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -600,7 +606,7 @@
 #pragma mark - UITableViewDelegate
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
-    return AIUAScreenHeight - AIUA_NAV_BAR_TOTAL_HEIGHT - 120 - 60 - self.keyboardHeight;
+    return self.ContentTextViewHeight - 16;
 }
 
 #pragma mark - UITextViewDelegate
@@ -657,6 +663,11 @@
 }
 
 #pragma mark - Actions
+
+- (CGFloat)getContentTextViewHeight {
+    CGSize sizeThatFits = [self.contentTextView sizeThatFits:CGSizeMake(AIUAScreenWidth - 32, CGFLOAT_MAX)];
+    return sizeThatFits.height;
+}
 
 - (void)toolbarButtonTapped:(UIButton *)sender {
     if (!self.hasUserEdited && self.isNewDocument) {
@@ -944,7 +955,8 @@
         self.contentTextView.text = newText;
         self.currentContent = newText;
         self.hasUserEdited = YES;
-        
+        self.ContentTextViewHeight = [self getContentTextViewHeight];
+        [self.tableView reloadData];
         [self hideAllSelectionViews];
     }
 }
@@ -954,7 +966,8 @@
         self.contentTextView.text = self.generatedContent;
         self.currentContent = self.generatedContent;
         self.hasUserEdited = YES;
-        
+        self.ContentTextViewHeight = [self getContentTextViewHeight];
+        [self.tableView reloadData];
         [self hideAllSelectionViews];
     }
 }
