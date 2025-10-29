@@ -2,6 +2,7 @@
 #import "AIUADataManager.h"
 #import "AIUAAlertHelper.h"
 #import "AIUAMBProgressManager.h"
+#import "AIUAToolsManager.h"
 #import "UITextView+AIUAPlaceholder.h"
 #import <Masonry/Masonry.h>
 
@@ -125,7 +126,7 @@
     self.tableView.dataSource = self;
     self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
     self.tableView.backgroundColor = [UIColor whiteColor];
-    self.tableView.keyboardDismissMode = UIScrollViewKeyboardDismissModeInteractive;
+    self.tableView.keyboardDismissMode = UIScrollViewKeyboardDismissModeOnDrag;
     [self.view addSubview:self.tableView];
     
     [self.tableView mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -135,7 +136,7 @@
 }
 
 - (void)setupHeaderView {
-    self.headerView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, self.view.frame.size.width, 120)];
+    self.headerView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, self.view.frame.size.width, 80)];
     self.headerView.backgroundColor = [UIColor whiteColor];
     
     // 标题输入框
@@ -530,6 +531,12 @@
 }
 
 - (void)setupResultButtonsForType:(AIUAWritingEditType)type {
+    // 移除旧的
+    for (UIView *view in self.generationView.subviews) {
+        if ([view isKindOfClass:[UIStackView class]]) {
+            [view removeFromSuperview];
+        }
+    }
     // 创建新的操作按钮
     UIStackView *buttonStack = [[UIStackView alloc] init];
     buttonStack.axis = UILayoutConstraintAxisHorizontal;
@@ -566,7 +573,7 @@
     [buttonStack addArrangedSubview:insertButton];
     
     // 改写和扩写有覆盖原文按钮
-    if (type == AIUAWritingEditTypeRewrite || type == AIUAWritingEditTypeExpand) {
+    if (type == AIUAWritingEditTypeRewrite || type == AIUAWritingEditTypeExpand || AIUAWritingEditTypeTranslate) {
         UIButton *coverButton = [UIButton buttonWithType:UIButtonTypeSystem];
         [coverButton setTitle:L(@"overwrite_original") forState:UIControlStateNormal];
         [coverButton setTitleColor:[UIColor systemBlueColor] forState:UIControlStateNormal];
@@ -606,7 +613,7 @@
 #pragma mark - UITableViewDelegate
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
-    return self.ContentTextViewHeight - 16;
+    return self.ContentTextViewHeight + 16;
 }
 
 #pragma mark - UITextViewDelegate
@@ -619,6 +626,11 @@
     } else if (textView == self.contentTextView) {
         self.currentContent = textView.text;
     }
+    self.ContentTextViewHeight = [self getContentTextViewHeight];
+    [UIView performWithoutAnimation:^{
+        [self.tableView beginUpdates];
+        [self.tableView endUpdates];
+    }];
 }
 
 #pragma mark - 键盘处理
@@ -645,7 +657,7 @@
     
     [UIView animateWithDuration:0.3 animations:^{
         [self.tableView mas_updateConstraints:^(MASConstraintMaker *make) {
-            make.bottom.equalTo(self.view).offset(-60 - self.keyboardHeight);
+            make.bottom.equalTo(self.view).offset(self.keyboardHeight);
         }];
         [self.view layoutIfNeeded];
     }];
@@ -665,8 +677,12 @@
 #pragma mark - Actions
 
 - (CGFloat)getContentTextViewHeight {
-    CGSize sizeThatFits = [self.contentTextView sizeThatFits:CGSizeMake(AIUAScreenWidth - 32, CGFLOAT_MAX)];
-    return sizeThatFits.height;
+    if (self.currentContent.length > 0) {
+        CGSize sizeThatFits = [self.contentTextView sizeThatFits:CGSizeMake(AIUAScreenWidth - 32, CGFLOAT_MAX)];
+        return sizeThatFits.height;
+    } else {
+        return 300;
+    }
 }
 
 - (void)toolbarButtonTapped:(UIButton *)sender {
@@ -805,11 +821,11 @@
         }];
         [self.view layoutIfNeeded];
     } completion:^(BOOL finished) {
-        for (int i = 0; i < self.toolbarButtonsArray.count; i++) {
-            UIButton *button = self.toolbarButtonsArray[i];
-            [button setTitleColor:AIUAUIColorSimplifyRGB(0.2, 0.2, 0.2) forState:UIControlStateNormal];
-            button.tintColor = AIUAUIColorSimplifyRGB(0.2, 0.2, 0.2);
-        }
+//        for (int i = 0; i < self.toolbarButtonsArray.count; i++) {
+//            UIButton *button = self.toolbarButtonsArray[i];
+//            [button setTitleColor:AIUAUIColorSimplifyRGB(0.2, 0.2, 0.2) forState:UIControlStateNormal];
+//            button.tintColor = AIUAUIColorSimplifyRGB(0.2, 0.2, 0.2);
+//        }
         self.styleSelectionView.hidden = YES;
     }];
 }
@@ -893,9 +909,9 @@
             }
             
             if (chunk && chunk.length > 0) {
-                [self.generatedContent appendString:chunk];
+                NSString *text = [AIUAToolsManager removeMarkdownSymbols:chunk];
+                [self.generatedContent appendString:text];
                 self.generationTextView.text = self.generatedContent;
-                
                 // 自动滚动到底部
                 [self scrollGenerationTextViewToBottom];
             }
@@ -912,7 +928,7 @@
 
 - (void)scrollGenerationTextViewToBottom {
     if (self.generationTextView.text.length > 0) {
-        NSRange range = NSMakeRange(self.generationTextView.text.length - 1, 1);
+        NSRange range = NSMakeRange(self.generationTextView.text.length, self.generationTextView.text.length + 1);
         [self.generationTextView scrollRangeToVisible:range];
     }
 }
@@ -956,7 +972,10 @@
         self.currentContent = newText;
         self.hasUserEdited = YES;
         self.ContentTextViewHeight = [self getContentTextViewHeight];
-        [self.tableView reloadData];
+        [UIView performWithoutAnimation:^{
+            [self.tableView beginUpdates];
+            [self.tableView endUpdates];
+        }];
         [self hideAllSelectionViews];
     }
 }
@@ -967,7 +986,10 @@
         self.currentContent = self.generatedContent;
         self.hasUserEdited = YES;
         self.ContentTextViewHeight = [self getContentTextViewHeight];
-        [self.tableView reloadData];
+        [UIView performWithoutAnimation:^{
+            [self.tableView beginUpdates];
+            [self.tableView endUpdates];
+        }];
         [self hideAllSelectionViews];
     }
 }

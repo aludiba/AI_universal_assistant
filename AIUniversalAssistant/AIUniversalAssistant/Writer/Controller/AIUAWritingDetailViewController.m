@@ -373,35 +373,6 @@
     }
 }
 
-// 移除Markdown符号的辅助方法
-- (NSString *)removeMarkdownSymbols:(NSString *)text {
-    if (!text) return @"";
-    
-    NSMutableString *cleanText = [text mutableCopy];
-    
-    // 移除粗体符号
-    NSRegularExpression *boldRegex = [NSRegularExpression regularExpressionWithPattern:@"(\\*\\*|__)(.*?)\\1" options:0 error:nil];
-    [boldRegex replaceMatchesInString:cleanText options:0 range:NSMakeRange(0, cleanText.length) withTemplate:@"$2"];
-    
-    // 移除斜体符号
-    NSRegularExpression *italicRegex = [NSRegularExpression regularExpressionWithPattern:@"(\\*|_)(.*?)\\1" options:0 error:nil];
-    [italicRegex replaceMatchesInString:cleanText options:0 range:NSMakeRange(0, cleanText.length) withTemplate:@"$2"];
-    
-    // 移除标题符号
-    NSRegularExpression *headerRegex = [NSRegularExpression regularExpressionWithPattern:@"^(#{1,6})\\s+" options:NSRegularExpressionAnchorsMatchLines error:nil];
-    [headerRegex replaceMatchesInString:cleanText options:0 range:NSMakeRange(0, cleanText.length) withTemplate:@""];
-    
-    // 移除代码符号
-    NSRegularExpression *codeRegex = [NSRegularExpression regularExpressionWithPattern:@"`(.*?)`" options:0 error:nil];
-    [codeRegex replaceMatchesInString:cleanText options:0 range:NSMakeRange(0, cleanText.length) withTemplate:@"$1"];
-    
-    // 移除链接符号
-    NSRegularExpression *linkRegex = [NSRegularExpression regularExpressionWithPattern:@"\\[(.*?)\\]\\(.*?\\)" options:0 error:nil];
-    [linkRegex replaceMatchesInString:cleanText options:0 range:NSMakeRange(0, cleanText.length) withTemplate:@"$1"];
-    
-    return [cleanText copy];
-}
-
 // 将Markdown转换为富文本
 - (NSAttributedString *)processMarkdownToAttributedString:(NSString *)text {
     if (!text || text.length == 0) {
@@ -409,7 +380,7 @@
     }
     
     // 先移除所有Markdown符号，获取纯文本
-    NSString *cleanText = [self removeMarkdownSymbols:text];
+    NSString *cleanText = [AIUAToolsManager removeMarkdownSymbols:text];
     
     // 创建基础富文本
     NSMutableAttributedString *attributedString = [[NSMutableAttributedString alloc] initWithString:cleanText];
@@ -464,7 +435,7 @@
         // 放宽标题判断条件，允许更长的标题
         if (firstLine.length > 2 && firstLine.length < 100) {
             // 移除可能的Markdown格式
-            NSString *cleanTitle = [self removeMarkdownSymbols:firstLine];
+            NSString *cleanTitle = [AIUAToolsManager removeMarkdownSymbols:firstLine];
             self.titleLabel.text = cleanTitle;
             self.finalTitle = cleanTitle;
             
@@ -494,15 +465,15 @@
         NSString *finalContent = [filteredLines componentsJoinedByString:@"\n"];
         
         // 处理最终内容的格式
-        NSString *processedTitle = [self removeMarkdownSymbols:title];
-        NSString *processedContent = [self removeMarkdownSymbols:finalContent];
+        NSString *processedTitle = [AIUAToolsManager removeMarkdownSymbols:title];
+        NSString *processedContent = [AIUAToolsManager removeMarkdownSymbols:finalContent];
         
         self.titleLabel.text = processedTitle;
         self.contentTextView.text = processedContent;
         self.finalTitle = processedTitle;
         self.finalContent = processedContent;
     } else {
-        NSString *processedContent = [self removeMarkdownSymbols:content];
+        NSString *processedContent = [AIUAToolsManager removeMarkdownSymbols:content];
         self.titleLabel.text = L(@"creation_content");
         self.contentTextView.text = processedContent;
         self.finalTitle = L(@"creation_content");

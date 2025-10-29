@@ -23,6 +23,9 @@ NS_ASSUME_NONNULL_BEGIN
 // 去TabBar的模块
 + (void)goToTabBarModule:(NSUInteger)selectedIndex;
 
+// 移除Markdown符号的辅助方法
++ (NSString *)removeMarkdownSymbols:(NSString *)text;
+
 @end
 
 NS_ASSUME_NONNULL_END

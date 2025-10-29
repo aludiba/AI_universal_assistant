@@ -76,4 +76,32 @@
     }
 }
 
++ (NSString *)removeMarkdownSymbols:(NSString *)text {
+    if (!text) return @"";
+    
+    NSMutableString *cleanText = [text mutableCopy];
+    
+    // 移除粗体符号
+    NSRegularExpression *boldRegex = [NSRegularExpression regularExpressionWithPattern:@"(\\*\\*|__)(.*?)\\1" options:0 error:nil];
+    [boldRegex replaceMatchesInString:cleanText options:0 range:NSMakeRange(0, cleanText.length) withTemplate:@"$2"];
+    
+    // 移除斜体符号
+    NSRegularExpression *italicRegex = [NSRegularExpression regularExpressionWithPattern:@"(\\*|_)(.*?)\\1" options:0 error:nil];
+    [italicRegex replaceMatchesInString:cleanText options:0 range:NSMakeRange(0, cleanText.length) withTemplate:@"$2"];
+    
+    // 移除标题符号
+    NSRegularExpression *headerRegex = [NSRegularExpression regularExpressionWithPattern:@"^(#{1,6})\\s+" options:NSRegularExpressionAnchorsMatchLines error:nil];
+    [headerRegex replaceMatchesInString:cleanText options:0 range:NSMakeRange(0, cleanText.length) withTemplate:@""];
+    
+    // 移除代码符号
+    NSRegularExpression *codeRegex = [NSRegularExpression regularExpressionWithPattern:@"`(.*?)`" options:0 error:nil];
+    [codeRegex replaceMatchesInString:cleanText options:0 range:NSMakeRange(0, cleanText.length) withTemplate:@"$1"];
+    
+    // 移除链接符号
+    NSRegularExpression *linkRegex = [NSRegularExpression regularExpressionWithPattern:@"\\[(.*?)\\]\\(.*?\\)" options:0 error:nil];
+    [linkRegex replaceMatchesInString:cleanText options:0 range:NSMakeRange(0, cleanText.length) withTemplate:@"$1"];
+    
+    return [cleanText copy];
+}
+
 @end
