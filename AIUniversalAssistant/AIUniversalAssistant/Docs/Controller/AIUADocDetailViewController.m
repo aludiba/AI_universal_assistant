@@ -459,11 +459,11 @@
     } else {
         // 其他模式：显示风格选择
         UILabel *titleLabel = titleContainer.subviews[1];
-        NSString *title = @"选择风格";
+        NSString *title = L(@"select_style");
         if (type == AIUAWritingEditTypeContinue) {
-            title = @"续写风格";
+            title = L(@"continuation_style");
         } else if (type == AIUAWritingEditTypeRewrite) {
-            title = @"改写风格";
+            title = L(@"rewrite_style");
         }
         titleLabel.text = title;
         for (UIView *subview in styleContainer.subviews) {
@@ -532,7 +532,7 @@
     
     // 重新生成按钮（所有类型都有）
     UIButton *regenerateButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    [regenerateButton setTitle:@"重新生成" forState:UIControlStateNormal];
+    [regenerateButton setTitle:L(@"regenerate") forState:UIControlStateNormal];
     [regenerateButton setTitleColor:[UIColor systemBlueColor] forState:UIControlStateNormal];
     regenerateButton.backgroundColor = [UIColor whiteColor];
     regenerateButton.layer.cornerRadius = 6;
@@ -543,7 +543,7 @@
     
     // 插入按钮（所有类型都有）
     UIButton *insertButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    [insertButton setTitle:@"插入" forState:UIControlStateNormal];
+    [insertButton setTitle:L(@"insert") forState:UIControlStateNormal];
     [insertButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
     insertButton.backgroundColor = [UIColor systemBlueColor];
     insertButton.layer.cornerRadius = 6;
@@ -553,7 +553,7 @@
     // 改写和扩写有覆盖原文按钮
     if (type == AIUAWritingEditTypeRewrite || type == AIUAWritingEditTypeExpand) {
         UIButton *coverButton = [UIButton buttonWithType:UIButtonTypeSystem];
-        [coverButton setTitle:@"覆盖原文" forState:UIControlStateNormal];
+        [coverButton setTitle:L(@"overwrite_original") forState:UIControlStateNormal];
         [coverButton setTitleColor:[UIColor systemBlueColor] forState:UIControlStateNormal];
         coverButton.backgroundColor = [UIColor whiteColor];
         coverButton.layer.cornerRadius = 6;
@@ -586,7 +586,7 @@
         self.contentTextView.backgroundColor = [UIColor clearColor];
         self.contentTextView.delegate = self;
         self.contentTextView.text = self.currentContent;
-        self.contentTextView.placeholder = @"请输入正文";
+        self.contentTextView.placeholder = L(@"enter_main_text");
         self.contentTextView.placeholderColor = [UIColor lightGrayColor];
         [cell.contentView addSubview:self.contentTextView];
         
@@ -660,10 +660,10 @@
 
 - (void)toolbarButtonTapped:(UIButton *)sender {
     if (!self.hasUserEdited && self.isNewDocument) {
-        [AIUAAlertHelper showAlertWithTitle:@"提示"
-                                   message:@"请先输入内容"
+        [AIUAAlertHelper showAlertWithTitle:L(@"prompt")
+                                   message:L(@"please_enter_content_first")
                              cancelBtnText:nil
-                            confirmBtnText:@"确定"
+                            confirmBtnText:L(@"confirm")
                               inController:self
                               cancelAction:nil
                              confirmAction:nil];
@@ -671,10 +671,10 @@
     }
     
     if (self.currentContent.length == 0) {
-        [AIUAAlertHelper showAlertWithTitle:@"提示"
-                                   message:@"请先输入正文内容"
+        [AIUAAlertHelper showAlertWithTitle:L(@"prompt")
+                                   message:L(@"please_enter_main_content_firs")
                              cancelBtnText:nil
-                            confirmBtnText:@"确定"
+                            confirmBtnText:L(@"confirm")
                               inController:self
                               cancelAction:nil
                              confirmAction:nil];
@@ -683,10 +683,10 @@
     
     // 检查DeepSeek配置
     if (!self.deepSeekWriter) {
-        [AIUAAlertHelper showAlertWithTitle:@"配置错误"
-                                   message:@"请先配置DeepSeek API Key"
+        [AIUAAlertHelper showAlertWithTitle:L(@"config_error")
+                                   message:L(@"please_configure_deepseek_api_key_first")
                              cancelBtnText:nil
-                            confirmBtnText:@"确定"
+                            confirmBtnText:L(@"confirm")
                               inController:self
                               cancelAction:nil
                              confirmAction:nil];
@@ -871,10 +871,10 @@
                     return;
                 }
                 
-                [AIUAAlertHelper showAlertWithTitle:@"生成失败"
+                [AIUAAlertHelper showAlertWithTitle:L(@"generation_failed")
                                            message:error.localizedDescription
                                      cancelBtnText:nil
-                                    confirmBtnText:@"确定"
+                                    confirmBtnText:L(@"confirm")
                                       inController:self
                                       cancelAction:nil
                                      confirmAction:nil];
@@ -913,23 +913,23 @@
     
     switch (type) {
         case AIUAWritingEditTypeContinue:
-            typeInstruction = @"请根据以下内容进行续写，保持原文风格和逻辑连贯性";
-            additionalInstruction = [NSString stringWithFormat:@"请使用%@风格进行写作。", self.selectedStyle];
+            typeInstruction = L(@"please_continue_based_on_the_following");
+            additionalInstruction = [NSString stringWithFormat:L(@"please_write_in_%@"), self.selectedStyle];
             break;
         case AIUAWritingEditTypeRewrite:
-            typeInstruction = @"请对以下内容进行改写，保持原意但优化表达方式";
-            additionalInstruction = [NSString stringWithFormat:@"请使用%@风格进行改写。", self.selectedStyle];
+            typeInstruction = L(@"please_rewrite_the_following");
+            additionalInstruction = [NSString stringWithFormat:L(@"please_rewrite_in_%@"), self.selectedStyle];
             break;
         case AIUAWritingEditTypeExpand:
-            typeInstruction = @"请对以下内容进行扩写，增加细节和丰富内容";
-            additionalInstruction = [NSString stringWithFormat:@"请进行%@长度的扩写，使用%@风格。", self.selectedLength, self.selectedStyle];
+            typeInstruction = L(@"please_expand_the_following");
+            additionalInstruction = [NSString stringWithFormat:L(@"please_expand_with_%@_length_in_%@"), self.selectedLength, self.selectedStyle];
             break;
         case AIUAWritingEditTypeTranslate:
-            typeInstruction = [NSString stringWithFormat:@"请将以下内容翻译成%@", self.selectedLanguage];
-            additionalInstruction = @"确保翻译准确流畅，保持原文意思不变。";
+            typeInstruction = [NSString stringWithFormat:L(@"please_translate_the_following_to_%@"), self.selectedLanguage];
+            additionalInstruction = L(@"ensure_translation_is_accurate_and_fluent");
             break;
     }
-    
+    NSLog(@"typeInstruction:%@, additionalInstruction:%@", typeInstruction, additionalInstruction);
     return [NSString stringWithFormat:@"%@：\n\n%@\n\n%@", typeInstruction, baseContent, additionalInstruction];
 }
 
