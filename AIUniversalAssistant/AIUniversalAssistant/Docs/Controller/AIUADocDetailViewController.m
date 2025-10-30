@@ -42,7 +42,7 @@
 @property (nonatomic, strong) NSMutableString *generatedContent;
 @property (nonatomic, strong) UITextView *generationTextView; // 生成内容显示框
 @property (nonatomic, strong) UIView *generationView; // 生成内容容器
-
+@property (nonatomic, assign) AIUAWritingEditType type; // 写作类型
 // 键盘相关
 @property (nonatomic, assign) CGFloat keyboardHeight;
 
@@ -271,7 +271,7 @@
     UIButton *backButton = [UIButton buttonWithType:UIButtonTypeSystem];
     [backButton setImage:[UIImage systemImageNamed:@"chevron.left"] forState:UIControlStateNormal];
     [backButton setTintColor:[UIColor systemGrayColor]];
-    [backButton addTarget:self action:@selector(hideStyleSelectionView) forControlEvents:UIControlEventTouchUpInside];
+    [backButton addTarget:self action:@selector(hideAllSelectionViews) forControlEvents:UIControlEventTouchUpInside];
     [titleContainer addSubview:backButton];
     
     [backButton mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -362,6 +362,29 @@
         make.height.equalTo(@200);
     }];
     
+    // 创建标题容器
+    UIView *titleContainer = [[UIView alloc] init];
+    [self.generationView addSubview:titleContainer];
+    
+    [titleContainer mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.equalTo(self.generationView).offset(8);
+        make.left.right.equalTo(self.generationView);
+        make.height.equalTo(@30);
+    }];
+    
+    // 添加返回按钮
+    UIButton *backButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    [backButton setImage:[UIImage systemImageNamed:@"chevron.left"] forState:UIControlStateNormal];
+    [backButton setTintColor:[UIColor systemGrayColor]];
+    [backButton addTarget:self action:@selector(showStyleSelectionView) forControlEvents:UIControlEventTouchUpInside];
+    [titleContainer addSubview:backButton];
+    
+    [backButton mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.equalTo(titleContainer).offset(16);
+        make.centerY.equalTo(titleContainer);
+        make.width.height.equalTo(@24);
+    }];
+    
     // 生成内容标题
     UILabel *titleLabel = [[UILabel alloc] init];
     titleLabel.text = L(@"generated_content");
@@ -370,9 +393,10 @@
     [self.generationView addSubview:titleLabel];
     
     [titleLabel mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.generationView).offset(8);
-        make.left.equalTo(self.generationView).offset(16);
+        make.left.equalTo(backButton.mas_right).offset(8);
+        make.centerY.equalTo(titleContainer);
     }];
+    
     
     // 生成内容文本框
     self.generationTextView = [[UITextView alloc] init];
@@ -531,6 +555,7 @@
 }
 
 - (void)setupResultButtonsForType:(AIUAWritingEditType)type {
+    self.type = type;
     // 移除旧的
     for (UIView *view in self.generationView.subviews) {
         if ([view isKindOfClass:[UIStackView class]]) {
@@ -555,8 +580,8 @@
     // 重新生成按钮（所有类型都有）
     UIButton *regenerateButton = [UIButton buttonWithType:UIButtonTypeSystem];
     [regenerateButton setTitle:L(@"regenerate") forState:UIControlStateNormal];
-    [regenerateButton setTitleColor:[UIColor systemBlueColor] forState:UIControlStateNormal];
-    regenerateButton.backgroundColor = [UIColor whiteColor];
+    [regenerateButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    regenerateButton.backgroundColor = [UIColor systemBlueColor];
     regenerateButton.layer.cornerRadius = 6;
     regenerateButton.layer.borderWidth = 1;
     regenerateButton.layer.borderColor = [UIColor systemBlueColor].CGColor;
@@ -573,11 +598,11 @@
     [buttonStack addArrangedSubview:insertButton];
     
     // 改写和扩写有覆盖原文按钮
-    if (type == AIUAWritingEditTypeRewrite || type == AIUAWritingEditTypeExpand || AIUAWritingEditTypeTranslate) {
+    if (type == AIUAWritingEditTypeRewrite || type == AIUAWritingEditTypeExpand || type == AIUAWritingEditTypeTranslate) {
         UIButton *coverButton = [UIButton buttonWithType:UIButtonTypeSystem];
         [coverButton setTitle:L(@"overwrite_original") forState:UIControlStateNormal];
-        [coverButton setTitleColor:[UIColor systemBlueColor] forState:UIControlStateNormal];
-        coverButton.backgroundColor = [UIColor whiteColor];
+        [coverButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+        coverButton.backgroundColor = [UIColor systemBlueColor];
         coverButton.layer.cornerRadius = 6;
         coverButton.layer.borderWidth = 1;
         coverButton.layer.borderColor = [UIColor systemBlueColor].CGColor;
@@ -821,11 +846,6 @@
         }];
         [self.view layoutIfNeeded];
     } completion:^(BOOL finished) {
-//        for (int i = 0; i < self.toolbarButtonsArray.count; i++) {
-//            UIButton *button = self.toolbarButtonsArray[i];
-//            [button setTitleColor:AIUAUIColorSimplifyRGB(0.2, 0.2, 0.2) forState:UIControlStateNormal];
-//            button.tintColor = AIUAUIColorSimplifyRGB(0.2, 0.2, 0.2);
-//        }
         self.styleSelectionView.hidden = YES;
     }];
 }
@@ -843,14 +863,18 @@
 }
 
 - (void)hideAllSelectionViews {
-    self.styleSelectionView.hidden = YES;
-    self.generationView.hidden = YES;
-    
     [UIView animateWithDuration:0.3 animations:^{
+        self.styleSelectionView.hidden = YES;
+        self.generationView.hidden = YES;
         [self.tableView mas_updateConstraints:^(MASConstraintMaker *make) {
             make.bottom.equalTo(self.view).offset(-60);
         }];
         [self.view layoutIfNeeded];
+        for (int i = 0; i < self.toolbarButtonsArray.count; i++) {
+            UIButton *button = self.toolbarButtonsArray[i];
+            [button setTitleColor:AIUAUIColorSimplifyRGB(0.2, 0.2, 0.2) forState:UIControlStateNormal];
+            button.tintColor = AIUAUIColorSimplifyRGB(0.2, 0.2, 0.2);
+        }
     }];
 }
 
@@ -960,10 +984,12 @@
     return [NSString stringWithFormat:@"%@：\n\n%@\n\n%@", typeInstruction, baseContent, additionalInstruction];
 }
 
+// 重新生成
 - (void)regenerateContent {
     [self performAIGenerationWithType:self.currentEditType];
 }
 
+// 插入
 - (void)insertGeneratedContent {
     if (self.generatedContent && self.generatedContent.length > 0) {
         NSRange selectedRange = self.contentTextView.selectedRange;
@@ -980,6 +1006,7 @@
     }
 }
 
+// 覆盖原文
 - (void)coverOriginalContent {
     if (self.generatedContent && self.generatedContent.length > 0) {
         self.contentTextView.text = self.generatedContent;
@@ -994,6 +1021,7 @@
     }
 }
 
+// 取消当前生成
 - (void)cancelCurrentGeneration {
     if (self.isGenerating) {
         [self.deepSeekWriter cancelCurrentRequest];
