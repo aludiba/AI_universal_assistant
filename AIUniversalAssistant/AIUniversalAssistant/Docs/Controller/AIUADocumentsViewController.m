@@ -104,10 +104,12 @@
     if (indexPath.section == 0) {
         // 新建文档cell
         AIUACreateDocumentCell *cell = [tableView dequeueReusableCellWithIdentifier:@"AIUACreateDocumentCell" forIndexPath:indexPath];
+        cell.selectionStyle = UITableViewCellSelectionStyleNone;
         return cell;
     } else {
         // 文档列表cell
         AIUADocumentCell *cell = [tableView dequeueReusableCellWithIdentifier:@"AIUADocumentCell" forIndexPath:indexPath];
+        cell.selectionStyle = UITableViewCellSelectionStyleNone;
         NSDictionary *document = self.documents[indexPath.row];
         [cell configureWithDocument:document];
         
@@ -183,9 +185,10 @@
            @{@"title": L(@"copy_full_text"), @"style": @(UIAlertActionStyleDefault)},
            @{@"title": L(@"delete_document"), @"style": @(UIAlertActionStyleDestructive)}
        ];
-    [AIUAAlertHelper showActionSheetWithTitle:nil
+    [AIUAAlertHelper showActionWithTitle:nil
                                             message:nil
                                             actions:actions
+                                      preferredStyle:UIAlertControllerStyleActionSheet
                                       inController:self
                                       actionHandler:^(NSString *actionTitle) {
         [self handleAction:actionTitle forDocument:document atIndexPath:indexPath];

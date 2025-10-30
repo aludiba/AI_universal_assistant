@@ -55,7 +55,7 @@
     [hud hideAnimated:YES afterDelay:2]; // 延时2秒隐藏
 }
 
-+ (void)showText:(nullable UIView *)view withText:(nullable NSString *)text andSubText:(nullable NSString *)subText  isBottom:(BOOL)isBottom{
++ (void)showText:(nullable UIView *)view withText:(nullable NSString *)text andSubText:(nullable NSString *)subText isBottom:(BOOL)isBottom {
     UIWindow *window = [AIUAToolsManager currentWindow];
     MBProgressHUD *hud = [MBProgressHUD showHUDAddedTo:view ? view : window animated:YES];
     hud.mode = MBProgressHUDModeText;

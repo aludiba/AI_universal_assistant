@@ -3,6 +3,7 @@
 #import "AIUADataManager.h"
 #import "AIUAAlertHelper.h"
 #import "AIUAMBProgressManager.h"
+#import "AIUADocDetailViewController.h"
 
 @interface AIUAWritingRecordsViewController () <UITableViewDelegate, UITableViewDataSource>
 
@@ -13,6 +14,11 @@
 @end
 
 @implementation AIUAWritingRecordsViewController
+
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+    [self loadData];
+}
 
 - (void)setupUI {
     [super setupUI];
@@ -62,7 +68,7 @@
     ]];
 }
 
-- (void)setupData {
+- (void)loadData {
     self.writingRecords = [[AIUADataManager sharedManager] loadWritingsByType:self.type];
     self.emptyLabel.hidden = self.writingRecords.count > 0;
     [self updateNavigationTitle];
@@ -102,6 +108,7 @@
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     AIUAWritingRecordCell *cell = [tableView dequeueReusableCellWithIdentifier:@"AIUAWritingRecordCell" forIndexPath:indexPath];
+    cell.selectionStyle = UITableViewCellSelectionStyleNone;
     NSDictionary *writing = self.writingRecords[indexPath.row];
     [cell configureWithWriting:writing];
     return cell;
@@ -115,6 +122,10 @@
     NSDictionary *writing = self.writingRecords[indexPath.row];
     // 这里可以添加点击后的操作，比如查看详情等
     NSLog(@"Selected writing: %@", writing[@"title"]);
+    
+    AIUADocDetailViewController *docDetailVC = [[AIUADocDetailViewController alloc] initWithWritingItem:writing];
+    docDetailVC.hidesBottomBarWhenPushed = YES;
+    [self.navigationController pushViewController:docDetailVC animated:YES];
 }
 
 - (UISwipeActionsConfiguration *)tableView:(UITableView *)tableView trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath {

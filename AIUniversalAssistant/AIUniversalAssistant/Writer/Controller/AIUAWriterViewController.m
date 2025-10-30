@@ -37,11 +37,8 @@
 }
 
 - (void)setupNavigationBar {
-    // 使用文字按钮
-    UIBarButtonItem *recordsButton = [[UIBarButtonItem alloc] initWithTitle:L(@"writing_records")
-                                                                      style:UIBarButtonItemStylePlain
-                                                                     target:self
-                                                                     action:@selector(recordsButtonTapped)];
+    UIImage *recordsIcon = [UIImage systemImageNamed:@"list.bullet"];
+    UIBarButtonItem *recordsButton = [[UIBarButtonItem alloc] initWithImage:recordsIcon style:UIBarButtonItemStylePlain target:self action:@selector(recordsButtonTapped)];
     recordsButton.tintColor = [UIColor grayColor];
     self.navigationItem.rightBarButtonItem = recordsButton;
 }

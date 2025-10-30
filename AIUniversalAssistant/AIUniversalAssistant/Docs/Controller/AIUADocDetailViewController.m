@@ -105,6 +105,12 @@
     } else {
         self.navigationItem.title = L(@"document_details");
     }
+    if (self.writingItem) {
+        UIImage *ellipsisIcon = [UIImage systemImageNamed:@"ellipsis"];
+        UIBarButtonItem *ellipsisButton = [[UIBarButtonItem alloc] initWithImage:ellipsisIcon style:UIBarButtonItemStylePlain target:self action:@selector(ellipsisTapped)];
+        ellipsisButton.tintColor = [UIColor grayColor];
+        self.navigationItem.rightBarButtonItem = ellipsisButton;
+    }
 }
 
 - (void)setupUI {
@@ -700,6 +706,76 @@
 }
 
 #pragma mark - Actions
+
+- (void)ellipsisTapped {
+    NSArray *actions = @[
+           @{@"title": L(@"export_document"), @"style": @(UIAlertActionStyleDefault)},
+           @{@"title": L(@"copy_full_text"), @"style": @(UIAlertActionStyleDefault)},
+           @{@"title": L(@"delete_document"), @"style": @(UIAlertActionStyleDestructive)}
+       ];
+    [AIUAAlertHelper showActionWithTitle:nil
+                                            message:nil
+                                            actions:actions
+                                      preferredStyle:UIAlertControllerStyleAlert
+                                      inController:self
+                                      actionHandler:^(NSString *actionTitle) {
+        [self handleAction:actionTitle forDocument:self.writingItem];
+    }];
+}
+
+- (void)handleAction:(NSString *)actionTitle forDocument:(NSDictionary *)document{
+    if ([actionTitle isEqualToString:L(@"export_document")]) {
+        [self exportDocument:document];
+    } else if ([actionTitle isEqualToString:L(@"copy_full_text")]) {
+        [self copyFullText:document];
+    } else if ([actionTitle isEqualToString:L(@"delete_document")]) {
+        [self deleteDocument:document];
+    }
+}
+
+// 增强版导出方法
+
+- (void)exportDocument:(NSDictionary *)document {
+    [[AIUADataManager sharedManager] exportDocument:document[@"title"] ?: @"" withContent:document[@"content"] ?: @""];
+}
+
+
+- (void)copyFullText:(NSDictionary *)document {
+    NSString *content = document[@"content"] ?: @"";
+    if (content.length > 0) {
+        [UIPasteboard generalPasteboard].string = [NSString stringWithFormat:@"%@\n%@", document[@"title"] ?: @"", content];
+        [AIUAMBProgressManager showText:nil withText:L(@"copied_to_clipboard") andSubText:nil isBottom:YES backColor:[UIColor whiteColor]];
+    } else {
+        [AIUAMBProgressManager showText:nil withText:L(@"empty_document") andSubText:nil isBottom:YES backColor:[UIColor whiteColor]];
+    }
+}
+
+- (void)deleteDocument:(NSDictionary *)document {
+    NSString *documentID = document[@"id"];
+    
+    if (!documentID) {
+        NSLog(@"Error: Document ID is nil");
+        return;
+    }
+    
+    WeakType(self);
+    [AIUAAlertHelper showAlertWithTitle:L(@"confirm_delete")
+                                message:L(@"confirm_delete_document")
+                          cancelBtnText:L(@"cancel")
+                         confirmBtnText:L(@"delete")
+                           inController:self
+                           cancelAction:nil
+                         confirmAction:^{
+        StrongType(self);
+        BOOL success = [[AIUADataManager sharedManager] deleteWritingWithID:documentID];
+        if (success) {
+            [strongself.navigationController popViewControllerAnimated:YES];
+            [AIUAMBProgressManager showText:nil withText:L(@"deleted_success") andSubText:nil isBottom:YES backColor:[UIColor whiteColor]];
+        } else {
+            [AIUAMBProgressManager showText:nil withText:L(@"delete_failed") andSubText:nil isBottom:YES backColor:[UIColor whiteColor]];
+        }
+    }];
+}
 
 - (CGFloat)getContentTextViewHeight {
     if (self.currentContent.length > 0) {

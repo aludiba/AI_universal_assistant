@@ -64,15 +64,16 @@
     }
 }
 
-+ (void)showActionSheetWithTitle:(nullable NSString *)title
++ (void)showActionWithTitle:(nullable NSString *)title
                          message:(nullable NSString *)message
                          actions:(nullable NSArray *)actions
-                   inController:(nullable UIViewController *)controller
-                   actionHandler:(nullable  void(^)(NSString *actionTitle))handler {
+                         preferredStyle:(UIAlertControllerStyle)preferredStyle
+                         inController:(nullable UIViewController *)controller
+                         actionHandler:(nullable  void(^)(NSString *actionTitle))handler {
     
     UIAlertController *alertController = [UIAlertController alertControllerWithTitle:title
                                                                              message:message
-                                                                      preferredStyle:UIAlertControllerStyleActionSheet];
+                                                                      preferredStyle:preferredStyle];
     
     for (NSDictionary *actionDict in actions) {
         NSString *actionTitle = actionDict[@"title"];
