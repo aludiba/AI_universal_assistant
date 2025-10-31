@@ -5,6 +5,7 @@
 #import "AIUAToolsManager.h"
 #import "UITextView+AIUAPlaceholder.h"
 #import <Masonry/Masonry.h>
+#import <MBProgressHUD/MBProgressHUD.h>
 
 @interface AIUADocDetailViewController () <UITableViewDelegate, UITableViewDataSource, UITextViewDelegate>
 
@@ -43,6 +44,8 @@
 @property (nonatomic, strong) UITextView *generationTextView; // 生成内容显示框
 @property (nonatomic, strong) UIView *generationView; // 生成内容容器
 @property (nonatomic, assign) AIUAWritingEditType type; // 写作类型
+@property (nonatomic, strong) UIButton *stopButton; // 停止生成按钮
+@property (nonatomic, strong) UIStackView *currentButtonStack; // 当前的结果按钮堆栈
 // 键盘相关
 @property (nonatomic, assign) CGFloat keyboardHeight;
 
@@ -375,6 +378,27 @@
         make.height.equalTo(@200);
     }];
     
+    // 停止生成按钮
+    UIButtonConfiguration *config = [UIButtonConfiguration plainButtonConfiguration];
+    config.title = L(@"stop_generating");
+    config.image = [self stopButtonImage];
+    config.imagePadding = 4;
+    config.baseForegroundColor = AIUAUIColorRGB(239, 68, 68);
+    config.background.backgroundColor = AIUAUIColorRGB(254, 242, 242);
+    config.contentInsets = NSDirectionalEdgeInsetsMake(8, 16, 8, 16);
+    config.cornerStyle = UIButtonConfigurationCornerStyleMedium;
+
+    UIButton *stopButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    stopButton.configuration = config;
+    stopButton.layer.cornerRadius = 6;
+    stopButton.layer.borderWidth = 1;
+    stopButton.layer.borderColor = AIUAUIColorRGB(254, 202, 202).CGColor;
+    stopButton.hidden = YES;
+    // 停止按钮添加到generationView中，和buttonStack在同一个父视图
+    [self.generationView addSubview:stopButton];
+    [stopButton addTarget:self action:@selector(stopButtonTapped) forControlEvents:UIControlEventTouchUpInside];
+    self.stopButton = stopButton;
+    
     // 创建标题容器
     UIView *titleContainer = [[UIView alloc] init];
     [self.generationView addSubview:titleContainer];
@@ -589,6 +613,9 @@
         make.right.equalTo(self.generationView).offset(-16);
         make.height.equalTo(@44);
     }];
+    
+    // 保存buttonStack引用
+    self.currentButtonStack = buttonStack;
     
     // 重新生成按钮（所有类型都有）
     UIButton *regenerateButton = [UIButton buttonWithType:UIButtonTypeSystem];
@@ -958,9 +985,11 @@
     self.generationView.hidden = NO;
     [self.generationView.superview layoutIfNeeded];
     
+    // 初始显示生成视图时，停止按钮还未显示，所以只需要考虑生成视图和工具栏
+    // 停止按钮的显示和布局会在performAIGenerationWithType中处理
     [UIView animateWithDuration:0.3 animations:^{
         [self.tableView mas_updateConstraints:^(MASConstraintMaker *make) {
-            make.bottom.equalTo(self.view).offset(-260);
+            make.bottom.equalTo(self.view).offset(-260); // 生成视图200 + 工具栏60
         }];
         [self.view layoutIfNeeded];
     }];
@@ -1007,10 +1036,40 @@
     
     NSString *prompt = [self buildPromptForType:type];
     
+    // 隐藏buttonStack，显示停止生成按钮（停止按钮取代buttonStack的位置）
+    self.currentButtonStack.hidden = YES;
+    self.stopButton.hidden = NO;
+    
+    // 更新停止按钮位置：取代buttonStack的位置（在generationTextView下方）
+    // 宽度参考AIUAWritingDetailViewController，设置为120
+    // 添加bottom约束确保不压到toolbar（留出至少16点的间距）
+    [self.stopButton mas_remakeConstraints:^(MASConstraintMaker *make) {
+        make.centerX.equalTo(self.generationView);
+        make.top.equalTo(self.generationTextView.mas_bottom).offset(8);
+        make.bottom.lessThanOrEqualTo(self.generationView.mas_bottom).offset(-16);
+        make.width.equalTo(@120);
+        make.height.equalTo(@40);
+    }];
+    
+    // 显示HUD（在停止按钮之后显示，确保停止按钮在HUD上方）
     [AIUAMBProgressManager showHUD:self.view];
+    
+    // 获取HUD实例并配置，允许停止按钮的交互
+    MBProgressHUD *hud = [MBProgressHUD HUDForView:self.view];
+    if (hud) {
+        // 设置HUD不阻止用户交互，这样停止按钮可以点击
+        hud.userInteractionEnabled = NO;
+    }
+    
+    // 确保停止按钮在HUD上面（通过设置z-order）
+    [self.view bringSubviewToFront:self.stopButton];
+    
     self.isGenerating = YES;
     self.generationTextView.text = @"";
     self.generatedContent = [NSMutableString string];
+    
+    // 禁用输入框和工具栏按钮
+    [self setUIEnabled:NO];
     
     // 使用流式生成
     [self.deepSeekWriter generateFullStreamWritingWithPrompt:prompt
@@ -1021,6 +1080,16 @@
             if (error) {
                 [AIUAMBProgressManager hideHUD:self.view];
                 self.isGenerating = NO;
+                self.stopButton.hidden = YES;
+                // 显示buttonStack
+                if (self.currentButtonStack) {
+                    self.currentButtonStack.hidden = NO;
+                } else if (self.generatedContent && self.generatedContent.length > 0) {
+                    // 如果有生成内容但没有buttonStack，创建它
+                    [self setupResultButtonsForType:self.currentEditType];
+                }
+                // 恢复输入框和工具栏按钮
+                [self setUIEnabled:YES];
                 
                 if (error.code == NSURLErrorCancelled) {
                     return;
@@ -1047,8 +1116,16 @@
             if (finished) {
                 [AIUAMBProgressManager hideHUD:self.view];
                 self.isGenerating = NO;
-                // 显示结果操作按钮
-                [self setupResultButtonsForType:type];
+                // 隐藏停止生成按钮，显示buttonStack
+                self.stopButton.hidden = YES;
+                if (self.currentButtonStack) {
+                    self.currentButtonStack.hidden = NO;
+                } else {
+                    // 如果没有buttonStack，创建它
+                    [self setupResultButtonsForType:type];
+                }
+                // 恢复输入框和工具栏按钮
+                [self setUIEnabled:YES];
             }
         });
     }];
@@ -1129,10 +1206,75 @@
 - (void)cancelCurrentGeneration {
     if (self.isGenerating) {
         [self.deepSeekWriter cancelCurrentRequest];
-        self.isGenerating = NO;
-        self.generatedContent = nil;
         [AIUAMBProgressManager hideHUD:self.view];
+        self.isGenerating = NO;
+        self.stopButton.hidden = YES;
+        // 如果有已生成内容，显示buttonStack（先保存再清空）
+        NSString *savedContent = [self.generatedContent copy];
+        self.generatedContent = nil;
+        if (savedContent && savedContent.length > 0) {
+            if (self.currentButtonStack) {
+                self.currentButtonStack.hidden = NO;
+            } else {
+                [self setupResultButtonsForType:self.currentEditType];
+            }
+        }
+        // 恢复输入框和工具栏按钮
+        [self setUIEnabled:YES];
     }
+}
+
+// 停止生成按钮点击事件
+- (void)stopButtonTapped {
+    [self.deepSeekWriter cancelCurrentRequest];
+    [AIUAMBProgressManager hideHUD:self.view];
+    self.isGenerating = NO;
+    self.stopButton.hidden = YES;
+    // 如果有已生成内容，显示buttonStack
+    if (self.generatedContent && self.generatedContent.length > 0) {
+        if (self.currentButtonStack) {
+            self.currentButtonStack.hidden = NO;
+        } else {
+            // 如果没有buttonStack，创建它
+            [self setupResultButtonsForType:self.currentEditType];
+        }
+    } else {
+        // 如果没有生成内容，隐藏生成视图
+        [self hideAllSelectionViews];
+    }
+    // 恢复输入框和工具栏按钮
+    [self setUIEnabled:YES];
+}
+
+// 设置UI启用/禁用状态
+- (void)setUIEnabled:(BOOL)enabled {
+    // 设置标题和内容输入框可编辑性
+    self.titleTextView.editable = enabled;
+    self.contentTextView.editable = enabled;
+    
+    // 禁用titleTextView和contentTextView的用户交互（防止生成时点击弹起键盘）
+    self.titleTextView.userInteractionEnabled = enabled;
+    self.contentTextView.userInteractionEnabled = enabled;
+    
+    // 设置工具栏按钮可点击性
+    for (UIButton *button in self.toolbarButtonsArray) {
+        button.enabled = enabled;
+        button.alpha = enabled ? 1.0 : 0.5;
+    }
+}
+
+// 停止按钮图标
+- (UIImage *)stopButtonImage {
+    UIGraphicsBeginImageContextWithOptions(CGSizeMake(12, 12), NO, [UIScreen mainScreen].scale);
+    
+    UIBezierPath *path = [UIBezierPath bezierPathWithRect:CGRectMake(0, 0, 12, 12)];
+    [[UIColor grayColor] setFill];
+    [path fill];
+    
+    UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    
+    return image;
 }
 
 #pragma mark - 数据保存
