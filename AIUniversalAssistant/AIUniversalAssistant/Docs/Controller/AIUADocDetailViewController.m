@@ -46,6 +46,7 @@
 @property (nonatomic, assign) AIUAWritingEditType type; // 写作类型
 @property (nonatomic, strong) UIButton *stopButton; // 停止生成按钮
 @property (nonatomic, strong) UIStackView *currentButtonStack; // 当前的结果按钮堆栈
+@property (nonatomic, strong) UIButton *generationBackButton; // 生成视图中的返回按钮
 // 键盘相关
 @property (nonatomic, assign) CGFloat keyboardHeight;
 
@@ -380,7 +381,6 @@
     
     // 停止生成按钮
     UIButtonConfiguration *config = [UIButtonConfiguration plainButtonConfiguration];
-    config.title = L(@"stop_generating");
     config.image = [self stopButtonImage];
     config.imagePadding = 4;
     config.baseForegroundColor = AIUAUIColorRGB(239, 68, 68);
@@ -394,10 +394,16 @@
     stopButton.layer.borderWidth = 1;
     stopButton.layer.borderColor = AIUAUIColorRGB(254, 202, 202).CGColor;
     stopButton.hidden = YES;
-    // 停止按钮添加到generationView中，和buttonStack在同一个父视图
-    [self.generationView addSubview:stopButton];
     [stopButton addTarget:self action:@selector(stopButtonTapped) forControlEvents:UIControlEventTouchUpInside];
     self.stopButton = stopButton;
+    // 停止按钮添加到generationView中，和buttonStack在同一个父视图
+    [self.generationView addSubview:stopButton];
+    [self.stopButton mas_remakeConstraints:^(MASConstraintMaker *make) {
+        make.centerX.equalTo(self.generationView);
+        make.bottom.lessThanOrEqualTo(self.generationView.mas_bottom).offset(-5);
+        make.width.equalTo(@30);
+        make.height.equalTo(@30);
+    }];
     
     // 创建标题容器
     UIView *titleContainer = [[UIView alloc] init];
@@ -415,6 +421,7 @@
     [backButton setTintColor:[UIColor systemGrayColor]];
     [backButton addTarget:self action:@selector(showStyleSelectionView) forControlEvents:UIControlEventTouchUpInside];
     [titleContainer addSubview:backButton];
+    self.generationBackButton = backButton; // 保存引用
     
     [backButton mas_makeConstraints:^(MASConstraintMaker *make) {
         make.left.equalTo(titleContainer).offset(16);
@@ -427,7 +434,7 @@
     titleLabel.text = L(@"generated_content");
     titleLabel.font = AIUAUIFontSystem(14);
     titleLabel.textColor = [UIColor darkGrayColor];
-    [self.generationView addSubview:titleLabel];
+    [titleContainer addSubview:titleLabel];
     
     [titleLabel mas_makeConstraints:^(MASConstraintMaker *make) {
         make.left.equalTo(backButton.mas_right).offset(8);
@@ -593,64 +600,65 @@
 
 - (void)setupResultButtonsForType:(AIUAWritingEditType)type {
     self.type = type;
-    // 移除旧的
-    for (UIView *view in self.generationView.subviews) {
-        if ([view isKindOfClass:[UIStackView class]]) {
-            [view removeFromSuperview];
-        }
-    }
-    // 创建新的操作按钮
-    UIStackView *buttonStack = [[UIStackView alloc] init];
-    buttonStack.axis = UILayoutConstraintAxisHorizontal;
-    buttonStack.distribution = UIStackViewDistributionFillEqually;
-    buttonStack.alignment = UIStackViewAlignmentCenter;
-    buttonStack.spacing = 16;
-    [self.generationView addSubview:buttonStack];
-    
-    [buttonStack mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.generationTextView.mas_bottom).offset(8);
-        make.left.equalTo(self.generationView).offset(16);
-        make.right.equalTo(self.generationView).offset(-16);
-        make.height.equalTo(@44);
-    }];
-    
-    // 保存buttonStack引用
-    self.currentButtonStack = buttonStack;
-    
-    // 重新生成按钮（所有类型都有）
-    UIButton *regenerateButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    [regenerateButton setTitle:L(@"regenerate") forState:UIControlStateNormal];
-    [regenerateButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-    regenerateButton.backgroundColor = [UIColor systemBlueColor];
-    regenerateButton.layer.cornerRadius = 6;
-    regenerateButton.layer.borderWidth = 1;
-    regenerateButton.layer.borderColor = [UIColor systemBlueColor].CGColor;
-    [regenerateButton addTarget:self action:@selector(regenerateContent) forControlEvents:UIControlEventTouchUpInside];
-    [buttonStack addArrangedSubview:regenerateButton];
-    
-    // 插入按钮（所有类型都有）
-    UIButton *insertButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    [insertButton setTitle:L(@"insert") forState:UIControlStateNormal];
-    [insertButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-    insertButton.backgroundColor = [UIColor systemBlueColor];
-    insertButton.layer.cornerRadius = 6;
-    [insertButton addTarget:self action:@selector(insertGeneratedContent) forControlEvents:UIControlEventTouchUpInside];
-    [buttonStack addArrangedSubview:insertButton];
-    
-    // 改写和扩写有覆盖原文按钮
-    if (type == AIUAWritingEditTypeRewrite || type == AIUAWritingEditTypeExpand || type == AIUAWritingEditTypeTranslate) {
-        UIButton *coverButton = [UIButton buttonWithType:UIButtonTypeSystem];
-        [coverButton setTitle:L(@"overwrite_original") forState:UIControlStateNormal];
-        [coverButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-        coverButton.backgroundColor = [UIColor systemBlueColor];
-        coverButton.layer.cornerRadius = 6;
-        coverButton.layer.borderWidth = 1;
-        coverButton.layer.borderColor = [UIColor systemBlueColor].CGColor;
-        [coverButton addTarget:self action:@selector(coverOriginalContent) forControlEvents:UIControlEventTouchUpInside];
-        [buttonStack addArrangedSubview:coverButton];
-        
-        // 调整布局为三个按钮
+    if (!self.currentButtonStack) {
+        // 创建新的操作按钮
+        UIStackView *buttonStack = [[UIStackView alloc] init];
+        buttonStack.axis = UILayoutConstraintAxisHorizontal;
         buttonStack.distribution = UIStackViewDistributionFillEqually;
+        buttonStack.alignment = UIStackViewAlignmentCenter;
+        buttonStack.spacing = 16;
+        [self.generationView addSubview:buttonStack];
+        [buttonStack mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.top.equalTo(self.generationTextView.mas_bottom).offset(8);
+            make.left.equalTo(self.generationView).offset(16);
+            make.right.equalTo(self.generationView).offset(-16);
+            make.height.equalTo(@44);
+        }];
+        // 保存buttonStack引用
+        self.currentButtonStack = buttonStack;
+    }
+    
+    if (self.currentButtonStack) {
+        // 移除旧的Button
+        for (id obj in self.currentButtonStack.subviews) {
+            if ([obj isKindOfClass:[UIButton class]]) {
+                [obj removeFromSuperview];
+            }
+        }
+        // 重新生成按钮（所有类型都有）
+        UIButton *regenerateButton = [UIButton buttonWithType:UIButtonTypeSystem];
+        [regenerateButton setTitle:L(@"regenerate") forState:UIControlStateNormal];
+        [regenerateButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+        regenerateButton.backgroundColor = [UIColor systemBlueColor];
+        regenerateButton.layer.cornerRadius = 6;
+        regenerateButton.layer.borderWidth = 1;
+        regenerateButton.layer.borderColor = [UIColor systemBlueColor].CGColor;
+        [regenerateButton addTarget:self action:@selector(regenerateContent) forControlEvents:UIControlEventTouchUpInside];
+        [self.currentButtonStack addArrangedSubview:regenerateButton];
+        
+        // 插入按钮（所有类型都有）
+        UIButton *insertButton = [UIButton buttonWithType:UIButtonTypeSystem];
+        [insertButton setTitle:L(@"insert") forState:UIControlStateNormal];
+        [insertButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+        insertButton.backgroundColor = [UIColor systemBlueColor];
+        insertButton.layer.cornerRadius = 6;
+        [insertButton addTarget:self action:@selector(insertGeneratedContent) forControlEvents:UIControlEventTouchUpInside];
+        [self.currentButtonStack addArrangedSubview:insertButton];
+        
+        // 改写和扩写有覆盖原文按钮
+        if (type == AIUAWritingEditTypeRewrite || type == AIUAWritingEditTypeExpand || type == AIUAWritingEditTypeTranslate) {
+            UIButton *coverButton = [UIButton buttonWithType:UIButtonTypeSystem];
+            [coverButton setTitle:L(@"overwrite_original") forState:UIControlStateNormal];
+            [coverButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+            coverButton.backgroundColor = [UIColor systemBlueColor];
+            coverButton.layer.cornerRadius = 6;
+            coverButton.layer.borderWidth = 1;
+            coverButton.layer.borderColor = [UIColor systemBlueColor].CGColor;
+            [coverButton addTarget:self action:@selector(coverOriginalContent) forControlEvents:UIControlEventTouchUpInside];
+            [self.currentButtonStack addArrangedSubview:coverButton];
+            // 调整布局为三个按钮
+            self.currentButtonStack.distribution = UIStackViewDistributionFillEqually;
+        }
     }
 }
 
@@ -1040,17 +1048,6 @@
     self.currentButtonStack.hidden = YES;
     self.stopButton.hidden = NO;
     
-    // 更新停止按钮位置：取代buttonStack的位置（在generationTextView下方）
-    // 宽度参考AIUAWritingDetailViewController，设置为120
-    // 添加bottom约束确保不压到toolbar（留出至少16点的间距）
-    [self.stopButton mas_remakeConstraints:^(MASConstraintMaker *make) {
-        make.centerX.equalTo(self.generationView);
-        make.top.equalTo(self.generationTextView.mas_bottom).offset(8);
-        make.bottom.lessThanOrEqualTo(self.generationView.mas_bottom).offset(-16);
-        make.width.equalTo(@120);
-        make.height.equalTo(@40);
-    }];
-    
     // 显示HUD（在停止按钮之后显示，确保停止按钮在HUD上方）
     [AIUAMBProgressManager showHUD:self.view];
     
@@ -1067,6 +1064,12 @@
     self.isGenerating = YES;
     self.generationTextView.text = @"";
     self.generatedContent = [NSMutableString string];
+    
+    // 禁用生成视图中的返回按钮
+    if (self.generationBackButton) {
+        self.generationBackButton.enabled = NO;
+        self.generationBackButton.alpha = 0.5;
+    }
     
     // 禁用输入框和工具栏按钮
     [self setUIEnabled:NO];
@@ -1087,6 +1090,11 @@
                 } else if (self.generatedContent && self.generatedContent.length > 0) {
                     // 如果有生成内容但没有buttonStack，创建它
                     [self setupResultButtonsForType:self.currentEditType];
+                }
+                // 恢复生成视图中的返回按钮
+                if (self.generationBackButton) {
+                    self.generationBackButton.enabled = YES;
+                    self.generationBackButton.alpha = 1.0;
                 }
                 // 恢复输入框和工具栏按钮
                 [self setUIEnabled:YES];
@@ -1120,9 +1128,13 @@
                 self.stopButton.hidden = YES;
                 if (self.currentButtonStack) {
                     self.currentButtonStack.hidden = NO;
-                } else {
-                    // 如果没有buttonStack，创建它
-                    [self setupResultButtonsForType:type];
+                }
+                [self setupResultButtonsForType:type];
+
+                // 恢复生成视图中的返回按钮
+                if (self.generationBackButton) {
+                    self.generationBackButton.enabled = YES;
+                    self.generationBackButton.alpha = 1.0;
                 }
                 // 恢复输入框和工具栏按钮
                 [self setUIEnabled:YES];
@@ -1133,7 +1145,7 @@
 
 - (void)scrollGenerationTextViewToBottom {
     if (self.generationTextView.text.length > 0) {
-        NSRange range = NSMakeRange(self.generationTextView.text.length + 1, self.generationTextView.text.length + 2);
+        NSRange range = NSMakeRange(self.generationTextView.text.length + 10, self.generationTextView.text.length + 20);
         [self.generationTextView scrollRangeToVisible:range];
     }
 }
@@ -1215,9 +1227,13 @@
         if (savedContent && savedContent.length > 0) {
             if (self.currentButtonStack) {
                 self.currentButtonStack.hidden = NO;
-            } else {
-                [self setupResultButtonsForType:self.currentEditType];
             }
+            [self setupResultButtonsForType:self.currentEditType];
+        }
+        // 恢复生成视图中的返回按钮
+        if (self.generationBackButton) {
+            self.generationBackButton.enabled = YES;
+            self.generationBackButton.alpha = 1.0;
         }
         // 恢复输入框和工具栏按钮
         [self setUIEnabled:YES];
@@ -1234,13 +1250,16 @@
     if (self.generatedContent && self.generatedContent.length > 0) {
         if (self.currentButtonStack) {
             self.currentButtonStack.hidden = NO;
-        } else {
-            // 如果没有buttonStack，创建它
-            [self setupResultButtonsForType:self.currentEditType];
         }
+        [self setupResultButtonsForType:self.currentEditType];
     } else {
         // 如果没有生成内容，隐藏生成视图
         [self hideAllSelectionViews];
+    }
+    // 恢复生成视图中的返回按钮
+    if (self.generationBackButton) {
+        self.generationBackButton.enabled = YES;
+        self.generationBackButton.alpha = 1.0;
     }
     // 恢复输入框和工具栏按钮
     [self setUIEnabled:YES];
