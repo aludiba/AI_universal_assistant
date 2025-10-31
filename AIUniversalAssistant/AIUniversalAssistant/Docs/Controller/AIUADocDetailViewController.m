@@ -46,6 +46,7 @@
 // 键盘相关
 @property (nonatomic, assign) CGFloat keyboardHeight;
 
+@property (nonatomic, assign) BOOL isDeleteDocumentSuccess; // 是否删除文档成功
 @end
 
 @implementation AIUADocDetailViewController
@@ -94,8 +95,14 @@
 
 - (void)viewWillDisappear:(BOOL)animated {
     [super viewWillDisappear:animated];
-    [self saveDocumentIfNeeded];
-    [self cancelCurrentGeneration];
+    if (!self.isDeleteDocumentSuccess) {
+        [self saveDocumentIfNeeded];
+        [self cancelCurrentGeneration];
+    }
+}
+
+- (void)dealloc
+{
     [self unregisterKeyboardNotifications];
 }
 
@@ -124,6 +131,7 @@
     [self setupNavigationBar];
     [self setupGestureRecognizer];
     [self registerKeyboardNotifications];
+    [self setupInputAccessoryView];
 }
 
 - (void)setupTableView {
@@ -132,7 +140,6 @@
     self.tableView.dataSource = self;
     self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
     self.tableView.backgroundColor = [UIColor whiteColor];
-    self.tableView.keyboardDismissMode = UIScrollViewKeyboardDismissModeOnDrag;
     [self.view addSubview:self.tableView];
     
     [self.tableView mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -620,6 +627,26 @@
     }
 }
 
+// 键盘添加完成按钮
+- (void)setupInputAccessoryView {
+    UIToolbar *toolbar = [[UIToolbar alloc] initWithFrame:CGRectMake(0, 0, self.view.frame.size.width, 44)];
+    toolbar.barStyle = UIBarStyleDefault;
+    toolbar.translucent = YES;
+    
+    UIBarButtonItem *doneButton = [[UIBarButtonItem alloc] initWithTitle:L(@"action_complete")
+                                                                   style:UIBarButtonItemStyleDone
+                                                                  target:self
+                                                                  action:@selector(dismissKeyboard)];
+    UIBarButtonItem *flexibleSpace = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace
+                                                                                   target:nil
+                                                                                   action:nil];
+    
+    [toolbar setItems:@[flexibleSpace, doneButton]];
+    
+    self.titleTextView.inputAccessoryView = toolbar;
+    self.contentTextView.inputAccessoryView = toolbar;
+}
+
 #pragma mark - UITableViewDataSource
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
@@ -685,10 +712,10 @@
 - (void)keyboardWillShow:(NSNotification *)notification {
     CGRect keyboardFrame = [notification.userInfo[UIKeyboardFrameEndUserInfoKey] CGRectValue];
     self.keyboardHeight = keyboardFrame.size.height;
-    
+    NSLog(@"keyboardWillShow-keyboardHeight:%lf", self.keyboardHeight);
     [UIView animateWithDuration:0.3 animations:^{
         [self.tableView mas_updateConstraints:^(MASConstraintMaker *make) {
-            make.bottom.equalTo(self.view).offset(self.keyboardHeight);
+            make.bottom.equalTo(self.view).offset(-self.keyboardHeight);
         }];
         [self.view layoutIfNeeded];
     }];
@@ -769,6 +796,7 @@
         StrongType(self);
         BOOL success = [[AIUADataManager sharedManager] deleteWritingWithID:documentID];
         if (success) {
+            self.isDeleteDocumentSuccess = YES;
             [strongself.navigationController popViewControllerAnimated:YES];
             [AIUAMBProgressManager showText:nil withText:L(@"deleted_success") andSubText:nil isBottom:YES backColor:[UIColor whiteColor]];
         } else {
@@ -1028,7 +1056,7 @@
 
 - (void)scrollGenerationTextViewToBottom {
     if (self.generationTextView.text.length > 0) {
-        NSRange range = NSMakeRange(self.generationTextView.text.length, self.generationTextView.text.length + 1);
+        NSRange range = NSMakeRange(self.generationTextView.text.length + 1, self.generationTextView.text.length + 2);
         [self.generationTextView scrollRangeToVisible:range];
     }
 }

@@ -121,3 +121,4 @@
 "please_expand_with_%@_length_in_%@" = "Please perform an expansion of %@ length, using %@ style.";
 "please_translate_the_following_to_%@" = "Please translate the following content into %@";
 "ensure_translation_is_accurate_and_fluent" = "Ensure the translation is accurate and fluent, keeping the original meaning unchanged";
+"action_complete" = "Complete";

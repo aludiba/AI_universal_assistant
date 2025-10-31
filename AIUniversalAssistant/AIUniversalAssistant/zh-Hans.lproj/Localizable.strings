@@ -121,3 +121,4 @@
 "please_expand_with_%@_length_in_%@" = "请进行%@长度的扩写，使用%@风格。";
 "please_translate_the_following_to_%@" = "请将以下内容翻译成%@";
 "ensure_translation_is_accurate_and_fluent" = "确保翻译准确流畅，保持原文意思不变";
+"action_complete" = "完成";
