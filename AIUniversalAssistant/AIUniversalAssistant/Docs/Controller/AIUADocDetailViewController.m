@@ -1145,7 +1145,7 @@
 
 - (void)scrollGenerationTextViewToBottom {
     if (self.generationTextView.text.length > 0) {
-        NSRange range = NSMakeRange(self.generationTextView.text.length + 10, self.generationTextView.text.length + 20);
+        NSRange range = NSMakeRange(self.generationTextView.text.length + 20, self.generationTextView.text.length + 30);
         [self.generationTextView scrollRangeToVisible:range];
     }
 }
