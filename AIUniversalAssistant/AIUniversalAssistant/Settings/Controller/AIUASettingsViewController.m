@@ -6,25 +6,161 @@
 //
 
 #import "AIUASettingsViewController.h"
+#import "AIUASettingsCell.h"
+#import "AIUAWritingRecordsViewController.h"
+#import "AIUAAboutViewController.h"
+#import <Masonry/Masonry.h>
 
-@interface AIUASettingsViewController ()
+@interface AIUASettingsViewController () <UITableViewDelegate, UITableViewDataSource>
+
+@property (nonatomic, strong) UITableView *tableView;
+@property (nonatomic, strong) NSArray *settingsData;
+@property (nonatomic, strong) UIView *headerView;
 
 @end
 
 @implementation AIUASettingsViewController
 
-- (void)viewDidLoad {
-    [super viewDidLoad];
+- (void)setupUI {
     self.navigationItem.title = L(@"tab_settings");
-    UILabel *label = [[UILabel alloc] initWithFrame:CGRectZero];
-    label.translatesAutoresizingMaskIntoConstraints = NO;
-    label.text = @"设置 页面（示例）";
-    label.textAlignment = NSTextAlignmentCenter;
-    [self.view addSubview:label];
-    [NSLayoutConstraint activateConstraints:@[
-        [label.centerXAnchor constraintEqualToAnchor:self.view.centerXAnchor],
-        [label.centerYAnchor constraintEqualToAnchor:self.view.centerYAnchor]
-    ]];
+    [self setupTableView];
+    [self setupData];
+}
+
+- (void)setupTableView {
+    self.tableView = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStylePlain];
+    self.tableView.delegate = self;
+    self.tableView.dataSource = self;
+    self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+    self.tableView.backgroundColor = [UIColor clearColor];
+    self.tableView.showsVerticalScrollIndicator = NO;
+    [self.tableView registerClass:[AIUASettingsCell class] forCellReuseIdentifier:@"AIUASettingsCell"];
+    [self.view addSubview:self.tableView];
+    
+    [self.tableView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.equalTo(self.view);
+        make.left.right.bottom.equalTo(self.view);
+    }];
+}
+
+- (void)setupData {
+    self.settingsData = @[
+        @{@"title": L(@"member_privileges"), @"icon": @"crown.fill", @"color": @"#FFD700", @"action": @"memberPrivileges"},
+        @{@"title": L(@"creation_records"), @"icon": @"doc.text.fill", @"color": @"#3B82F6", @"action": @"creationRecords"},
+        @{@"title": L(@"writing_word_packs"), @"icon": @"cube.fill", @"color": @"#10B981", @"action": @"wordPacks"},
+        @{@"title": L(@"contact_us"), @"icon": @"envelope.fill", @"color": @"#F59E0B", @"action": @"contactUs"},
+        @{@"title": L(@"about_us"), @"icon": @"info.circle.fill", @"color": @"#8B5CF6", @"action": @"aboutUs"}
+    ];
+    [self.tableView reloadData];
+}
+
+#pragma mark - UITableViewDataSource
+
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+    return 1;
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return self.settingsData.count;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    AIUASettingsCell *cell = [tableView dequeueReusableCellWithIdentifier:@"AIUASettingsCell" forIndexPath:indexPath];
+    
+    NSDictionary *item = self.settingsData[indexPath.row];
+    NSString *iconName = item[@"icon"];
+    NSString *colorHex = item[@"color"];
+    NSString *title = item[@"title"];
+    
+    // 创建带颜色背景的图标
+    UIImage *icon = [self createIconWithSystemName:iconName color:[self colorFromHex:colorHex]];
+    
+    [cell configureWithIcon:icon title:title subtitle:nil];
+    
+    return cell;
+}
+
+#pragma mark - UITableViewDelegate
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    NSDictionary *item = self.settingsData[indexPath.row];
+    NSString *action = item[@"action"];
+    
+    if ([action isEqualToString:@"memberPrivileges"]) {
+        [self showMemberPrivileges];
+    } else if ([action isEqualToString:@"creationRecords"]) {
+        [self showCreationRecords];
+    } else if ([action isEqualToString:@"wordPacks"]) {
+        [self showWordPacks];
+    } else if ([action isEqualToString:@"contactUs"]) {
+        [self showContactUs];
+    } else if ([action isEqualToString:@"aboutUs"]) {
+        [self showAboutUs];
+    }
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
+    return 72;
+}
+
+#pragma mark - Actions
+
+- (void)showMemberPrivileges {
+    // TODO: 实现会员特权页面
+    NSLog(@"显示会员特权");
+}
+
+- (void)showCreationRecords {
+    AIUAWritingRecordsViewController *vc = [[AIUAWritingRecordsViewController alloc] init];
+    vc.hidesBottomBarWhenPushed = YES;
+    vc.isAllRecords = YES; // 显示所有创作记录
+    [self.navigationController pushViewController:vc animated:YES];
+}
+
+- (void)showWordPacks {
+    // TODO: 实现创作字数包页面
+    NSLog(@"显示创作字数包");
+}
+
+- (void)showContactUs {
+    // TODO: 实现联系我们页面
+    NSLog(@"显示联系我们");
+}
+
+- (void)showAboutUs {
+    AIUAAboutViewController *vc = [[AIUAAboutViewController alloc] init];
+    vc.hidesBottomBarWhenPushed = YES;
+    [self.navigationController pushViewController:vc animated:YES];
+}
+
+- (UIImage *)createIconWithSystemName:(NSString *)systemName color:(UIColor *)color {
+    UIGraphicsBeginImageContextWithOptions(CGSizeMake(36, 36), NO, [UIScreen mainScreen].scale);
+    
+    // 绘制背景
+    UIBezierPath *path = [UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 0, 36, 36) cornerRadius:8];
+    [color setFill];
+    [path fill];
+    
+    // 绘制图标
+    UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:18 weight:UIImageSymbolWeightMedium];
+    UIImage *icon = [UIImage systemImageNamed:systemName withConfiguration:config];
+    UIImage *whiteIcon = [icon imageWithTintColor:[UIColor whiteColor] renderingMode:UIImageRenderingModeAlwaysOriginal];
+    [whiteIcon drawInRect:CGRectMake(9, 9, 18, 18)];
+    
+    UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    
+    return image;
+}
+
+- (UIColor *)colorFromHex:(NSString *)hexString {
+    unsigned rgbValue = 0;
+    NSScanner *scanner = [NSScanner scannerWithString:[hexString stringByReplacingOccurrencesOfString:@"#" withString:@""]];
+    [scanner scanHexInt:&rgbValue];
+    return [UIColor colorWithRed:((rgbValue & 0xFF0000) >> 16)/255.0
+                           green:((rgbValue & 0xFF00) >> 8)/255.0
+                            blue:(rgbValue & 0xFF)/255.0
+                           alpha:1.0];
 }
 
 @end

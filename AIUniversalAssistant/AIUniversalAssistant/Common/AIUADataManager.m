@@ -264,7 +264,6 @@
 
 - (NSArray *)loadWritingsByType:(NSString *)type {
     NSArray *allWritings = [self loadAllWritings];
-    
     if (!type || type.length == 0) {
         // 如果type为空，返回type为空或没有type字段的记录
         NSPredicate *predicate = [NSPredicate predicateWithBlock:^BOOL(NSDictionary *writing, NSDictionary *bindings) {

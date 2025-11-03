@@ -69,7 +69,11 @@
 }
 
 - (void)loadData {
-    self.writingRecords = [[AIUADataManager sharedManager] loadWritingsByType:self.type];
+    if (self.isAllRecords) {
+        self.writingRecords = [[AIUADataManager sharedManager] loadAllWritings];
+    } else {
+        self.writingRecords = [[AIUADataManager sharedManager] loadWritingsByType:self.type];
+    }
     self.emptyLabel.hidden = self.writingRecords.count > 0;
     [self updateNavigationTitle];
     [self.tableView reloadData];
