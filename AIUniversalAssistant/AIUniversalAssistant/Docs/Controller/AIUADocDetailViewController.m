@@ -746,25 +746,36 @@
 
 - (void)keyboardWillShow:(NSNotification *)notification {
     CGRect keyboardFrame = [notification.userInfo[UIKeyboardFrameEndUserInfoKey] CGRectValue];
-    self.keyboardHeight = keyboardFrame.size.height;
-    NSLog(@"keyboardWillShow-keyboardHeight:%lf", self.keyboardHeight);
+    CGFloat riseHeight = [self riseHeight:keyboardFrame.size.height];
+    NSLog(@"keyboardWillShow-riseHeight:%lf", riseHeight);
     [UIView animateWithDuration:0.3 animations:^{
         [self.tableView mas_updateConstraints:^(MASConstraintMaker *make) {
-            make.bottom.equalTo(self.view).offset(-self.keyboardHeight);
+            make.bottom.equalTo(self.view).offset(-riseHeight);
         }];
         [self.view layoutIfNeeded];
     }];
 }
 
 - (void)keyboardWillHide:(NSNotification *)notification {
-    self.keyboardHeight = 0;
-    
+    CGFloat riseHeight = [self riseHeight:60];
+    NSLog(@"keyboardWillHide-riseHeight:%lf", riseHeight);
     [UIView animateWithDuration:0.3 animations:^{
         [self.tableView mas_updateConstraints:^(MASConstraintMaker *make) {
-            make.bottom.equalTo(self.view).offset(-60);
+            make.bottom.equalTo(self.view).offset(-riseHeight);
         }];
         [self.view layoutIfNeeded];
     }];
+}
+
+- (CGFloat)riseHeight:(CGFloat)height {
+    CGFloat riseHeight = height;
+    if (self.styleSelectionView.isHidden == NO) {
+        riseHeight = MAX(riseHeight, 220);
+    }
+    if (self.generationView.isHidden == NO) {
+        riseHeight = MAX(riseHeight, 260);
+    }
+    return riseHeight;
 }
 
 #pragma mark - Actions
