@@ -9,6 +9,7 @@
 #import "AIUASettingsCell.h"
 #import "AIUAWritingRecordsViewController.h"
 #import "AIUAAboutViewController.h"
+#import "AIUAMembershipViewController.h"
 #import <Masonry/Masonry.h>
 
 @interface AIUASettingsViewController () <UITableViewDelegate, UITableViewDataSource>
@@ -106,8 +107,9 @@
 #pragma mark - Actions
 
 - (void)showMemberPrivileges {
-    // TODO: 实现会员特权页面
-    NSLog(@"显示会员特权");
+    AIUAMembershipViewController *vc = [[AIUAMembershipViewController alloc] init];
+    vc.hidesBottomBarWhenPushed = YES;
+    [self.navigationController pushViewController:vc animated:YES];
 }
 
 - (void)showCreationRecords {
