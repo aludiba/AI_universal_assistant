@@ -64,6 +64,12 @@ typedef void(^AIUAIAPRestoreCompletion)(BOOL success, NSInteger restoredCount, N
 /// 清除订阅信息（仅用于测试）
 - (void)clearSubscriptionInfo;
 
+/// 本地验证收据
+- (BOOL)verifyReceiptLocally;
+
+/// 检测设备是否越狱
++ (BOOL)isJailbroken;
+
 @end
 
 NS_ASSUME_NONNULL_END

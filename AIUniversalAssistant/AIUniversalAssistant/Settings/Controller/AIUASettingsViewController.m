@@ -10,6 +10,7 @@
 #import "AIUAWritingRecordsViewController.h"
 #import "AIUAAboutViewController.h"
 #import "AIUAMembershipViewController.h"
+#import "AIUAIAPManager.h"
 #import <Masonry/Masonry.h>
 
 @interface AIUASettingsViewController () <UITableViewDelegate, UITableViewDataSource>
@@ -22,10 +23,30 @@
 
 @implementation AIUASettingsViewController
 
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    // 监听订阅状态变化
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(subscriptionStatusChanged:)
+                                                 name:@"AIUASubscriptionStatusChanged"
+                                               object:nil];
+}
+
+- (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
 - (void)setupUI {
     self.navigationItem.title = L(@"tab_settings");
     [self setupTableView];
     [self setupData];
+}
+
+- (void)subscriptionStatusChanged:(NSNotification *)notification {
+    // 订阅状态改变，刷新会员特权行
+    NSIndexPath *indexPath = [NSIndexPath indexPathForRow:0 inSection:0];
+    [self.tableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationNone];
 }
 
 - (void)setupTableView {
@@ -72,11 +93,18 @@
     NSString *iconName = item[@"icon"];
     NSString *colorHex = item[@"color"];
     NSString *title = item[@"title"];
+    NSString *action = item[@"action"];
     
     // 创建带颜色背景的图标
     UIImage *icon = [self createIconWithSystemName:iconName color:[self colorFromHex:colorHex]];
     
-    [cell configureWithIcon:icon title:title subtitle:nil];
+    // 为会员特权添加状态信息
+    NSString *subtitle = nil;
+    if ([action isEqualToString:@"memberPrivileges"]) {
+        subtitle = [self getMembershipStatusText];
+    }
+    
+    [cell configureWithIcon:icon title:title subtitle:subtitle];
     
     return cell;
 }
@@ -110,6 +138,34 @@
     AIUAMembershipViewController *vc = [[AIUAMembershipViewController alloc] init];
     vc.hidesBottomBarWhenPushed = YES;
     [self.navigationController pushViewController:vc animated:YES];
+}
+
+- (NSString *)getMembershipStatusText {
+    AIUAIAPManager *iapManager = [AIUAIAPManager sharedManager];
+    
+    if (!iapManager.isVIPMember) {
+        return L(@"not_vip_member");
+    }
+    
+    // 获取订阅类型
+    NSString *subscriptionType = [iapManager productNameForType:iapManager.currentSubscriptionType];
+    
+    // 获取到期时间
+    if (iapManager.subscriptionExpiryDate) {
+        // 如果是永久会员（到期时间>50年），显示"永久会员"
+        NSTimeInterval timeInterval = [iapManager.subscriptionExpiryDate timeIntervalSinceNow];
+        if (timeInterval > 50 * 365 * 24 * 60 * 60) {
+            return [NSString stringWithFormat:@"%@ - %@", subscriptionType, L(@"lifetime")];
+        }
+        
+        // 显示到期时间
+        NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+        formatter.dateFormat = @"yyyy-MM-dd";
+        NSString *expiryDateString = [formatter stringFromDate:iapManager.subscriptionExpiryDate];
+        return [NSString stringWithFormat:@"%@ - %@ %@", subscriptionType, L(@"expires_on"), expiryDateString];
+    }
+    
+    return subscriptionType;
 }
 
 - (void)showCreationRecords {

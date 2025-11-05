@@ -11,6 +11,7 @@
 #import "AIUADataManager.h"
 #import "AIUAToolsManager.h"
 #import "AIUAAlertHelper.h"
+#import "AIUAWritingInputViewController.h"
 
 @interface AIUASearchViewController () <UISearchBarDelegate, UITableViewDataSource, UITableViewDelegate>
 
@@ -374,17 +375,13 @@
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
-    
     if (self.isSearching) {
         NSDictionary *item = self.searchResults[indexPath.row];
         NSString *title = item[@"title"];
-        NSString *type = item[@"type"];
-        
         // 添加到历史搜索
         [self addToHistory:title];
-        
         // 处理模板选择
-        [self handleTemplateSelectionWithType:type title:title];
+        [self handleTemplateSelection:item];
     } else {
         // 点击历史搜索项，开始搜索
         NSString *historyText = self.historySearches[indexPath.row];
@@ -394,12 +391,10 @@
     }
 }
 
-- (void)handleTemplateSelectionWithType:(NSString *)type title:(NSString *)title {
-    // 这里可以处理模板选择后的逻辑
-    NSLog(@"选择了模板: %@, 类型: %@", title, type);
-    
-    // TODO:示例：显示提示
-    [AIUAAlertHelper showAlertWithTitle:@"模板选择" message:[NSString stringWithFormat:@"您选择了: %@", title] cancelBtnText:nil confirmBtnText:@"确定" inController:self cancelAction:nil confirmAction:nil];
+- (void)handleTemplateSelection:(NSDictionary *)item{
+    AIUAWritingInputViewController *writingInputVC = [[AIUAWritingInputViewController alloc] initWithTemplateItem:item categoryId:item[@"categoryId"] apiKey:APIKEY];
+    // 跳转到对应的写作页面
+    [self.navigationController pushViewController:writingInputVC animated:YES];
 }
 
 @end

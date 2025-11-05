@@ -121,14 +121,78 @@
 但需要在 App Store Connect 中创建对应的新产品ID。
 
 ### 3. 收据验证
-当前代码包含本地收据验证的框架，建议在生产环境中：
-1. 将收据发送到你的服务器
-2. 服务器将收据转发给 Apple 验证
-3. 根据验证结果解锁内容
 
-Apple 验证服务器：
-- 生产环境: `https://buy.itunes.apple.com/verifyReceipt`
-- 沙盒环境: `https://sandbox.itunes.apple.com/verifyReceipt`
+#### 本地验证（已实现）
+代码已实现基础的本地收据验证 `verifyReceiptLocally`：
+
+**验证内容**：
+1. ✅ 检查收据文件是否存在
+2. ✅ 验证收据数据大小（> 100 字节）
+3. ✅ 检查 PKCS#7 格式（DER 编码以 0x30 开头）
+4. ✅ 验证 Bundle ID
+5. ✅ 记录 Bundle Version
+
+**调用时机**：
+- 每次购买完成后
+- 每次恢复购买后
+- 检查订阅状态时（`checkSubscriptionStatus`）
+
+**安全性说明**：
+- ⚠️ 本地验证只能防止基本的篡改
+- ⚠️ 越狱设备可能伪造本地收据
+- ⚠️ 不能验证收据签名和详细内容
+- ✅ 适用于快速检查和离线场景
+- ✅ 可作为第一道防线
+
+#### 服务器验证（推荐用于生产环境）
+
+**优势**：
+- 🔒 完全安全，无法被客户端绕过
+- ✓ 验证收据签名
+- ✓ 解析所有购买信息
+- ✓ 检查订阅状态和到期时间
+- ✓ 防止越狱破解
+
+**实现步骤**：
+1. 客户端获取收据数据并 Base64 编码
+2. 发送到你的服务器
+3. 服务器转发到 Apple 验证服务器：
+   - 生产环境: `https://buy.itunes.apple.com/verifyReceipt`
+   - 沙盒环境: `https://sandbox.itunes.apple.com/verifyReceipt`
+4. 解析 Apple 返回的 JSON 结果
+5. 根据结果解锁内容
+
+**代码示例** (在 `verifyReceipt:` 方法中已提供注释)：
+```objective-c
+NSString *receiptString = [receiptData base64EncodedStringWithOptions:0];
+NSDictionary *requestDict = @{@"receipt-data": receiptString};
+// 发送到你的服务器...
+```
+
+**Apple 返回的 JSON 格式**：
+```json
+{
+  "status": 0,
+  "receipt": {
+    "bundle_id": "com.yourcompany.aiassistant",
+    "in_app": [
+      {
+        "product_id": "com.yourcompany.aiassistant.yearly",
+        "transaction_id": "1000000xxxxx",
+        "purchase_date": "2025-01-01 00:00:00 Etc/GMT"
+      }
+    ]
+  }
+}
+```
+
+**Status 代码**：
+- `0`: 验证成功
+- `21000`: 请求格式错误
+- `21002`: 收据数据错误
+- `21003`: 收据无法认证
+- `21007`: 沙盒收据发送到生产环境（需要重试到沙盒）
+- `21008`: 生产收据发送到沙盒环境（需要重试到生产）
 
 ## 五、常见问题
 
@@ -177,16 +241,27 @@ Apple 验证服务器：
 
 ## 六、上线前检查清单
 
+### 必须项
 - [ ] 所有产品在 App Store Connect 中已创建
 - [ ] 产品ID与代码中的匹配
 - [ ] 产品已本地化（中文和英文）
 - [ ] 已使用沙盒账号完整测试购买流程
 - [ ] 已测试恢复购买功能
-- [ ] 已添加收据验证（推荐使用服务器验证）
 - [ ] 已在应用中添加"恢复购买"按钮
 - [ ] 已准备审核说明和测试账号
-- [ ] 已添加订阅管理链接（在设置中）
 - [ ] 已添加隐私政策和用户协议
+
+### 验证相关
+- [x] ✅ 本地收据验证已实现（基础防护）
+- [ ] ⚠️ 服务器收据验证（强烈推荐，增强安全性）
+- [ ] 定期检查订阅状态（已实现 `checkSubscriptionStatus`）
+
+### 可选但推荐
+- [ ] 添加订阅管理链接（跳转到 App Store）
+- [ ] 实现 App Store Server Notifications（服务器端监听订阅变化）
+- [ ] 添加订阅到期提醒
+- [ ] 实现优惠码功能
+- [ ] 添加数据分析和统计
 
 ## 七、监控和维护
 

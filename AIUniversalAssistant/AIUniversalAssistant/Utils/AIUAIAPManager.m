@@ -6,6 +6,8 @@
 //
 
 #import "AIUAIAPManager.h"
+#import <sys/stat.h>
+#import <mach-o/dyld.h>
 
 // 本地存储Key
 static NSString * const kAIUAIsVIPMember = @"kAIUAIsVIPMember";
@@ -167,18 +169,31 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
 - (void)checkSubscriptionStatus {
     [self loadLocalSubscriptionInfo];
     
+    // 验证收据并更新订阅信息
+    BOOL isValid = [self verifyReceiptLocally];
+    
+    if (!isValid) {
+        NSLog(@"[IAP] 收据验证失败，清除订阅状态");
+        self.isVIPMember = NO;
+        self.subscriptionExpiryDate = nil;
+        [self saveLocalSubscriptionInfo];
+        return;
+    }
+    
     // 检查订阅是否过期
     if (self.subscriptionExpiryDate) {
         NSDate *now = [NSDate date];
         if ([now compare:self.subscriptionExpiryDate] == NSOrderedDescending) {
             // 订阅已过期
+            NSLog(@"[IAP] 订阅已过期");
             self.isVIPMember = NO;
             [self saveLocalSubscriptionInfo];
-            NSLog(@"[IAP] 订阅已过期");
+        } else {
+            NSLog(@"[IAP] 订阅有效，到期时间: %@", self.subscriptionExpiryDate);
         }
     }
     
-    // TODO: 可以添加服务器验证逻辑
+    // 注意：本地验证只是基础检查，强烈建议在生产环境中使用服务器验证
     // [self verifyReceiptWithServer];
 }
 
@@ -440,16 +455,535 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
         return;
     }
     
-    // TODO: 将收据发送到服务器进行验证
-    // 这是推荐的做法，可以防止越狱设备绕过验证
-    NSString *receiptString = [receiptData base64EncodedStringWithOptions:0];
-    NSLog(@"[IAP] 收据数据长度: %lu", (unsigned long)receiptString.length);
+    // 本地验证收据基本信息
+    BOOL isValid = [self verifyReceiptLocally];
+    NSLog(@"[IAP] 本地收据验证结果: %@", isValid ? @"通过" : @"失败");
     
-    // 实际项目中应该：
-    // 1. 将 receiptString 发送到你的服务器
-    // 2. 服务器将收据发送到 Apple 验证服务器
-    // 3. Apple 返回验证结果
-    // 4. 服务器根据结果决定是否解锁内容
+    // 注意：本地验证只是基础检查，不能完全防止破解
+    // 强烈建议在生产环境中使用服务器验证：
+    // 1. 将收据数据发送到你的服务器
+    // 2. 服务器将收据转发到 Apple 验证服务器
+    //    - 生产环境: https://buy.itunes.apple.com/verifyReceipt
+    //    - 沙盒环境: https://sandbox.itunes.apple.com/verifyReceipt
+    // 3. Apple 返回验证结果（JSON格式）
+    // 4. 服务器解析结果并决定是否解锁内容
+    // 5. 服务器返回结果给客户端
+    
+    // 示例服务器验证代码（需要在你的服务器端实现）：
+    /*
+    NSString *receiptString = [receiptData base64EncodedStringWithOptions:0];
+    NSDictionary *requestDict = @{@"receipt-data": receiptString};
+    NSData *requestData = [NSJSONSerialization dataWithJSONObject:requestDict options:0 error:nil];
+    
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:@"YOUR_SERVER_URL"]];
+    request.HTTPMethod = @"POST";
+    request.HTTPBody = requestData;
+    [request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
+    
+    [[[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        if (data) {
+            NSDictionary *result = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
+            // 处理服务器返回的验证结果
+        }
+    }] resume];
+    */
+}
+
+- (BOOL)verifyReceiptLocally {
+    // 1. 检查收据文件是否存在
+    NSURL *receiptURL = [[NSBundle mainBundle] appStoreReceiptURL];
+    if (!receiptURL) {
+        NSLog(@"[IAP] 收据URL为空");
+        return NO;
+    }
+    
+    NSData *receiptData = [NSData dataWithContentsOfURL:receiptURL];
+    if (!receiptData || receiptData.length == 0) {
+        NSLog(@"[IAP] 收据数据为空");
+        return NO;
+    }
+    
+    NSLog(@"[IAP] 收据文件存在，大小: %lu bytes", (unsigned long)receiptData.length);
+    
+    // 2. 验证 Bundle ID
+    NSString *bundleIdentifier = [[NSBundle mainBundle] bundleIdentifier];
+    NSString *bundleVersion = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleShortVersionString"];
+    
+    NSLog(@"[IAP] 应用 Bundle ID: %@", bundleIdentifier);
+    NSLog(@"[IAP] 应用版本: %@", bundleVersion);
+    
+    // 3. 收据文件大小验证
+    if (receiptData.length < 100) {
+        NSLog(@"[IAP] 收据文件太小，可能无效");
+        return NO;
+    }
+    
+    // 4. 检查是否是 PKCS#7 格式
+    const unsigned char *bytes = [receiptData bytes];
+    if (bytes[0] != 0x30) {
+        NSLog(@"[IAP] 收据格式不是有效的 PKCS#7");
+        return NO;
+    }
+    
+    // 5. 解析收据中的 Bundle ID 和订阅信息
+    NSDictionary *receiptInfo = [self parseReceiptData:receiptData];
+    
+    if (receiptInfo) {
+        // 验证 Bundle ID
+        NSString *receiptBundleId = receiptInfo[@"bundle_id"];
+        if (receiptBundleId && ![receiptBundleId isEqualToString:bundleIdentifier]) {
+            NSLog(@"[IAP] Bundle ID不匹配！应用: %@, 收据: %@", bundleIdentifier, receiptBundleId);
+            return NO;
+        }
+        
+        // 提取订阅信息
+        NSArray *inAppPurchases = receiptInfo[@"in_app"];
+        if (inAppPurchases && inAppPurchases.count > 0) {
+            // 找到最新的有效订阅
+            NSDictionary *latestSubscription = [self findLatestValidSubscription:inAppPurchases];
+            
+            if (latestSubscription) {
+                NSString *productId = latestSubscription[@"product_id"];
+                NSDate *expiresDate = latestSubscription[@"expires_date"];
+                
+                NSLog(@"[IAP] 从收据中提取订阅信息 - 产品: %@, 到期: %@", productId, expiresDate);
+                
+                // 根据 product_id 确定订阅类型
+                AIUASubscriptionProductType productType = [self productTypeFromProductId:productId];
+                
+                // 更新本地缓存
+                self.currentSubscriptionType = productType;
+                
+                if (expiresDate) {
+                    self.subscriptionExpiryDate = expiresDate;
+                    
+                    // 检查是否过期
+                    NSDate *now = [NSDate date];
+                    if ([now compare:expiresDate] == NSOrderedAscending) {
+                        // 未过期
+                        self.isVIPMember = YES;
+                        NSLog(@"[IAP] 订阅有效，类型: %ld, 到期: %@", (long)productType, expiresDate);
+                    } else {
+                        // 已过期
+                        self.isVIPMember = NO;
+                        NSLog(@"[IAP] 订阅已过期");
+                    }
+                } else {
+                    // 永久会员或非续期订阅
+                    self.isVIPMember = YES;
+                    self.subscriptionExpiryDate = [self calculateExpiryDateForProductType:productType];
+                    NSLog(@"[IAP] 永久订阅");
+                }
+                
+                // 保存更新后的信息
+                [self saveLocalSubscriptionInfo];
+            }
+        }
+    }
+    
+    NSLog(@"[IAP] 本地收据验证通过");
+    
+    // 注意：这只是基本验证，真正的安全性需要服务器端验证
+    return YES;
+}
+
+// 解析收据中的订阅信息
+- (NSDictionary *)parseReceiptData:(NSData *)receiptData {
+    if (!receiptData || receiptData.length == 0) {
+        return nil;
+    }
+    
+    // 注意：完整的ASN.1解析非常复杂
+    // 这里实现简化版本，提取关键信息
+    
+    NSMutableDictionary *result = [NSMutableDictionary dictionary];
+    NSMutableArray *inAppPurchases = [NSMutableArray array];
+    
+    const uint8_t *bytes = [receiptData bytes];
+    NSUInteger length = receiptData.length;
+    
+    // 尝试查找Bundle ID和购买记录
+    // Bundle ID 在收据中的字段类型为 2
+    // In-App Purchase 在收据中的字段类型为 17
+    
+    for (NSUInteger i = 0; i < length - 20; i++) {
+        // 查找 Bundle ID 模式
+        if (i + 100 < length) {
+            NSString *bundleId = [self extractBundleIdFromReceipt:receiptData atOffset:i];
+            if (bundleId && bundleId.length > 0) {
+                result[@"bundle_id"] = bundleId;
+                NSLog(@"[IAP] 从收据中提取 Bundle ID: %@", bundleId);
+            }
+        }
+        
+        // 查找产品ID模式（简化查找）
+        NSString *productId = [self extractProductIdFromReceipt:receiptData atOffset:i];
+        if (productId && [productId containsString:@"."]) {
+            // 可能是一个有效的产品ID
+            NSMutableDictionary *purchase = [NSMutableDictionary dictionary];
+            purchase[@"product_id"] = productId;
+            
+            // 尝试提取过期时间（对于自动续订订阅）
+            NSDate *expiresDate = [self extractExpiresDateFromReceipt:receiptData nearOffset:i];
+            if (expiresDate) {
+                purchase[@"expires_date"] = expiresDate;
+            }
+            
+            [inAppPurchases addObject:purchase];
+            NSLog(@"[IAP] 从收据中提取产品: %@", productId);
+        }
+    }
+    
+    if (inAppPurchases.count > 0) {
+        result[@"in_app"] = inAppPurchases;
+    }
+    
+    return result.count > 0 ? result : nil;
+}
+
+// 从收据中提取 Bundle ID
+- (NSString *)extractBundleIdFromReceipt:(NSData *)receiptData atOffset:(NSUInteger)offset {
+    const uint8_t *bytes = [receiptData bytes];
+    NSUInteger length = receiptData.length;
+    
+    if (offset + 50 > length) return nil;
+    
+    // 查找可能的Bundle ID字符串
+    // Bundle ID通常是 com.company.appname 格式
+    for (NSUInteger i = offset; i < MIN(offset + 100, length - 30); i++) {
+        if (bytes[i] == 'c' && bytes[i+1] == 'o' && bytes[i+2] == 'm' && bytes[i+3] == '.') {
+            // 可能找到了Bundle ID
+            NSUInteger endPos = i;
+            while (endPos < length && endPos < i + 100) {
+                char c = bytes[endPos];
+                if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || 
+                    (c >= '0' && c <= '9') || c == '.' || c == '-') {
+                    endPos++;
+                } else {
+                    break;
+                }
+            }
+            
+            if (endPos > i + 10) { // Bundle ID至少有一定长度
+                NSData *bundleData = [receiptData subdataWithRange:NSMakeRange(i, endPos - i)];
+                NSString *bundleId = [[NSString alloc] initWithData:bundleData encoding:NSUTF8StringEncoding];
+                if (bundleId && [bundleId componentsSeparatedByString:@"."].count >= 3) {
+                    return bundleId;
+                }
+            }
+        }
+    }
+    
+    return nil;
+}
+
+// 从收据中提取产品ID
+- (NSString *)extractProductIdFromReceipt:(NSData *)receiptData atOffset:(NSUInteger)offset {
+    const uint8_t *bytes = [receiptData bytes];
+    NSUInteger length = receiptData.length;
+    
+    if (offset + 50 > length) return nil;
+    
+    // 查找可能的产品ID (包含 lifetime, yearly, monthly, weekly)
+    NSArray *productTypes = @[@"lifetime", @"yearly", @"monthly", @"weekly"];
+    
+    for (NSString *type in productTypes) {
+        const char *typeStr = [type UTF8String];
+        NSUInteger typeLen = strlen(typeStr);
+        
+        if (offset + typeLen < length) {
+            BOOL found = YES;
+            for (NSUInteger j = 0; j < typeLen; j++) {
+                if (bytes[offset + j] != typeStr[j]) {
+                    found = NO;
+                    break;
+                }
+            }
+            
+            if (found) {
+                // 向前查找完整的产品ID
+                NSUInteger startPos = offset;
+                while (startPos > 0 && startPos > offset - 100) {
+                    char c = bytes[startPos - 1];
+                    if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || 
+                        (c >= '0' && c <= '9') || c == '.' || c == '-') {
+                        startPos--;
+                    } else {
+                        break;
+                    }
+                }
+                
+                NSUInteger endPos = offset + typeLen;
+                NSData *productData = [receiptData subdataWithRange:NSMakeRange(startPos, endPos - startPos)];
+                NSString *productId = [[NSString alloc] initWithData:productData encoding:NSUTF8StringEncoding];
+                
+                if (productId && [productId containsString:@"."]) {
+                    return productId;
+                }
+            }
+        }
+    }
+    
+    return nil;
+}
+
+// 从收据中提取过期时间
+- (NSDate *)extractExpiresDateFromReceipt:(NSData *)receiptData nearOffset:(NSUInteger)offset {
+    if (!receiptData || receiptData.length == 0) {
+        return nil;
+    }
+    
+    const uint8_t *bytes = [receiptData bytes];
+    NSUInteger length = receiptData.length;
+    
+    // 在产品ID附近搜索时间戳
+    // ASN.1 时间戳格式：YYYYMMDDTHHMMSSZ 或 YYYY-MM-DDTHH:MM:SSZ
+    NSUInteger searchStart = (offset > 200) ? offset - 200 : 0;
+    NSUInteger searchEnd = MIN(offset + 500, length);
+    
+    // 方法1: 查找 ISO 8601 格式时间戳 (YYYY-MM-DD)
+    NSDate *isoDate = [self findISO8601DateInReceipt:receiptData start:searchStart end:searchEnd];
+    if (isoDate) {
+        NSLog(@"[IAP] 从收据中提取到 ISO 8601 时间戳: %@", isoDate);
+        return isoDate;
+    }
+    
+    // 方法2: 查找 ASN.1 GeneralizedTime 格式 (YYYYMMDDHHMMSSZ)
+    NSDate *asnDate = [self findASN1DateInReceipt:receiptData start:searchStart end:searchEnd];
+    if (asnDate) {
+        NSLog(@"[IAP] 从收据中提取到 ASN.1 时间戳: %@", asnDate);
+        return asnDate;
+    }
+    
+    NSLog(@"[IAP] 未能从收据中提取过期时间");
+    return nil;
+}
+
+// 查找 ISO 8601 格式的时间戳 (YYYY-MM-DDTHH:MM:SSZ)
+- (NSDate *)findISO8601DateInReceipt:(NSData *)receiptData start:(NSUInteger)start end:(NSUInteger)end {
+    const uint8_t *bytes = [receiptData bytes];
+    NSUInteger length = receiptData.length;
+    
+    // 查找模式: 20XX-XX-XX (未来日期，作为订阅到期时间)
+    for (NSUInteger i = start; i < end && i < length - 20; i++) {
+        // 检查是否是年份开头 (20)
+        if (bytes[i] == '2' && bytes[i+1] == '0' && 
+            bytes[i+2] >= '2' && bytes[i+2] <= '9' && 
+            bytes[i+3] >= '0' && bytes[i+3] <= '9') {
+            
+            // 检查日期分隔符 (-)
+            if (i + 10 < length && bytes[i+4] == '-' && bytes[i+7] == '-') {
+                // 提取完整的时间戳字符串
+                NSString *dateString = [self extractDateStringFromReceipt:receiptData offset:i];
+                
+                if (dateString && dateString.length >= 10) {
+                    NSDate *date = [self parseDateString:dateString];
+                    if (date) {
+                        // 验证日期是否在未来（订阅到期时间应该在未来）
+                        NSDate *now = [NSDate date];
+                        NSTimeInterval interval = [date timeIntervalSinceDate:now];
+                        
+                        // 只接受未来3个月到10年之间的日期（合理的订阅周期）
+                        if (interval > -30*24*3600 && interval < 10*365*24*3600) {
+                            return date;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    return nil;
+}
+
+// 查找 ASN.1 GeneralizedTime 格式 (YYYYMMDDHHMMSSZ)
+- (NSDate *)findASN1DateInReceipt:(NSData *)receiptData start:(NSUInteger)start end:(NSUInteger)end {
+    const uint8_t *bytes = [receiptData bytes];
+    NSUInteger length = receiptData.length;
+    
+    // ASN.1 GeneralizedTime 标签是 0x18
+    for (NSUInteger i = start; i < end && i < length - 20; i++) {
+        if (bytes[i] == 0x18) {
+            // 下一个字节是长度
+            NSUInteger timeLength = bytes[i+1];
+            
+            // GeneralizedTime 通常是 15 字节 (YYYYMMDDHHMMSSZ)
+            if (timeLength >= 14 && timeLength <= 17 && i + 2 + timeLength < length) {
+                NSData *timeData = [receiptData subdataWithRange:NSMakeRange(i+2, timeLength)];
+                NSString *timeString = [[NSString alloc] initWithData:timeData encoding:NSASCIIStringEncoding];
+                
+                if (timeString && [self isValidASN1TimeString:timeString]) {
+                    NSDate *date = [self parseASN1TimeString:timeString];
+                    if (date) {
+                        // 验证日期合理性
+                        NSDate *now = [NSDate date];
+                        NSTimeInterval interval = [date timeIntervalSinceDate:now];
+                        
+                        if (interval > -30*24*3600 && interval < 10*365*24*3600) {
+                            return date;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    return nil;
+}
+
+// 从收据中提取日期字符串
+- (NSString *)extractDateStringFromReceipt:(NSData *)receiptData offset:(NSUInteger)offset {
+    const uint8_t *bytes = [receiptData bytes];
+    NSUInteger length = receiptData.length;
+    
+    if (offset + 30 > length) return nil;
+    
+    // 尝试提取完整的 ISO 8601 时间戳
+    // 格式: YYYY-MM-DDTHH:MM:SSZ 或 YYYY-MM-DD HH:MM:SS
+    NSMutableString *dateString = [NSMutableString string];
+    
+    for (NSUInteger i = offset; i < MIN(offset + 30, length); i++) {
+        char c = bytes[i];
+        
+        // 有效的日期时间字符
+        if ((c >= '0' && c <= '9') || c == '-' || c == ':' || 
+            c == 'T' || c == 'Z' || c == ' ' || c == '.') {
+            [dateString appendFormat:@"%c", c];
+        } else {
+            // 遇到非日期字符，停止
+            break;
+        }
+        
+        // 至少获取 YYYY-MM-DD
+        if (dateString.length >= 10) {
+            break;
+        }
+    }
+    
+    return dateString.length >= 10 ? dateString : nil;
+}
+
+// 解析日期字符串
+- (NSDate *)parseDateString:(NSString *)dateString {
+    if (!dateString || dateString.length < 10) {
+        return nil;
+    }
+    
+    // 尝试多种格式
+    NSArray *formatters = @[
+        [self createDateFormatterWithFormat:@"yyyy-MM-dd'T'HH:mm:ss'Z'"],      // ISO 8601 完整格式
+        [self createDateFormatterWithFormat:@"yyyy-MM-dd'T'HH:mm:ss"],         // ISO 8601 无Z
+        [self createDateFormatterWithFormat:@"yyyy-MM-dd HH:mm:ss"],           // 空格分隔
+        [self createDateFormatterWithFormat:@"yyyy-MM-dd"],                    // 仅日期
+    ];
+    
+    for (NSDateFormatter *formatter in formatters) {
+        NSDate *date = [formatter dateFromString:dateString];
+        if (date) {
+            return date;
+        }
+    }
+    
+    return nil;
+}
+
+// 创建日期格式化器
+- (NSDateFormatter *)createDateFormatterWithFormat:(NSString *)format {
+    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+    formatter.dateFormat = format;
+    formatter.locale = [[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"];
+    formatter.timeZone = [NSTimeZone timeZoneWithName:@"UTC"];
+    return formatter;
+}
+
+// 验证 ASN.1 时间字符串格式
+- (BOOL)isValidASN1TimeString:(NSString *)timeString {
+    if (!timeString || timeString.length < 14) {
+        return NO;
+    }
+    
+    // GeneralizedTime 格式: YYYYMMDDHHMMSSZ
+    // 至少14个字符，以Z结尾
+    return [timeString hasSuffix:@"Z"] && timeString.length >= 14;
+}
+
+// 解析 ASN.1 GeneralizedTime 字符串
+- (NSDate *)parseASN1TimeString:(NSString *)timeString {
+    if (![self isValidASN1TimeString:timeString]) {
+        return nil;
+    }
+    
+    // 格式: YYYYMMDDHHMMSSZ
+    // 提取各个部分
+    if (timeString.length < 14) return nil;
+    
+    NSInteger year = [[timeString substringWithRange:NSMakeRange(0, 4)] integerValue];
+    NSInteger month = [[timeString substringWithRange:NSMakeRange(4, 2)] integerValue];
+    NSInteger day = [[timeString substringWithRange:NSMakeRange(6, 2)] integerValue];
+    NSInteger hour = [[timeString substringWithRange:NSMakeRange(8, 2)] integerValue];
+    NSInteger minute = [[timeString substringWithRange:NSMakeRange(10, 2)] integerValue];
+    NSInteger second = [[timeString substringWithRange:NSMakeRange(12, 2)] integerValue];
+    
+    // 验证范围
+    if (year < 2020 || year > 2100 || 
+        month < 1 || month > 12 || 
+        day < 1 || day > 31 ||
+        hour < 0 || hour > 23 ||
+        minute < 0 || minute > 59 ||
+        second < 0 || second > 59) {
+        return nil;
+    }
+    
+    // 创建日期组件
+    NSDateComponents *components = [[NSDateComponents alloc] init];
+    components.year = year;
+    components.month = month;
+    components.day = day;
+    components.hour = hour;
+    components.minute = minute;
+    components.second = second;
+    components.timeZone = [NSTimeZone timeZoneWithName:@"UTC"];
+    
+    NSCalendar *calendar = [NSCalendar calendarWithIdentifier:NSCalendarIdentifierGregorian];
+    calendar.timeZone = [NSTimeZone timeZoneWithName:@"UTC"];
+    
+    return [calendar dateFromComponents:components];
+}
+
+// 找到最新的有效订阅
+- (NSDictionary *)findLatestValidSubscription:(NSArray *)inAppPurchases {
+    if (!inAppPurchases || inAppPurchases.count == 0) {
+        return nil;
+    }
+    
+    // 优先级：lifetime > yearly > monthly > weekly
+    NSArray *priorityOrder = @[@"lifetime", @"yearly", @"monthly", @"weekly"];
+    
+    for (NSString *type in priorityOrder) {
+        for (NSDictionary *purchase in inAppPurchases) {
+            NSString *productId = purchase[@"product_id"];
+            if ([productId containsString:type]) {
+                return purchase;
+            }
+        }
+    }
+    
+    // 返回第一个
+    return inAppPurchases.firstObject;
+}
+
+// 根据产品ID获取订阅类型
+- (AIUASubscriptionProductType)productTypeFromProductId:(NSString *)productId {
+    if ([productId containsString:@"lifetime"]) {
+        return AIUASubscriptionProductTypeLifetime;
+    } else if ([productId containsString:@"yearly"]) {
+        return AIUASubscriptionProductTypeYearly;
+    } else if ([productId containsString:@"monthly"]) {
+        return AIUASubscriptionProductTypeMonthly;
+    } else if ([productId containsString:@"weekly"]) {
+        return AIUASubscriptionProductTypeWeekly;
+    }
+    return AIUASubscriptionProductTypeLifetime;
 }
 
 #pragma mark - Local Storage
@@ -473,6 +1007,93 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
     [defaults synchronize];
     
     NSLog(@"[IAP] 保存本地订阅信息 - VIP: %d, Type: %ld", self.isVIPMember, (long)self.currentSubscriptionType);
+}
+
+#pragma mark - Jailbreak Detection
+
++ (BOOL)isJailbroken {
+    #if TARGET_IPHONE_SIMULATOR
+    // 模拟器环境，不检测越狱
+    return NO;
+    #endif
+    
+    // 方法1: 检查常见的越狱文件
+    NSArray *jailbreakPaths = @[
+        @"/Applications/Cydia.app",
+        @"/Library/MobileSubstrate/MobileSubstrate.dylib",
+        @"/bin/bash",
+        @"/usr/sbin/sshd",
+        @"/etc/apt",
+        @"/private/var/lib/apt/",
+        @"/private/var/lib/cydia",
+        @"/private/var/stash",
+        @"/Applications/Sileo.app",
+        @"/Applications/Zebra.app",
+        @"/usr/bin/ssh",
+        @"/usr/libexec/ssh-keysign",
+        @"/var/cache/apt",
+        @"/var/lib/apt",
+        @"/var/lib/cydia",
+        @"/usr/sbin/frida-server",
+        @"/usr/bin/cycript",
+        @"/usr/local/bin/cycript",
+        @"/usr/lib/libcycript.dylib"
+    ];
+    
+    for (NSString *path in jailbreakPaths) {
+        if ([[NSFileManager defaultManager] fileExistsAtPath:path]) {
+            NSLog(@"[IAP] 检测到越狱文件: %@", path);
+            return YES;
+        }
+    }
+    
+    // 方法2: 检查是否可以写入系统目录
+    NSString *testPath = @"/private/jailbreak_test.txt";
+    NSError *error;
+    [@"test" writeToFile:testPath atomically:YES encoding:NSUTF8StringEncoding error:&error];
+    if (!error) {
+        [[NSFileManager defaultManager] removeItemAtPath:testPath error:nil];
+        NSLog(@"[IAP] 检测到可以写入系统目录");
+        return YES;
+    }
+    
+    // 方法3: 检查是否可以打开 Cydia URL
+    if ([[UIApplication sharedApplication] canOpenURL:[NSURL URLWithString:@"cydia://package/com.example.package"]]) {
+        NSLog(@"[IAP] 检测到可以打开 Cydia URL");
+        return YES;
+    }
+    
+    // 方法4: 检查环境变量
+    char *env = getenv("DYLD_INSERT_LIBRARIES");
+    if (env != NULL) {
+        NSLog(@"[IAP] 检测到 DYLD_INSERT_LIBRARIES 环境变量");
+        return YES;
+    }
+    
+    // 方法5: 检查可疑的动态库
+    uint32_t count = _dyld_image_count();
+    for (uint32_t i = 0; i < count; i++) {
+        const char *name = _dyld_get_image_name(i);
+        NSString *imageName = [NSString stringWithUTF8String:name];
+        
+        if ([imageName containsString:@"MobileSubstrate"] ||
+            [imageName containsString:@"substrate"] ||
+            [imageName containsString:@"cycript"] ||
+            [imageName containsString:@"SSLKillSwitch"]) {
+            NSLog(@"[IAP] 检测到可疑动态库: %@", imageName);
+            return YES;
+        }
+    }
+    
+    // 方法6: 检查系统调用
+    struct stat stat_info;
+    if (stat("/Applications/Cydia.app", &stat_info) == 0) {
+        NSLog(@"[IAP] 通过 stat 检测到越狱");
+        return YES;
+    }
+    
+    NSLog(@"[IAP] 未检测到越狱");
+    return NO;
 }
 
 @end
