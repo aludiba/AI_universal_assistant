@@ -5,6 +5,7 @@
 #import "AIUAAlertHelper.h"
 #import "AIUASearchViewController.h"
 #import "AIUAWritingInputViewController.h"
+#import "AIUAVIPManager.h"
 
 static NSString * const kCardCellId = @"CardCell";
 static NSString * const kEmptyCellId = @"EmptyCell";
@@ -484,10 +485,16 @@ static NSString * const kEmptyCellId = @"EmptyCell";
 }
 
 - (void)navigateToWriting:(NSDictionary *)item {
-    AIUAWritingInputViewController *writingInputVC = [[AIUAWritingInputViewController alloc] initWithTemplateItem:item categoryId:item[@"categoryId"] apiKey:APIKEY];
-    writingInputVC.hidesBottomBarWhenPushed = YES;
-    // 跳转到对应的写作页面
-    [self.navigationController pushViewController:writingInputVC animated:YES];
+    // 检查VIP权限
+    [[AIUAVIPManager sharedManager] checkVIPPermissionWithViewController:self completion:^(BOOL hasPermission) {
+        if (hasPermission) {
+            // 有权限，跳转到写作页面
+            AIUAWritingInputViewController *writingInputVC = [[AIUAWritingInputViewController alloc] initWithTemplateItem:item categoryId:item[@"categoryId"] apiKey:APIKEY];
+            writingInputVC.hidesBottomBarWhenPushed = YES;
+            [self.navigationController pushViewController:writingInputVC animated:YES];
+        }
+        // 无权限，已显示弹窗
+    }];
 }
 
 #pragma mark - AIUACollectionViewCellDelegate

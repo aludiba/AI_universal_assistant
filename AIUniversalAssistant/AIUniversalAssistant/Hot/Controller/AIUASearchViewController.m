@@ -12,6 +12,7 @@
 #import "AIUAToolsManager.h"
 #import "AIUAAlertHelper.h"
 #import "AIUAWritingInputViewController.h"
+#import "AIUAVIPManager.h"
 
 @interface AIUASearchViewController () <UISearchBarDelegate, UITableViewDataSource, UITableViewDelegate>
 
@@ -392,9 +393,15 @@
 }
 
 - (void)handleTemplateSelection:(NSDictionary *)item{
-    AIUAWritingInputViewController *writingInputVC = [[AIUAWritingInputViewController alloc] initWithTemplateItem:item categoryId:item[@"categoryId"] apiKey:APIKEY];
-    // 跳转到对应的写作页面
-    [self.navigationController pushViewController:writingInputVC animated:YES];
+    // 检查VIP权限
+    [[AIUAVIPManager sharedManager] checkVIPPermissionWithViewController:self completion:^(BOOL hasPermission) {
+        if (hasPermission) {
+            AIUAWritingInputViewController *writingInputVC = [[AIUAWritingInputViewController alloc] initWithTemplateItem:item categoryId:item[@"categoryId"] apiKey:APIKEY];
+            // 跳转到对应的写作页面
+            [self.navigationController pushViewController:writingInputVC animated:YES];
+        }
+        // 无权限，已显示弹窗
+    }];
 }
 
 @end

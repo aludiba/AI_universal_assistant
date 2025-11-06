@@ -186,3 +186,9 @@
 "security_alert" = "Security Alert";
 "jailbreak_detected_message" = "Jailbroken device detected. For your data security, the app will exit.";
 "auto_renew_agreement_content" = "Auto-Renewal Service Agreement\n\nThis agreement explains the terms of the auto-renewal service.\n\n1. Service Description\n1. Auto-renewal means the system will automatically renew your membership before it expires;\n2. The renewal cycle is the same as your selected subscription cycle;\n3. The renewal price is based on the standard price at that time.\n\n2. Billing\n1. Auto-renewal will be charged within 24 hours before membership expiration;\n2. After successful billing, the membership period will automatically extend by one cycle.\n\n3. Cancellation\n1. You can cancel the auto-renewal service at any time;\n2. After cancellation, the current membership period remains valid and will not renew after expiration;\n3. Cancellation must be completed 24 hours before the next billing.\n\n4. Refund Policy\nSubscription fees that have been charged are non-refundable unless otherwise required by law.";
+
+// VIP Permission Prompts
+"vip_unlock_required" = "VIP Membership Required";
+"vip_feature_locked_message" = "The \"%@\" feature requires VIP membership to use";
+"vip_general_locked_message" = "This feature requires VIP membership to use";
+"unlock_vip_features" = "Unlock All Features with VIP";

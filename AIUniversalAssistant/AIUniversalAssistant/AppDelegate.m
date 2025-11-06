@@ -53,7 +53,7 @@
 }
 
 - (void)applicationDidBecomeActive:(UIApplication *)application {
-    // 检查订阅状态
+    // 这会从本地收据中提取订阅信息，即使用户重新下载或更换设备
     [[AIUAIAPManager sharedManager] checkSubscriptionStatus];
 }
 

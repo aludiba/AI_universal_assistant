@@ -11,6 +11,7 @@
 #import "AIUADataManager.h"
 #import "AIUAWritingDetailViewController.h"
 #import "AIUAWritingRecordsViewController.h"
+#import "AIUAVIPManager.h"
 
 @interface AIUAWriterViewController ()<UITableViewDelegate, UITableViewDataSource>
 
@@ -65,11 +66,17 @@
     };
     WeakType(self);
     self.inputCell.onStartCreate = ^(NSString *text) {
-        AIUAWritingDetailViewController *writingDetailVC = [[AIUAWritingDetailViewController alloc] initWithPrompt:text apiKey:APIKEY];
-        writingDetailVC.hidesBottomBarWhenPushed = YES;
         StrongType(self);
-        // 开始创作处理
-        [strongself.navigationController pushViewController:writingDetailVC animated:YES];
+        // 检查VIP权限
+        [[AIUAVIPManager sharedManager] checkVIPPermissionWithViewController:strongself completion:^(BOOL hasPermission) {
+            if (hasPermission) {
+                // 有权限，开始创作
+                AIUAWritingDetailViewController *writingDetailVC = [[AIUAWritingDetailViewController alloc] initWithPrompt:text apiKey:APIKEY];
+                writingDetailVC.hidesBottomBarWhenPushed = YES;
+                [strongself.navigationController pushViewController:writingDetailVC animated:YES];
+            }
+            // 无权限，已显示弹窗
+        }];
     };
 }
 

@@ -3,6 +3,7 @@
 #import "AIUAAlertHelper.h"
 #import "AIUAMBProgressManager.h"
 #import "AIUAToolsManager.h"
+#import "AIUAVIPManager.h"
 #import "UITextView+AIUAPlaceholder.h"
 #import <Masonry/Masonry.h>
 #import <MBProgressHUD/MBProgressHUD.h>
@@ -861,58 +862,70 @@
 }
 
 - (void)toolbarButtonTapped:(UIButton *)sender {
-    if (!self.hasUserEdited && self.isNewDocument) {
-        [AIUAAlertHelper showAlertWithTitle:L(@"prompt")
-                                   message:L(@"please_enter_content_first")
-                             cancelBtnText:nil
-                            confirmBtnText:L(@"confirm")
-                              inController:self
-                              cancelAction:nil
-                             confirmAction:nil];
-        return;
-    }
+    // 检查VIP权限
+    NSArray *featureNames = @[L(@"continue_writing"), L(@"rewrite"), L(@"expand_writing"), L(@"translate")];
+    NSString *featureName = sender.tag < featureNames.count ? featureNames[sender.tag] : @"";
     
-    if (self.currentContent.length == 0) {
-        [AIUAAlertHelper showAlertWithTitle:L(@"prompt")
-                                   message:L(@"please_enter_main_content_firs")
-                             cancelBtnText:nil
-                            confirmBtnText:L(@"confirm")
-                              inController:self
-                              cancelAction:nil
-                             confirmAction:nil];
-        return;
-    }
-    
-    // 检查DeepSeek配置
-    if (!self.deepSeekWriter) {
-        [AIUAAlertHelper showAlertWithTitle:L(@"config_error")
-                                   message:L(@"please_configure_deepseek_api_key_first")
-                             cancelBtnText:nil
-                            confirmBtnText:L(@"confirm")
-                              inController:self
-                              cancelAction:nil
-                             confirmAction:nil];
-        return;
-    }
-    
-    for (int i = 0; i < self.toolbarButtonsArray.count; i++) {
-        UIButton *button = self.toolbarButtonsArray[i];
-        if (sender.tag == button.tag) {
-            [button setTitleColor:[UIColor systemBlueColor] forState:UIControlStateNormal];
-            button.tintColor = [UIColor systemBlueColor];
-        } else {
-            [button setTitleColor:AIUAUIColorSimplifyRGB(0.2, 0.2, 0.2) forState:UIControlStateNormal];
-            button.tintColor = AIUAUIColorSimplifyRGB(0.2, 0.2, 0.2);
+    [[AIUAVIPManager sharedManager] checkVIPPermissionWithViewController:self completion:^(BOOL hasPermission) {
+        if (!hasPermission) {
+            // 无权限，已显示弹窗
+            return;
         }
-    }
-    
-    self.currentEditType = (AIUAWritingEditType)sender.tag;
-    
-    // 根据类型更新界面
-    [self updateStyleSelectionForType:self.currentEditType];
-    
-    // 显示风格选择视图
-    [self showStyleSelectionView];
+        
+        // 有权限，执行原有逻辑
+        if (!self.hasUserEdited && self.isNewDocument) {
+            [AIUAAlertHelper showAlertWithTitle:L(@"prompt")
+                                       message:L(@"please_enter_content_first")
+                                 cancelBtnText:nil
+                                confirmBtnText:L(@"confirm")
+                                  inController:self
+                                  cancelAction:nil
+                                 confirmAction:nil];
+            return;
+        }
+        
+        if (self.currentContent.length == 0) {
+            [AIUAAlertHelper showAlertWithTitle:L(@"prompt")
+                                       message:L(@"please_enter_main_content_firs")
+                                 cancelBtnText:nil
+                                confirmBtnText:L(@"confirm")
+                                  inController:self
+                                  cancelAction:nil
+                                 confirmAction:nil];
+            return;
+        }
+        
+        // 检查DeepSeek配置
+        if (!self.deepSeekWriter) {
+            [AIUAAlertHelper showAlertWithTitle:L(@"config_error")
+                                       message:L(@"please_configure_deepseek_api_key_first")
+                                 cancelBtnText:nil
+                                confirmBtnText:L(@"confirm")
+                                  inController:self
+                                  cancelAction:nil
+                                 confirmAction:nil];
+            return;
+        }
+        
+        for (int i = 0; i < self.toolbarButtonsArray.count; i++) {
+            UIButton *button = self.toolbarButtonsArray[i];
+            if (sender.tag == button.tag) {
+                [button setTitleColor:[UIColor systemBlueColor] forState:UIControlStateNormal];
+                button.tintColor = [UIColor systemBlueColor];
+            } else {
+                [button setTitleColor:AIUAUIColorSimplifyRGB(0.2, 0.2, 0.2) forState:UIControlStateNormal];
+                button.tintColor = AIUAUIColorSimplifyRGB(0.2, 0.2, 0.2);
+            }
+        }
+        
+        self.currentEditType = (AIUAWritingEditType)sender.tag;
+        
+        // 根据类型更新界面
+        [self updateStyleSelectionForType:self.currentEditType];
+        
+        // 显示风格选择视图
+        [self showStyleSelectionView];
+    }];
 }
 
 - (void)styleButtonTapped:(UIButton *)sender {
