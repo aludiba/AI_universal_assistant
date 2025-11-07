@@ -444,8 +444,9 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
     
     // 推荐标签
     NSString *badge = plan[@"badge"];
+    UILabel *badgeLabel;
     if (badge && badge.length > 0) {
-        UILabel *badgeLabel = [[UILabel alloc] init];
+        badgeLabel = [[UILabel alloc] init];
         badgeLabel.text = badge;
         badgeLabel.font = AIUAUIFontBold(11);
         badgeLabel.textColor = [UIColor whiteColor];
@@ -493,8 +494,12 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
     
     // 布局
     [nameLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+        if (badgeLabel) {
+            make.top.equalTo(badgeLabel.mas_bottom).offset(4);
+        } else {
+            make.centerY.equalTo(card).offset(-10);
+        }
         make.left.equalTo(card).offset(16);
-        make.centerY.equalTo(card).offset(-10);
     }];
     
     [priceLabel mas_makeConstraints:^(MASConstraintMaker *make) {

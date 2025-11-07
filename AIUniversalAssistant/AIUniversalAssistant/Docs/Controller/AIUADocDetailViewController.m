@@ -17,7 +17,7 @@
 @property (nonatomic, strong) UIView *headerView;
 @property (nonatomic, strong) UIView *toolbarView;
 
-@property (nonatomic, strong) NSDictionary *writingItem; // 编辑模式下的原始数据
+@property (nonatomic, copy) NSDictionary *writingItem; // 编辑模式下的原始数据
 @property (nonatomic, assign) BOOL isNewDocument; // 是否为新建文档
 @property (nonatomic, assign) BOOL hasUserEdited; // 用户是否编辑过
 
@@ -117,12 +117,10 @@
     } else {
         self.navigationItem.title = L(@"document_details");
     }
-    if (self.writingItem) {
-        UIImage *ellipsisIcon = [UIImage systemImageNamed:@"ellipsis"];
-        UIBarButtonItem *ellipsisButton = [[UIBarButtonItem alloc] initWithImage:ellipsisIcon style:UIBarButtonItemStylePlain target:self action:@selector(ellipsisTapped)];
-        ellipsisButton.tintColor = [UIColor grayColor];
-        self.navigationItem.rightBarButtonItem = ellipsisButton;
-    }
+    UIImage *ellipsisIcon = [UIImage systemImageNamed:@"ellipsis"];
+    UIBarButtonItem *ellipsisButton = [[UIBarButtonItem alloc] initWithImage:ellipsisIcon style:UIBarButtonItemStylePlain target:self action:@selector(ellipsisTapped)];
+    ellipsisButton.tintColor = [UIColor grayColor];
+    self.navigationItem.rightBarButtonItem = ellipsisButton;
 }
 
 - (void)setupUI {
@@ -781,12 +779,22 @@
 
 #pragma mark - Actions
 
+// 更多：导出文档、复制全文、删除文档
 - (void)ellipsisTapped {
-    NSArray *actions = @[
-           @{@"title": L(@"export_document"), @"style": @(UIAlertActionStyleDefault)},
-           @{@"title": L(@"copy_full_text"), @"style": @(UIAlertActionStyleDefault)},
-           @{@"title": L(@"delete_document"), @"style": @(UIAlertActionStyleDestructive)}
-       ];
+    [self updateWritingItem];
+    NSArray *actions;
+    if (self.isNewDocument) {
+        actions = @[
+               @{@"title": L(@"export_document"), @"style": @(UIAlertActionStyleDefault)},
+               @{@"title": L(@"copy_full_text"), @"style": @(UIAlertActionStyleDefault)}
+           ];
+    } else {
+        actions = @[
+               @{@"title": L(@"export_document"), @"style": @(UIAlertActionStyleDefault)},
+               @{@"title": L(@"copy_full_text"), @"style": @(UIAlertActionStyleDefault)},
+               @{@"title": L(@"delete_document"), @"style": @(UIAlertActionStyleDestructive)}
+           ];
+    }
     [AIUAAlertHelper showActionWithTitle:nil
                                             message:nil
                                             actions:actions
@@ -808,9 +816,19 @@
 }
 
 // 增强版导出方法
-
 - (void)exportDocument:(NSDictionary *)document {
-    [[AIUADataManager sharedManager] exportDocument:document[@"title"] ?: @"" withContent:document[@"content"] ?: @""];
+    NSString *content = document[@"content"] ?: @"";
+    if (content.length > 0) {
+        [[AIUADataManager sharedManager] exportDocument:document[@"title"] ?: @"" withContent:document[@"content"] ?: @""];
+    } else {
+        [AIUAAlertHelper showAlertWithTitle:L(@"prompt")
+                                   message:L(@"please_enter_content_first")
+                             cancelBtnText:nil
+                            confirmBtnText:L(@"confirm")
+                              inController:self
+                              cancelAction:nil
+                             confirmAction:nil];
+    }
 }
 
 
@@ -820,7 +838,13 @@
         [UIPasteboard generalPasteboard].string = [NSString stringWithFormat:@"%@\n%@", document[@"title"] ?: @"", content];
         [AIUAMBProgressManager showText:nil withText:L(@"copied_to_clipboard") andSubText:nil isBottom:YES backColor:[UIColor whiteColor]];
     } else {
-        [AIUAMBProgressManager showText:nil withText:L(@"empty_document") andSubText:nil isBottom:YES backColor:[UIColor whiteColor]];
+        [AIUAAlertHelper showAlertWithTitle:L(@"prompt")
+                                   message:L(@"please_enter_content_first")
+                             cancelBtnText:nil
+                            confirmBtnText:L(@"confirm")
+                              inController:self
+                              cancelAction:nil
+                             confirmAction:nil];
     }
 }
 
@@ -1322,44 +1346,47 @@
 
 #pragma mark - 数据保存
 
-- (void)saveDocumentIfNeeded {
+- (void)updateWritingItem {
     if (!self.hasUserEdited) {
         return;
     }
-    
     NSString *title = [self.currentTitle stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
     NSString *content = [self.currentContent stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    
     if (title.length == 0 && content.length == 0) {
         return;
     }
-    
+    NSString *documentID = self.writingItem[@"id"] ?: @"";
     NSMutableDictionary *writingRecord = [NSMutableDictionary dictionary];
-    
-    if (self.isNewDocument) {
+    if (self.isNewDocument && documentID.length == 0) {
         // 新建文档
         writingRecord[@"id"] = [[AIUADataManager sharedManager] generateUniqueID];
         writingRecord[@"createTime"] = [[AIUADataManager sharedManager] currentTimeString];
         writingRecord[@"prompt"] = @"";
         writingRecord[@"type"] = @"";
     } else {
-        NSString *documentID = self.writingItem[@"id"];
-        BOOL success = NO;
-        if (documentID && documentID.length > 0) {
-            success = [[AIUADataManager sharedManager] deleteWritingWithID:documentID];
-        }
         // 编辑现有文档
         writingRecord[@"id"] = documentID ?: [[AIUADataManager sharedManager] generateUniqueID];
         writingRecord[@"createTime"] = self.writingItem[@"createTime"] ?: [[AIUADataManager sharedManager] currentTimeString];
         writingRecord[@"prompt"] = self.writingItem[@"prompt"] ?: @"";
         writingRecord[@"type"] = self.writingItem[@"type"] ?: @"";
     }
-    
     writingRecord[@"title"] = title ?: @"";
     writingRecord[@"content"] = content ?: @"";
     writingRecord[@"wordCount"] = @(content.length);
-    
-    [[AIUADataManager sharedManager] saveWritingToPlist:writingRecord];
+    self.writingItem = [writingRecord copy];
+}
+
+- (void)saveDocumentIfNeeded {
+    if (!self.hasUserEdited) {
+        return;
+    }
+    [self updateWritingItem];
+    NSString *documentID = self.writingItem[@"id"] ?: @"";
+    BOOL success = NO;
+    if (documentID.length > 0) {
+        success = [[AIUADataManager sharedManager] deleteWritingWithID:documentID];
+    }
+    [[AIUADataManager sharedManager] saveWritingToPlist:self.writingItem];
 }
 
 @end
