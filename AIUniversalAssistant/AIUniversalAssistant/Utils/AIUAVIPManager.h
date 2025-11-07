@@ -31,8 +31,7 @@ NS_ASSUME_NONNULL_BEGIN
  * @param viewController 当前视图控制器
  * @param completion 回调，YES表示有权限（是VIP），NO表示无权限（不是VIP）
  */
-- (void)checkVIPPermissionWithViewController:(UIViewController *)viewController
-                                  completion:(void(^)(BOOL hasPermission))completion;
+- (void)checkVIPPermissionWithViewController:(UIViewController *)viewController featureName:(NSString * _Nullable)featureName completion:(void(^)(BOOL hasPermission))completion;
 
 /**
  * 显示VIP权限提示弹窗

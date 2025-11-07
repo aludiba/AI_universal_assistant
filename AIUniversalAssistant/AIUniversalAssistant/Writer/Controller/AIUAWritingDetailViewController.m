@@ -3,6 +3,7 @@
 #import "AIUADeepSeekWriter.h"
 #import "AIUAAlertHelper.h"
 #import "AIUAMBProgressManager.h"
+#import "AIUADocDetailViewController.h"
 
 @interface AIUAWritingDetailViewController ()
 
@@ -31,6 +32,7 @@
 @property (nonatomic, copy) NSString *finalContent;
 @property (nonatomic, copy) NSString *finalTitle;
 @property (nonatomic, copy) NSString *currentWritingID; // 当前写作记录的ID
+@property (nonatomic, copy) NSDictionary *currentWritingDocParam; // 当前要保存的文档参数
 
 @end
 
@@ -497,7 +499,7 @@
     // 生成新的ID
     self.currentWritingID = [[AIUADataManager sharedManager] generateUniqueID];
     
-    [[AIUADataManager sharedManager] saveWritingToPlist:@{
+    self.currentWritingDocParam = @{
         @"id": self.currentWritingID,
         @"title": self.finalTitle ?: @"",
         @"content": self.finalContent ?: @"",
@@ -505,7 +507,9 @@
         @"createTime": [[AIUADataManager sharedManager] currentTimeString],
         @"type": self.type ?: @"",
         @"wordCount": @(self.finalContent.length),
-    }];
+    };
+    
+    [[AIUADataManager sharedManager] saveWritingToPlist:self.currentWritingDocParam];
 }
 
 - (void)deleteCurrentWritingRecord {
@@ -518,6 +522,7 @@
 
 #pragma mark - 按钮事件
 
+// 停止生成
 - (void)stopButtonTapped {
     [self.writer cancelCurrentRequest];
     // 即使停止生成，也保存已生成的内容
@@ -530,12 +535,14 @@
     [self writingCompletedWithContent:self.contentTextView.text ?: @""];
 }
 
+// 重新生成
 - (void)rewriteButtonTapped {
     [AIUAAlertHelper showAlertWithTitle:L(@"recreate") message:L(@"confirm_regenerate_content") cancelBtnText:L(@"cancel")  confirmBtnText:L(@"confirm")   inController:self cancelAction:nil confirmAction:^{
             [self restartWriting];
     }];
 }
 
+// 复制全文
 - (void)duplicateButtonTapped {
     NSString *fullText = [NSString stringWithFormat:@"%@\n%@", self.titleLabel.text, self.contentTextView.text];
     UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
@@ -543,13 +550,16 @@
     [self showToastMessage:L(@"copied_to_clipboard")];
 }
 
+// 导出文档
 - (void)exportButtonTapped {
     [[AIUADataManager sharedManager] exportDocument:self.titleLabel.text withContent:self.contentTextView.text];
 }
 
+// 智能编辑
 - (void)editButtonTapped {
-    // 智能编辑功能 - 这里可以跳转到编辑页面或进行其他处理
-    [self showToastMessage:@"智能编辑功能开发中"];
+    // 跳转到编辑页面
+    AIUADocDetailViewController *docDetailVC = [[AIUADocDetailViewController alloc] initWithWritingItem:self.currentWritingDocParam];
+    [self.navigationController pushViewController:docDetailVC animated:YES];
 }
 
 - (void)restartWriting {

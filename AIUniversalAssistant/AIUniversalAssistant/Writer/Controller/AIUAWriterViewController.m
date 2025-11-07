@@ -68,7 +68,7 @@
     self.inputCell.onStartCreate = ^(NSString *text) {
         StrongType(self);
         // 检查VIP权限
-        [[AIUAVIPManager sharedManager] checkVIPPermissionWithViewController:strongself completion:^(BOOL hasPermission) {
+        [[AIUAVIPManager sharedManager] checkVIPPermissionWithViewController:strongself featureName:nil completion:^(BOOL hasPermission) {
             if (hasPermission) {
                 // 有权限，开始创作
                 AIUAWritingDetailViewController *writingDetailVC = [[AIUAWritingDetailViewController alloc] initWithPrompt:text apiKey:APIKEY];

@@ -486,7 +486,7 @@ static NSString * const kEmptyCellId = @"EmptyCell";
 
 - (void)navigateToWriting:(NSDictionary *)item {
     // 检查VIP权限
-    [[AIUAVIPManager sharedManager] checkVIPPermissionWithViewController:self completion:^(BOOL hasPermission) {
+    [[AIUAVIPManager sharedManager] checkVIPPermissionWithViewController:self featureName:nil completion:^(BOOL hasPermission) {
         if (hasPermission) {
             // 有权限，跳转到写作页面
             AIUAWritingInputViewController *writingInputVC = [[AIUAWritingInputViewController alloc] initWithTemplateItem:item categoryId:item[@"categoryId"] apiKey:APIKEY];

@@ -866,7 +866,7 @@
     NSArray *featureNames = @[L(@"continue_writing"), L(@"rewrite"), L(@"expand_writing"), L(@"translate")];
     NSString *featureName = sender.tag < featureNames.count ? featureNames[sender.tag] : @"";
     
-    [[AIUAVIPManager sharedManager] checkVIPPermissionWithViewController:self completion:^(BOOL hasPermission) {
+    [[AIUAVIPManager sharedManager] checkVIPPermissionWithViewController:self featureName:featureName completion:^(BOOL hasPermission) {
         if (!hasPermission) {
             // 无权限，已显示弹窗
             return;

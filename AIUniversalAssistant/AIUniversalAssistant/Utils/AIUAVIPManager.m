@@ -29,8 +29,7 @@
     return [[AIUAIAPManager sharedManager] isVIPMember];
 }
 
-- (void)checkVIPPermissionWithViewController:(UIViewController *)viewController
-                                  completion:(void(^)(BOOL hasPermission))completion {
+- (void)checkVIPPermissionWithViewController:(UIViewController *)viewController featureName:(NSString * _Nullable)featureName completion:(void(^)(BOOL hasPermission))completion {
     BOOL isVIP = [self isVIPUser];
     
     if (isVIP) {
@@ -40,7 +39,7 @@
         }
     } else {
         // 不是VIP，显示提示弹窗
-        [self showVIPAlertWithViewController:viewController featureName:nil completion:^{
+        [self showVIPAlertWithViewController:viewController featureName:featureName completion:^{
             if (completion) {
                 completion(NO);
             }
@@ -49,7 +48,7 @@
 }
 
 - (void)showVIPAlertWithViewController:(UIViewController *)viewController
-                           featureName:(NSString *)featureName
+                           featureName:(NSString * _Nullable)featureName
                             completion:(void (^)(void))completion {
     if (!viewController) {
         NSLog(@"[VIP] showVIPAlert: viewController 为空");

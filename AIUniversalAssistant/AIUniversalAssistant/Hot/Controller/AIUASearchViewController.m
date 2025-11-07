@@ -394,7 +394,7 @@
 
 - (void)handleTemplateSelection:(NSDictionary *)item{
     // 检查VIP权限
-    [[AIUAVIPManager sharedManager] checkVIPPermissionWithViewController:self completion:^(BOOL hasPermission) {
+    [[AIUAVIPManager sharedManager] checkVIPPermissionWithViewController:self featureName:nil completion:^(BOOL hasPermission) {
         if (hasPermission) {
             AIUAWritingInputViewController *writingInputVC = [[AIUAWritingInputViewController alloc] initWithTemplateItem:item categoryId:item[@"categoryId"] apiKey:APIKEY];
             // 跳转到对应的写作页面
