@@ -97,6 +97,7 @@
 				18A161352E8BD07A00E13FB0 /* Frameworks */,
 				18A161362E8BD07A00E13FB0 /* Resources */,
 				945866655D1D9DECEC4191F8 /* [CP] Copy Pods Resources */,
+				2970C671CDE3ADAAECB92F4C /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -157,6 +158,23 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		2970C671CDE3ADAAECB92F4C /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-AIUniversalAssistant/Pods-AIUniversalAssistant-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-AIUniversalAssistant/Pods-AIUniversalAssistant-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-AIUniversalAssistant/Pods-AIUniversalAssistant-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
 		945866655D1D9DECEC4191F8 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -165,13 +183,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-AIUniversalAssistant/Pods-AIUniversalAssistant-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-AIUniversalAssistant/Pods-AIUniversalAssistant-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -229,6 +243,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = AIUniversalAssistant/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "AI写作喵";
+				INFOPLIST_KEY_NSUserTrackingUsageDescription = "为了向您提供更好的广告体验，请允许应用跟踪您的活动";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
@@ -266,6 +281,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = AIUniversalAssistant/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "AI写作喵";
+				INFOPLIST_KEY_NSUserTrackingUsageDescription = "为了向您提供更好的广告体验，请允许应用跟踪您的活动";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;

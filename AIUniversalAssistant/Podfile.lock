@@ -1,4 +1,40 @@
 PODS:
+  - Ads-CN (6.7.0.8):
+    - Ads-CN/BUAdLive-Framework (= 6.7.0.8)
+    - Ads-CN/BUAdSDK (= 6.7.0.8)
+  - Ads-CN/BUAdLive-Framework (6.7.0.8):
+    - BUTTSDKFramework/LivePull-Lite (= 1.45.1.8-premium)
+  - Ads-CN/BUAdSDK (6.7.0.8)
+  - BUTTSDKFramework/Core (1.45.1.8-premium)
+  - BUTTSDKFramework/LiveBase (1.45.1.8-premium):
+    - BUTTSDKFramework/Core
+    - BUTTSDKFramework/Reachability
+  - BUTTSDKFramework/LivePlayer/Base (1.45.1.8-premium):
+    - BUTTSDKFramework/Core
+    - BUTTSDKFramework/LiveBase
+    - BUTTSDKFramework/Reachability
+  - BUTTSDKFramework/LivePlayer/Lite (1.45.1.8-premium):
+    - BUTTSDKFramework/LivePlayer/Base
+    - BUTTSDKFramework/PlayerCore/LiveLite
+  - BUTTSDKFramework/LivePull-Lite (1.45.1.8-premium):
+    - BUTTSDKFramework/LivePlayer/Lite
+    - BUTTSDKFramework/Strategy/Lite
+  - BUTTSDKFramework/PlayerCore/LiveLite (1.45.1.8-premium):
+    - BUTTSDKFramework/TTFFmpeg/LiveLite
+  - BUTTSDKFramework/Reachability (1.45.1.8-premium)
+  - BUTTSDKFramework/SSL (1.45.1.8-premium)
+  - BUTTSDKFramework/Strategy/Core (1.45.1.8-premium):
+    - BUTTSDKFramework/LiveBase
+    - BUTTSDKFramework/Reachability
+  - BUTTSDKFramework/Strategy/Lite (1.45.1.8-premium):
+    - BUTTSDKFramework/LivePlayer/Lite
+    - BUTTSDKFramework/Strategy/Core
+  - BUTTSDKFramework/Tools (1.45.1.8-premium):
+    - BUTTSDKFramework/SSL
+  - BUTTSDKFramework/TTFFmpeg/Base (1.45.1.8-premium):
+    - BUTTSDKFramework/Tools
+  - BUTTSDKFramework/TTFFmpeg/LiveLite (1.45.1.8-premium):
+    - BUTTSDKFramework/TTFFmpeg/Base
   - Masonry (1.1.0)
   - MBProgressHUD (1.2.0)
   - MJRefresh (3.7.9)
@@ -7,6 +43,7 @@ PODS:
   - SDWebImage/Core (5.21.0)
 
 DEPENDENCIES:
+  - Ads-CN
   - Masonry
   - MBProgressHUD
   - MJRefresh
@@ -14,17 +51,21 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
+    - Ads-CN
+    - BUTTSDKFramework
     - Masonry
     - MBProgressHUD
     - MJRefresh
     - SDWebImage
 
 SPEC CHECKSUMS:
+  Ads-CN: 4dcb5105a7105f76bcefb246e69daf6c39db2778
+  BUTTSDKFramework: 914058900f46707f12a6e8c10e8da6ba4e891c3e
   Masonry: 678fab65091a9290e40e2832a55e7ab731aad201
   MBProgressHUD: 3ee5efcc380f6a79a7cc9b363dd669c5e1ae7406
   MJRefresh: ff9e531227924c84ce459338414550a05d2aea78
   SDWebImage: f84b0feeb08d2d11e6a9b843cb06d75ebf5b8868
 
-PODFILE CHECKSUM: cd736b0dbe567c0e2c80fbf252bd5072d3e75271
+PODFILE CHECKSUM: 19ac4f708adfa3bd9252f020f027fb2c1aca5eec
 
 COCOAPODS: 1.16.2

@@ -10,4 +10,8 @@ target 'AIUniversalAssistant' do
     pod 'MJRefresh'
     pod 'MBProgressHUD'
     pod 'Masonry'
+    
+  # 穿山甲广告SDK (国内版本)
+    pod 'Ads-CN'
+    # 如果是海外版本，使用: pod 'Ads-Global'
 end
