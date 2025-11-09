@@ -12,6 +12,7 @@
 #import "AIUAMembershipViewController.h"
 #import "AIUAIAPManager.h"
 #import <Masonry/Masonry.h>
+#import <StoreKit/StoreKit.h>
 
 @interface AIUASettingsViewController () <UITableViewDelegate, UITableViewDataSource>
 
@@ -70,6 +71,8 @@
         @{@"title": L(@"member_privileges"), @"icon": @"crown.fill", @"color": @"#FFD700", @"action": @"memberPrivileges"},
         @{@"title": L(@"creation_records"), @"icon": @"doc.text.fill", @"color": @"#3B82F6", @"action": @"creationRecords"},
         @{@"title": L(@"writing_word_packs"), @"icon": @"cube.fill", @"color": @"#10B981", @"action": @"wordPacks"},
+        @{@"title": L(@"rate_app"), @"icon": @"star.fill", @"color": @"#EF4444", @"action": @"rateApp"},
+        @{@"title": L(@"share_app"), @"icon": @"square.and.arrow.up.fill", @"color": @"#06B6D4", @"action": @"shareApp"},
         @{@"title": L(@"contact_us"), @"icon": @"envelope.fill", @"color": @"#F59E0B", @"action": @"contactUs"},
         @{@"title": L(@"about_us"), @"icon": @"info.circle.fill", @"color": @"#8B5CF6", @"action": @"aboutUs"}
     ];
@@ -112,6 +115,8 @@
 #pragma mark - UITableViewDelegate
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    
     NSDictionary *item = self.settingsData[indexPath.row];
     NSString *action = item[@"action"];
     
@@ -121,6 +126,10 @@
         [self showCreationRecords];
     } else if ([action isEqualToString:@"wordPacks"]) {
         [self showWordPacks];
+    } else if ([action isEqualToString:@"rateApp"]) {
+        [self rateApp];
+    } else if ([action isEqualToString:@"shareApp"]) {
+        [self shareApp];
     } else if ([action isEqualToString:@"contactUs"]) {
         [self showContactUs];
     } else if ([action isEqualToString:@"aboutUs"]) {
@@ -189,6 +198,128 @@
     AIUAAboutViewController *vc = [[AIUAAboutViewController alloc] init];
     vc.hidesBottomBarWhenPushed = YES;
     [self.navigationController pushViewController:vc animated:YES];
+}
+
+#pragma mark - 评分和分享
+
+/**
+ * 前往App Store评分
+ */
+- (void)rateApp {
+    NSLog(@"[设置] 用户点击前往评分");
+    
+    // 方法1: iOS 10.3+ 使用SKStoreReviewController（推荐）
+    if (@available(iOS 10.3, *)) {
+        // 使用系统原生评分弹窗（每年限制3次）
+        [SKStoreReviewController requestReview];
+        NSLog(@"[设置] 调用系统评分弹窗");
+    } else {
+        // 方法2: 跳转到App Store评分页面
+        [self openAppStoreRatingPage];
+    }
+    
+    // 可选：延迟1秒后打开App Store评分页面（作为补充）
+    // 如果用户没有在系统弹窗中评分，可以引导去App Store
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        // 可以在这里添加一个确认对话框，询问用户是否要去App Store评分
+    });
+}
+
+/**
+ * 打开App Store评分页面
+ */
+- (void)openAppStoreRatingPage {
+    // 获取App Store ID（需要在上架后获得）
+    NSString *appID = @"YOUR_APP_STORE_ID"; // TODO: 替换为实际的App Store ID
+    
+    // 方法1: iOS 11+ 使用新的URL格式
+    NSString *urlString = [NSString stringWithFormat:@"https://apps.apple.com/app/id%@?action=write-review", appID];
+    NSURL *url = [NSURL URLWithString:urlString];
+    
+    if ([[UIApplication sharedApplication] canOpenURL:url]) {
+        [[UIApplication sharedApplication] openURL:url options:@{} completionHandler:^(BOOL success) {
+            if (success) {
+                NSLog(@"[设置] 成功打开App Store评分页面");
+            } else {
+                NSLog(@"[设置] 打开App Store评分页面失败");
+            }
+        }];
+    } else {
+        NSLog(@"[设置] 无法打开App Store URL");
+        // 显示提示
+        [self showAlertWithTitle:L(@"prompt") message:L(@"cannot_open_app_store")];
+    }
+}
+
+/**
+ * 分享APP
+ */
+- (void)shareApp {
+    NSLog(@"[设置] 用户点击分享APP");
+    
+    // 准备分享内容
+    NSString *appName = @"AI写作喵";
+    NSString *appDescription = L(@"share_app_description"); // "一款强大的AI写作助手，帮你轻松完成各种写作任务"
+    
+    // App Store链接（上架后替换为实际链接）
+    NSString *appStoreURL = @"https://apps.apple.com/app/YOUR_APP_STORE_ID"; // TODO: 替换为实际的App Store链接
+    
+    // 分享文本
+    NSString *shareText = [NSString stringWithFormat:@"%@\n\n%@\n\n%@", appName, appDescription, appStoreURL];
+    
+    // 可选：添加应用图标
+    UIImage *appIcon = [UIImage imageNamed:@"AppIcon"]; // 如果需要分享图标
+    
+    // 创建分享内容数组
+    NSMutableArray *activityItems = [NSMutableArray array];
+    [activityItems addObject:shareText];
+    if (appIcon) {
+        [activityItems addObject:appIcon];
+    }
+    
+    // 创建分享控制器
+    UIActivityViewController *activityVC = [[UIActivityViewController alloc] initWithActivityItems:activityItems applicationActivities:nil];
+    
+    // 排除某些分享选项（可选）
+    activityVC.excludedActivityTypes = @[
+        UIActivityTypeAssignToContact,
+        UIActivityTypePrint,
+        UIActivityTypeOpenInIBooks,
+        UIActivityTypeMarkupAsPDF
+    ];
+    
+    // iPad需要设置popover
+    if ([UIDevice currentDevice].userInterfaceIdiom == UIUserInterfaceIdiomPad) {
+        activityVC.popoverPresentationController.sourceView = self.view;
+        activityVC.popoverPresentationController.sourceRect = CGRectMake(self.view.bounds.size.width/2, self.view.bounds.size.height/2, 0, 0);
+    }
+    
+    // 分享完成回调
+    activityVC.completionWithItemsHandler = ^(UIActivityType activityType, BOOL completed, NSArray *returnedItems, NSError *activityError) {
+        if (completed) {
+            NSLog(@"[设置] 分享成功: %@", activityType);
+            // 可以在这里添加分享成功的统计或奖励
+        } else {
+            NSLog(@"[设置] 分享取消或失败");
+        }
+    };
+    
+    // 显示分享界面
+    [self presentViewController:activityVC animated:YES completion:nil];
+}
+
+/**
+ * 显示提示框
+ */
+- (void)showAlertWithTitle:(NSString *)title message:(NSString *)message {
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:title
+                                                                   message:message
+                                                            preferredStyle:UIAlertControllerStyleAlert];
+    UIAlertAction *okAction = [UIAlertAction actionWithTitle:L(@"confirm")
+                                                       style:UIAlertActionStyleDefault
+                                                     handler:nil];
+    [alert addAction:okAction];
+    [self presentViewController:alert animated:YES completion:nil];
 }
 
 - (UIImage *)createIconWithSystemName:(NSString *)systemName color:(UIColor *)color {

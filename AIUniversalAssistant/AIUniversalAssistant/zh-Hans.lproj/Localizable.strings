@@ -192,3 +192,9 @@
 "vip_feature_locked_message" = "「%@」功能需要开通会员才能使用";
 "vip_general_locked_message" = "此功能需要开通会员才能使用";
 "unlock_vip_features" = "开通会员，解锁全部功能";
+
+// 评分和分享
+"rate_app" = "前往评分";
+"share_app" = "分享APP";
+"share_app_description" = "一款强大的AI写作助手，帮你轻松完成各种写作任务！";
+"cannot_open_app_store" = "无法打开App Store，请稍后再试";
