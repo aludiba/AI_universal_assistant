@@ -46,8 +46,11 @@ typedef void(^AIUAIAPRestoreCompletion)(BOOL success, NSInteger restoredCount, N
 /// 获取产品信息
 - (void)fetchProductsWithCompletion:(AIUAIAPProductsCompletion)completion;
 
-/// 购买产品
+/// 购买订阅产品
 - (void)purchaseProduct:(AIUASubscriptionProductType)productType completion:(AIUAIAPPurchaseCompletion)completion;
+
+/// 购买消耗型产品（如字数包）
+- (void)purchaseConsumableProduct:(NSString *)productID completion:(AIUAIAPPurchaseCompletion)completion;
 
 /// 恢复购买
 - (void)restorePurchasesWithCompletion:(AIUAIAPRestoreCompletion)completion;

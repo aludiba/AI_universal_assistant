@@ -144,7 +144,7 @@
 "unlock_all_features" = "即刻解锁全部创作模板及会员权益";
 "unlock_templates" = "解锁创作模板";
 "unlock_templates_desc" = "创作模板覆盖所有应用场景";
-"daily_word_quota" = "赠送创作字数";
+"daily_word_quota" = "每日赠送字数";
 "daily_word_quota_desc" = "每日赠送50万字用于AI创作";
 "ai_writing_assist" = "AI辅助写作";
 "ai_writing_assist_desc" = "支持续写、改写、扩写、翻译";
@@ -198,3 +198,25 @@
 "share_app" = "分享APP";
 "share_app_description" = "一款强大的AI写作助手，帮你轻松完成各种写作任务！";
 "cannot_open_app_store" = "无法打开App Store，请稍后再试";
+
+// 创作字数包
+"writing_word_packs" = "创作字数包";
+"vip_gifted_words" = "今日赠送: %@字";
+"purchased_words" = "已购买: %@字";
+"total_remaining_words" = "可用总字数: %@字";
+"purchase_word_pack" = "购买字数包";
+"purchase_notes" = "购买须知";
+"word_pack_note_1" = "字数包购买后90天内有效，逾期未使用将自动失效";
+"word_pack_note_2" = "使用时将优先消耗会员每日赠送字数，其次消耗购买字数包";
+"word_pack_note_3" = "订阅会员每日赠送50万字";
+"word_pack_note_4" = "字数统计规则：1个中文字符、英文字母、数字、标点或空格均计为1字";
+"confirm_purchase_word_pack" = "确认购买 %@ 字数包，需支付 ¥%@？";
+"word_pack_purchase_success" = "购买成功！已获得 %@ 字";
+"processing" = "处理中...";
+"purchase_success" = "购买成功";
+"insufficient_words" = "字数不足";
+"insufficient_words_message" = "剩余字数不足，请购买字数包或开通会员";
+"word_consumption_record" = "字数消耗记录";
+"consumed_words" = "已消耗: %@字";
+"vip_gift_expired" = "会员赠送字数已到期";
+"word_pack_expired" = "字数包已过期";

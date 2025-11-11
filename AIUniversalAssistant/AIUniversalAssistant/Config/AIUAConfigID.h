@@ -20,8 +20,8 @@
 // 4. 将对应的ID填入下方宏定义中
 
 // ========== 测试配置（当前使用，可以立即看到广告） ==========
-#define AIUA_APPID               @"5603361"      // 测试AppID
-#define AIUA_SPLASH_AD_SLOT_ID   @"890787307"   // 测试开屏广告代码位
+#define AIUA_APPID               @"5755016"      // 测试AppID
+#define AIUA_SPLASH_AD_SLOT_ID   @"893331808"   // 测试开屏广告代码位
 
 // ========== 你的正式配置（等测试成功后再使用） ==========
 // 新创建的代码位需要1-3天审核激活，激活后再替换下面的配置
@@ -32,6 +32,6 @@
 #define AIUA_BU_APP_KEY          @""  // 穿山甲AppKey（已废弃，使用AIUA_APPID）
 
 // 广告开关（如果不想展示广告，设置为0）
-#define AIUA_AD_ENABLED          1    // 1: 开启广告  0: 关闭广告
+#define AIUA_AD_ENABLED          0    // 1: 开启广告  0: 关闭广告
 
 #endif /* AIUAConfigID_h */

@@ -8,6 +8,7 @@
 #import "AppDelegate.h"
 #import "AIUATabBarController.h"
 #import "AIUAIAPManager.h"
+#import "AIUAWordPackManager.h"
 #import "AIUASplashAdManager.h"
 
 // 判断是否已接入穿山甲SDK
@@ -63,8 +64,10 @@
     [[AIUAIAPManager sharedManager] startObservingPaymentQueue];
     NSLog(@"[启动] IAP管理器初始化完成");
     
-    // 初始化穿山甲SDK
-    [self initPangleSDK];
+    if (AIUA_AD_ENABLED) {
+        // 初始化穿山甲SDK
+        [self initPangleSDK];
+    }
     
     // 创建主窗口
     self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
@@ -86,7 +89,8 @@
     } else {
         // 不展示广告，直接进入主界面
         NSLog(@"[启动] 跳过广告，直接进入主界面");
-        [self showMainWindow];
+        self.window.rootViewController = [[AIUATabBarController alloc] init];
+        [self.window makeKeyAndVisible];
     }
     
     NSLog(@"========== 应用启动完成 ==========");
@@ -178,6 +182,12 @@
 - (void)applicationDidBecomeActive:(UIApplication *)application {
     // 这会从本地收据中提取订阅信息，即使用户重新下载或更换设备
     [[AIUAIAPManager sharedManager] checkSubscriptionStatus];
+    
+    // 启用iCloud同步
+    [[AIUAWordPackManager sharedManager] enableiCloudSync];
+    
+    // 刷新VIP赠送字数
+    [[AIUAWordPackManager sharedManager] refreshVIPGiftedWords];
 }
 
 - (UIInterfaceOrientationMask)application:(UIApplication *)application supportedInterfaceOrientationsForWindow:(UIWindow *)window {

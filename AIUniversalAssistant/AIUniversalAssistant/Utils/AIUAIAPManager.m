@@ -143,6 +143,36 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
     [self addPaymentForProduct:product];
 }
 
+- (void)purchaseConsumableProduct:(NSString *)productID completion:(AIUAIAPPurchaseCompletion)completion {
+    // 检查设备是否支持IAP
+    if (![SKPaymentQueue canMakePayments]) {
+        if (completion) {
+            completion(NO, L(@"iap_not_supported"));
+        }
+        return;
+    }
+    
+    self.purchaseCompletion = completion;
+    
+    // 先检查缓存
+    SKProduct *product = self.productsCache[productID];
+    
+    if (!product) {
+        NSLog(@"[IAP] 消耗型产品未在缓存中，先获取产品信息: %@", productID);
+        
+        // 获取产品信息
+        SKProductsRequest *request = [[SKProductsRequest alloc] initWithProductIdentifiers:[NSSet setWithObject:productID]];
+        request.delegate = self;
+        [request start];
+        
+        // 注意：这里会异步等待产品信息返回后再购买
+        // 在 productsRequest:didReceiveResponse: 中会处理购买
+        return;
+    }
+    
+    [self addPaymentForProduct:product];
+}
+
 - (void)addPaymentForProduct:(SKProduct *)product {
     SKMutablePayment *payment = [SKMutablePayment paymentWithProduct:product];
     [[SKPaymentQueue defaultQueue] addPayment:payment];

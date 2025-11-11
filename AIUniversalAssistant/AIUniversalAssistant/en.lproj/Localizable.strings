@@ -144,7 +144,7 @@
 "unlock_all_features" = "Unlock all creation templates and member benefits";
 "unlock_templates" = "Unlock Templates";
 "unlock_templates_desc" = "Templates cover all scenarios";
-"daily_word_quota" = "Daily Word Quota";
+"daily_word_quota" = "Daily Word Gift";
 "daily_word_quota_desc" = "500,000 words daily for AI creation";
 "ai_writing_assist" = "AI Writing Assist";
 "ai_writing_assist_desc" = "Continuation, rewriting, expansion, translation";
@@ -192,3 +192,25 @@
 "vip_feature_locked_message" = "The \"%@\" feature requires VIP membership to use";
 "vip_general_locked_message" = "This feature requires VIP membership to use";
 "unlock_vip_features" = "Unlock All Features with VIP";
+
+// Word Pack
+"writing_word_packs" = "Writing Word Packs";
+"vip_gifted_words" = "Today's Gift: %@ words";
+"purchased_words" = "Purchased: %@ words";
+"total_remaining_words" = "Total Available: %@ words";
+"purchase_word_pack" = "Purchase Word Pack";
+"purchase_notes" = "Purchase Notes";
+"word_pack_note_1" = "Word packs are valid for 90 days after purchase and will expire if unused";
+"word_pack_note_2" = "VIP daily gifted words will be consumed first, followed by purchased word packs";
+"word_pack_note_3" = "VIP members receive 500,000 words daily";
+"word_pack_note_4" = "Word counting: 1 Chinese character, letter, digit, punctuation, or space counts as 1 word";
+"confirm_purchase_word_pack" = "Confirm purchase of %@ word pack for ¥%@?";
+"word_pack_purchase_success" = "Purchase successful! You've received %@ words";
+"processing" = "Processing...";
+"purchase_success" = "Purchase Successful";
+"insufficient_words" = "Insufficient Words";
+"insufficient_words_message" = "Not enough words remaining. Please purchase word packs or subscribe to VIP";
+"word_consumption_record" = "Word Consumption Record";
+"consumed_words" = "Consumed: %@ words";
+"vip_gift_expired" = "VIP gifted words have expired";
+"word_pack_expired" = "Word pack has expired";

@@ -10,6 +10,7 @@
 #import "AIUAWritingRecordsViewController.h"
 #import "AIUAAboutViewController.h"
 #import "AIUAMembershipViewController.h"
+#import "AIUAWordPackViewController.h"
 #import "AIUAIAPManager.h"
 #import <Masonry/Masonry.h>
 #import <StoreKit/StoreKit.h>
@@ -185,8 +186,9 @@
 }
 
 - (void)showWordPacks {
-    // TODO: 实现创作字数包页面
-    NSLog(@"显示创作字数包");
+    AIUAWordPackViewController *vc = [[AIUAWordPackViewController alloc] init];
+    vc.hidesBottomBarWhenPushed = YES;
+    [self.navigationController pushViewController:vc animated:YES];
 }
 
 - (void)showContactUs {
