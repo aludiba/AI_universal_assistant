@@ -10,6 +10,7 @@
 #import "AIUAIAPManager.h"
 #import "AIUAWordPackManager.h"
 #import "AIUASplashAdManager.h"
+#import "AIUAToolsManager.h"
 
 // 判断是否已接入穿山甲SDK
 #if __has_include(<BUAdSDK/BUAdSDK.h>)
@@ -182,6 +183,21 @@
 - (void)applicationDidBecomeActive:(UIApplication *)application {
     // 这会从本地收据中提取订阅信息，即使用户重新下载或更换设备
     [[AIUAIAPManager sharedManager] checkSubscriptionStatus];
+    
+    // 检查iCloud可用性并提示用户（如果需要）
+    // 只在应用激活时提示一次，避免频繁打扰用户
+    static BOOL hasShowniCloudAlert = NO;
+    if (!hasShowniCloudAlert) {
+        UIViewController *topVC = [AIUAToolsManager topViewController];
+        BOOL isAvailable = [[AIUAWordPackManager sharedManager] checkiCloudAvailabilityAndPrompt:topVC showAlert:YES];
+        if (!isAvailable) {
+            hasShowniCloudAlert = YES;
+            // 延迟重置标志，避免用户设置后无法再次提示
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(24 * 60 * 60 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                hasShowniCloudAlert = NO;
+            });
+        }
+    }
     
     // 启用iCloud同步
     [[AIUAWordPackManager sharedManager] enableiCloudSync];

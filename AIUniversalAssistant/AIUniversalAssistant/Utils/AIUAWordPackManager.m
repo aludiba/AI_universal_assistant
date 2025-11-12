@@ -8,6 +8,8 @@
 #import "AIUAWordPackManager.h"
 #import "AIUAIAPManager.h"
 #import "AIUAKeychainManager.h"
+#import "AIUAAlertHelper.h"
+#import "AIUAToolsManager.h"
 #import "AIUAMacros.h"
 #import <UIKit/UIKit.h>
 
@@ -483,6 +485,52 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
     } @catch (NSException *exception) {
         NSLog(@"[WordPack] iCloud不可用：%@", exception.reason);
         return NO;
+    }
+}
+
+- (BOOL)checkiCloudAvailabilityAndPrompt:(UIViewController *)viewController showAlert:(BOOL)showAlert {
+    BOOL isAvailable = [self isiCloudAvailable];
+    
+    if (!isAvailable && showAlert) {
+        // 显示提示并引导用户到设置页面
+        NSString *title = L(@"icloud_unavailable_title");
+        NSString *message = L(@"icloud_unavailable_message");
+        NSString *cancelText = L(@"cancel");
+        NSString *confirmText = L(@"go_to_settings");
+        
+        [AIUAAlertHelper showAlertWithTitle:title
+                                   message:message
+                             cancelBtnText:cancelText
+                            confirmBtnText:confirmText
+                              inController:viewController
+                              cancelAction:nil
+                             confirmAction:^{
+            // 跳转到设置页面
+            [self openiCloudSettings];
+        }];
+    }
+    
+    return isAvailable;
+}
+
+- (void)openiCloudSettings {
+    // 跳转到iOS设置页面的iCloud设置
+    NSURL *settingsURL = [NSURL URLWithString:UIApplicationOpenSettingsURLString];
+    
+    if ([[UIApplication sharedApplication] canOpenURL:settingsURL]) {
+        if (@available(iOS 10.0, *)) {
+            [[UIApplication sharedApplication] openURL:settingsURL options:@{} completionHandler:^(BOOL success) {
+                if (success) {
+                    NSLog(@"[WordPack] 已跳转到设置页面");
+                } else {
+                    NSLog(@"[WordPack] 跳转设置页面失败");
+                }
+            }];
+        } else {
+            [[UIApplication sharedApplication] openURL:settingsURL];
+        }
+    } else {
+        NSLog(@"[WordPack] 无法打开设置页面");
     }
 }
 

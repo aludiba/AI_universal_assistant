@@ -125,6 +125,14 @@ extern NSString * const AIUAWordConsumedNotification;
 - (void)enableiCloudSync;
 
 /**
+ * 检查iCloud可用性并提示用户（如果需要）
+ * @param viewController 用于显示提示的视图控制器，如果为nil则自动查找顶层控制器
+ * @param showAlert 是否显示提示，YES表示显示，NO表示静默检查
+ * @return YES表示iCloud可用，NO表示不可用
+ */
+- (BOOL)checkiCloudAvailabilityAndPrompt:(UIViewController * _Nullable)viewController showAlert:(BOOL)showAlert;
+
+/**
  * 从iCloud同步数据
  */
 - (void)syncFromiCloud;

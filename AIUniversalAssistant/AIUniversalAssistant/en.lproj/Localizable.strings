@@ -214,3 +214,6 @@
 "consumed_words" = "Consumed: %@ words";
 "vip_gift_expired" = "VIP gifted words have expired";
 "word_pack_expired" = "Word pack has expired";
+"icloud_unavailable_title" = "iCloud Unavailable";
+"icloud_unavailable_message" = "Your device is not signed in with an Apple ID or iCloud Drive is not enabled. To use data sync, please sign in with your Apple ID and enable iCloud Drive in Settings.";
+"go_to_settings" = "Go to Settings";

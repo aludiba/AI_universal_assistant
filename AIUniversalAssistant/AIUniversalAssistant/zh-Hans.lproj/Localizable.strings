@@ -220,3 +220,6 @@
 "consumed_words" = "已消耗: %@字";
 "vip_gift_expired" = "会员赠送字数已到期";
 "word_pack_expired" = "字数包已过期";
+"icloud_unavailable_title" = "iCloud不可用";
+"icloud_unavailable_message" = "检测到您的设备未登录Apple ID或未开启iCloud Drive。为了使用数据同步功能，请在设置中登录Apple ID并开启iCloud Drive。";
+"go_to_settings" = "前往设置";
