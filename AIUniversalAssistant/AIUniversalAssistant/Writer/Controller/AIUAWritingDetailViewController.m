@@ -4,6 +4,8 @@
 #import "AIUAAlertHelper.h"
 #import "AIUAMBProgressManager.h"
 #import "AIUADocDetailViewController.h"
+#import "AIUAWordPackManager.h"
+#import "AIUAWordPackViewController.h"
 
 @interface AIUAWritingDetailViewController ()
 
@@ -319,6 +321,28 @@
 #pragma mark - 写作逻辑
 
 - (void)startWriting {
+    // 估算需要消耗的字数（基于用户设置的wordCount或默认值）
+    NSInteger estimatedWords = self.wordCount > 0 ? self.wordCount : 1000; // 默认估算1000字
+    
+    // 检查字数是否足够
+    if (![[AIUAWordPackManager sharedManager] hasEnoughWords:estimatedWords]) {
+        NSInteger availableWords = [[AIUAWordPackManager sharedManager] totalAvailableWords];
+        NSString *message = [NSString stringWithFormat:L(@"insufficient_words_message"), @(estimatedWords), @(availableWords)];
+        
+        [AIUAAlertHelper showAlertWithTitle:L(@"insufficient_words")
+                                   message:message
+                             cancelBtnText:L(@"cancel")
+                            confirmBtnText:L(@"purchase_word_pack")
+                              inController:self
+                              cancelAction:nil
+                             confirmAction:^{
+            // 跳转到字数包购买页面
+            AIUAWordPackViewController *wordPackVC = [[AIUAWordPackViewController alloc] init];
+            [self.navigationController pushViewController:wordPackVC animated:YES];
+        }];
+        return;
+    }
+    
     self.isGenerating = YES;
     [self updateUIState];
     
@@ -416,7 +440,20 @@
     
     // 最终处理内容格式
     NSAttributedString *attributedContent = [self processMarkdownToAttributedString:content];
-    [self processFinalContent:attributedContent.string];
+    NSString *finalText = attributedContent.string;
+    [self processFinalContent:finalText];
+    
+    // 计算实际生成的字数并消耗
+    NSInteger actualWords = [AIUAWordPackManager countWordsInText:finalText];
+    if (actualWords > 0) {
+        [[AIUAWordPackManager sharedManager] consumeWords:actualWords completion:^(BOOL success, NSInteger remainingWords) {
+            if (success) {
+                NSLog(@"[Writing] 消耗字数成功: %ld 字，剩余: %ld 字", (long)actualWords, (long)remainingWords);
+            } else {
+                NSLog(@"[Writing] 消耗字数失败，剩余: %ld 字", (long)remainingWords);
+            }
+        }];
+    }
     
     // 保存到plist文件
     [self saveWritingToPlist];

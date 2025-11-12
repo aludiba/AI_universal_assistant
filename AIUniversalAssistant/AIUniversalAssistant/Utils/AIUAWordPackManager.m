@@ -7,6 +7,7 @@
 
 #import "AIUAWordPackManager.h"
 #import "AIUAIAPManager.h"
+#import "AIUAKeychainManager.h"
 #import "AIUAMacros.h"
 #import <UIKit/UIKit.h>
 
@@ -36,6 +37,7 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
 
 @property (nonatomic, strong) NSUbiquitousKeyValueStore *iCloudStore;
 @property (nonatomic, assign) BOOL iCloudSyncEnabled;
+@property (nonatomic, strong) AIUAKeychainManager *keychainManager;
 
 @end
 
@@ -57,6 +59,7 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
     if (self) {
         _iCloudStore = [NSUbiquitousKeyValueStore defaultStore];
         _iCloudSyncEnabled = NO;
+        _keychainManager = [AIUAKeychainManager sharedManager];
         
         // 监听VIP状态变化
         [[NSNotificationCenter defaultCenter] addObserver:self
@@ -78,6 +81,24 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
     [self refreshVIPGiftedWords];
 }
 
+#pragma mark - 本地存储辅助方法（使用Keychain）
+
+- (void)setLocalInteger:(NSInteger)value forKey:(NSString *)key {
+    [self.keychainManager setInteger:value forKey:key];
+}
+
+- (NSInteger)localIntegerForKey:(NSString *)key {
+    return [self.keychainManager integerForKey:key];
+}
+
+- (void)setLocalObject:(id)object forKey:(NSString *)key {
+    [self.keychainManager setObject:object forKey:key];
+}
+
+- (id)localObjectForKey:(NSString *)key {
+    return [self.keychainManager objectForKey:key];
+}
+
 #pragma mark - 字数查询
 
 - (NSInteger)vipGiftedWords {
@@ -91,14 +112,14 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
     // 检查是否需要刷新（新的一天）
     [self checkAndRefreshDailyGift];
     
-    NSInteger giftedWords = [[NSUserDefaults standardUserDefaults] integerForKey:kAIUAVIPGiftedWords];
+    NSInteger giftedWords = [self localIntegerForKey:kAIUAVIPGiftedWords];
     NSLog(@"[WordPack] VIP今日剩余赠送字数: %ld", (long)giftedWords);
     return MAX(0, giftedWords);
 }
 
 // 检查并刷新每日赠送
 - (void)checkAndRefreshDailyGift {
-    NSDate *lastRefreshDate = [[NSUserDefaults standardUserDefaults] objectForKey:kAIUAVIPGiftedWordsLastRefreshDate];
+    NSDate *lastRefreshDate = [self localObjectForKey:kAIUAVIPGiftedWordsLastRefreshDate];
     NSDate *now = [NSDate date];
     
     // 检查是否是新的一天
@@ -106,9 +127,8 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
         NSLog(@"[WordPack] 新的一天，刷新VIP每日赠送字数为 %ld", (long)kVIPDailyGiftWords);
         
         // 重置为50万字
-        [[NSUserDefaults standardUserDefaults] setInteger:kVIPDailyGiftWords forKey:kAIUAVIPGiftedWords];
-        [[NSUserDefaults standardUserDefaults] setObject:now forKey:kAIUAVIPGiftedWordsLastRefreshDate];
-        [[NSUserDefaults standardUserDefaults] synchronize];
+        [self setLocalInteger:kVIPDailyGiftWords forKey:kAIUAVIPGiftedWords];
+        [self setLocalObject:now forKey:kAIUAVIPGiftedWordsLastRefreshDate];
         
         // 同步到iCloud
         if (self.iCloudSyncEnabled) {
@@ -136,7 +156,7 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
 
 - (NSInteger)purchasedWords {
     // 遍历所有购买记录，计算未过期的字数
-    NSArray *purchases = [[NSUserDefaults standardUserDefaults] objectForKey:kAIUAWordPackPurchases];
+    NSArray *purchases = [self localObjectForKey:kAIUAWordPackPurchases];
     if (!purchases) {
         return 0;
     }
@@ -164,7 +184,7 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
 }
 
 - (NSInteger)consumedWords {
-    NSInteger consumed = [[NSUserDefaults standardUserDefaults] integerForKey:kAIUAConsumedWords];
+    NSInteger consumed = [self localIntegerForKey:kAIUAConsumedWords];
     return consumed;
 }
 
@@ -222,10 +242,8 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
 }
 
 - (void)addPurchaseRecord:(NSInteger)words forProductID:(NSString *)productID {
-    NSMutableArray *purchases = [[[NSUserDefaults standardUserDefaults] objectForKey:kAIUAWordPackPurchases] mutableCopy];
-    if (!purchases) {
-        purchases = [NSMutableArray array];
-    }
+    NSArray *existingPurchases = [self localObjectForKey:kAIUAWordPackPurchases];
+    NSMutableArray *purchases = existingPurchases ? [existingPurchases mutableCopy] : [NSMutableArray array];
     
     // 创建购买记录
     NSDate *now = [NSDate date];
@@ -241,9 +259,8 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
     
     [purchases addObject:purchase];
     
-    // 保存
-    [[NSUserDefaults standardUserDefaults] setObject:purchases forKey:kAIUAWordPackPurchases];
-    [[NSUserDefaults standardUserDefaults] synchronize];
+    // 保存到Keychain
+    [self setLocalObject:purchases forKey:kAIUAWordPackPurchases];
     
     NSLog(@"[WordPack] 购买记录已保存: %@ 字，过期时间: %@", @(words), expiryDate);
 }
@@ -290,29 +307,27 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
         NSLog(@"[WordPack] 检测到VIP用户，检查每日赠送字数");
         
         // 获取上次刷新日期
-        NSDate *lastRefreshDate = [[NSUserDefaults standardUserDefaults] objectForKey:kAIUAVIPGiftedWordsLastRefreshDate];
+        NSDate *lastRefreshDate = [self localObjectForKey:kAIUAVIPGiftedWordsLastRefreshDate];
         NSDate *now = [NSDate date];
         
         // 如果是新的一天或首次使用，则刷新为50万字
         if (![self isSameDay:lastRefreshDate date2:now]) {
             NSLog(@"[WordPack] 新的一天，重置VIP每日赠送字数为 %ld", (long)kVIPDailyGiftWords);
-            [[NSUserDefaults standardUserDefaults] setInteger:kVIPDailyGiftWords forKey:kAIUAVIPGiftedWords];
-            [[NSUserDefaults standardUserDefaults] setObject:now forKey:kAIUAVIPGiftedWordsLastRefreshDate];
-            [[NSUserDefaults standardUserDefaults] synchronize];
+            [self setLocalInteger:kVIPDailyGiftWords forKey:kAIUAVIPGiftedWords];
+            [self setLocalObject:now forKey:kAIUAVIPGiftedWordsLastRefreshDate];
             
             // 同步到iCloud
             if (self.iCloudSyncEnabled) {
                 [self syncToiCloud];
             }
         } else {
-            NSInteger currentWords = [[NSUserDefaults standardUserDefaults] integerForKey:kAIUAVIPGiftedWords];
+            NSInteger currentWords = [self localIntegerForKey:kAIUAVIPGiftedWords];
             NSLog(@"[WordPack] 今日VIP赠送字数已刷新过，当前剩余: %ld", (long)currentWords);
         }
     } else {
         NSLog(@"[WordPack] 用户不是VIP，无每日赠送字数");
         // 清除赠送字数
-        [[NSUserDefaults standardUserDefaults] setInteger:0 forKey:kAIUAVIPGiftedWords];
-        [[NSUserDefaults standardUserDefaults] synchronize];
+        [self setLocalInteger:0 forKey:kAIUAVIPGiftedWords];
     }
 }
 
@@ -340,7 +355,7 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
         NSInteger consumeFromVIP = MIN(remainingToConsume, vipWords);
         NSInteger newVIPWords = vipWords - consumeFromVIP;
         
-        [[NSUserDefaults standardUserDefaults] setInteger:newVIPWords forKey:kAIUAVIPGiftedWords];
+        [self setLocalInteger:newVIPWords forKey:kAIUAVIPGiftedWords];
         remainingToConsume -= consumeFromVIP;
         
         NSLog(@"[WordPack] 从VIP赠送消耗 %ld 字，剩余 %ld 字", (long)consumeFromVIP, (long)newVIPWords);
@@ -352,10 +367,9 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
     }
     
     // 3. 更新总消耗字数
-    NSInteger totalConsumed = [[NSUserDefaults standardUserDefaults] integerForKey:kAIUAConsumedWords];
+    NSInteger totalConsumed = [self localIntegerForKey:kAIUAConsumedWords];
     totalConsumed += words;
-    [[NSUserDefaults standardUserDefaults] setInteger:totalConsumed forKey:kAIUAConsumedWords];
-    [[NSUserDefaults standardUserDefaults] synchronize];
+    [self setLocalInteger:totalConsumed forKey:kAIUAConsumedWords];
     
     NSLog(@"[WordPack] ✓ 消耗完成，累计消耗: %ld 字", (long)totalConsumed);
     
@@ -377,7 +391,8 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
 }
 
 - (void)consumeFromPurchasedPacks:(NSInteger)words {
-    NSMutableArray *purchases = [[[NSUserDefaults standardUserDefaults] objectForKey:kAIUAWordPackPurchases] mutableCopy];
+    NSArray *existingPurchases = [self localObjectForKey:kAIUAWordPackPurchases];
+    NSMutableArray *purchases = existingPurchases ? [existingPurchases mutableCopy] : nil;
     if (!purchases || purchases.count == 0) {
         return;
     }
@@ -412,19 +427,75 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
         }
     }
     
-    // 保存更新后的购买记录
-    [[NSUserDefaults standardUserDefaults] setObject:purchases forKey:kAIUAWordPackPurchases];
-    [[NSUserDefaults standardUserDefaults] synchronize];
+    // 保存更新后的购买记录到Keychain
+    [self setLocalObject:purchases forKey:kAIUAWordPackPurchases];
 }
 
 - (BOOL)hasEnoughWords:(NSInteger)words {
     return [self totalAvailableWords] >= words;
 }
 
+#pragma mark - 字数统计
+
++ (NSInteger)countWordsInText:(NSString *)text {
+    if (!text || text.length == 0) {
+        return 0;
+    }
+    
+    // 根据规则：1个中文字符、英文字母、数字、标点或空格均计为1字
+    // 实际上就是字符串的长度（每个字符都计为1字）
+    // 使用NSString的length属性即可，因为NSString的length返回的是UTF-16代码单元的数量
+    // 对于大多数字符（包括中文、英文、数字、标点、空格），每个字符占用1个UTF-16代码单元
+    // 对于emoji等特殊字符，可能占用2个UTF-16代码单元，但按照规则也应该计为1字
+    
+    // 为了准确统计，我们需要遍历字符串并统计实际的字符数量（而不是UTF-16代码单元）
+    // 使用enumerateSubstringsInRange:options:usingBlock:来正确处理所有Unicode字符
+    __block NSInteger count = 0;
+    [text enumerateSubstringsInRange:NSMakeRange(0, text.length)
+                             options:NSStringEnumerationByComposedCharacterSequences
+                          usingBlock:^(NSString * _Nullable substring, NSRange substringRange, NSRange enclosingRange, BOOL * _Nonnull stop) {
+        // 每个composed character sequence（包括emoji）计为1字
+        count++;
+    }];
+    
+    return count;
+}
+
 #pragma mark - iCloud同步
+
+- (BOOL)isiCloudAvailable {
+    // 检查iCloud Key-Value Store是否可用
+    // 如果设备未登录Apple ID或未开启iCloud Drive，会返回nil或无法访问
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    NSURL *ubiquityURL = [fileManager URLForUbiquityContainerIdentifier:nil];
+    
+    if (ubiquityURL == nil) {
+        NSLog(@"[WordPack] iCloud不可用：设备未登录Apple ID或未开启iCloud Drive");
+        return NO;
+    }
+    
+    // 尝试访问iCloud Store
+    @try {
+        // 尝试读取一个测试值
+        id testValue = [self.iCloudStore objectForKey:@"__test_icloud_availability__"];
+        NSLog(@"[WordPack] iCloud可用");
+        return YES;
+    } @catch (NSException *exception) {
+        NSLog(@"[WordPack] iCloud不可用：%@", exception.reason);
+        return NO;
+    }
+}
 
 - (void)enableiCloudSync {
     if (self.iCloudSyncEnabled) {
+        return;
+    }
+    
+    // 检查iCloud是否可用
+    if (![self isiCloudAvailable]) {
+        NSLog(@"[WordPack] iCloud不可用，使用本地存储");
+        // iCloud不可用时，数据保存在Keychain中，只是不会同步到iCloud
+        // 这是自动降级，用户无需任何操作
         return;
     }
     
@@ -464,29 +535,23 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
     
     // 同步VIP赠送字数
     if (iCloudData[@"vipGiftedWords"]) {
-        [[NSUserDefaults standardUserDefaults] setInteger:[iCloudData[@"vipGiftedWords"] integerValue]
-                                                   forKey:kAIUAVIPGiftedWords];
+        [self setLocalInteger:[iCloudData[@"vipGiftedWords"] integerValue] forKey:kAIUAVIPGiftedWords];
     }
     
     // 同步上次刷新日期
     if (iCloudData[@"vipGiftedWordsLastRefreshDate"]) {
-        [[NSUserDefaults standardUserDefaults] setObject:iCloudData[@"vipGiftedWordsLastRefreshDate"]
-                                                   forKey:kAIUAVIPGiftedWordsLastRefreshDate];
+        [self setLocalObject:iCloudData[@"vipGiftedWordsLastRefreshDate"] forKey:kAIUAVIPGiftedWordsLastRefreshDate];
     }
     
     // 同步购买记录
     if (iCloudData[@"purchases"]) {
-        [[NSUserDefaults standardUserDefaults] setObject:iCloudData[@"purchases"]
-                                                   forKey:kAIUAWordPackPurchases];
+        [self setLocalObject:iCloudData[@"purchases"] forKey:kAIUAWordPackPurchases];
     }
     
     // 同步消耗记录
     if (iCloudData[@"consumedWords"]) {
-        [[NSUserDefaults standardUserDefaults] setInteger:[iCloudData[@"consumedWords"] integerValue]
-                                                   forKey:kAIUAConsumedWords];
+        [self setLocalInteger:[iCloudData[@"consumedWords"] integerValue] forKey:kAIUAConsumedWords];
     }
-    
-    [[NSUserDefaults standardUserDefaults] synchronize];
     NSLog(@"[WordPack] iCloud同步完成");
 }
 
@@ -501,28 +566,183 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
     NSMutableDictionary *data = [NSMutableDictionary dictionary];
     
     // VIP赠送字数（每日）
-    data[@"vipGiftedWords"] = @([[NSUserDefaults standardUserDefaults] integerForKey:kAIUAVIPGiftedWords]);
+    data[@"vipGiftedWords"] = @([self localIntegerForKey:kAIUAVIPGiftedWords]);
     
     // VIP赠送字数上次刷新日期
-    NSDate *lastRefreshDate = [[NSUserDefaults standardUserDefaults] objectForKey:kAIUAVIPGiftedWordsLastRefreshDate];
+    NSDate *lastRefreshDate = [self localObjectForKey:kAIUAVIPGiftedWordsLastRefreshDate];
     if (lastRefreshDate) {
         data[@"vipGiftedWordsLastRefreshDate"] = lastRefreshDate;
     }
     
     // 购买记录
-    NSArray *purchases = [[NSUserDefaults standardUserDefaults] objectForKey:kAIUAWordPackPurchases];
+    NSArray *purchases = [self localObjectForKey:kAIUAWordPackPurchases];
     if (purchases) {
         data[@"purchases"] = purchases;
     }
     
     // 消耗记录
-    data[@"consumedWords"] = @([[NSUserDefaults standardUserDefaults] integerForKey:kAIUAConsumedWords]);
+    data[@"consumedWords"] = @([self localIntegerForKey:kAIUAConsumedWords]);
     
     // 上传到iCloud
     [self.iCloudStore setDictionary:data forKey:kAIUAiCloudWordPackData];
     [self.iCloudStore synchronize];
     
     NSLog(@"[WordPack] iCloud上传完成");
+}
+
+#pragma mark - 数据导出/导入（iCloud不可用时的替代方案）
+
+- (NSString *)exportWordPackData {
+    NSLog(@"[WordPack] 导出字数包数据");
+    
+    // 构建要导出的数据
+    NSMutableDictionary *data = [NSMutableDictionary dictionary];
+    
+    // VIP赠送字数
+    data[@"vipGiftedWords"] = @([self localIntegerForKey:kAIUAVIPGiftedWords]);
+    
+    // VIP赠送字数上次刷新日期
+    NSDate *lastRefreshDate = [self localObjectForKey:kAIUAVIPGiftedWordsLastRefreshDate];
+    if (lastRefreshDate) {
+        data[@"vipGiftedWordsLastRefreshDate"] = @([lastRefreshDate timeIntervalSince1970]);
+    }
+    
+    // 购买记录
+    NSArray *purchases = [self localObjectForKey:kAIUAWordPackPurchases];
+    if (purchases) {
+        // 将NSDate转换为时间戳，以便JSON序列化
+        NSMutableArray *purchasesJSON = [NSMutableArray array];
+        for (NSDictionary *purchase in purchases) {
+            NSMutableDictionary *purchaseJSON = [purchase mutableCopy];
+            if (purchase[@"purchaseDate"]) {
+                NSDate *purchaseDate = purchase[@"purchaseDate"];
+                purchaseJSON[@"purchaseDate"] = @([purchaseDate timeIntervalSince1970]);
+            }
+            if (purchase[@"expiryDate"]) {
+                NSDate *expiryDate = purchase[@"expiryDate"];
+                purchaseJSON[@"expiryDate"] = @([expiryDate timeIntervalSince1970]);
+            }
+            [purchasesJSON addObject:purchaseJSON];
+        }
+        data[@"purchases"] = purchasesJSON;
+    }
+    
+    // 消耗记录
+    data[@"consumedWords"] = @([self localIntegerForKey:kAIUAConsumedWords]);
+    
+    // 添加版本号和导出时间
+    data[@"version"] = @1;
+    data[@"exportTime"] = @([[NSDate date] timeIntervalSince1970]);
+    
+    // 转换为JSON字符串
+    NSError *error = nil;
+    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:data options:NSJSONWritingPrettyPrinted error:&error];
+    
+    if (error) {
+        NSLog(@"[WordPack] 导出失败: %@", error.localizedDescription);
+        return nil;
+    }
+    
+    NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+    NSLog(@"[WordPack] 导出成功，数据大小: %lu 字节", (unsigned long)jsonString.length);
+    
+    return jsonString;
+}
+
+- (void)importWordPackData:(NSString *)jsonString completion:(void (^)(BOOL, NSError * _Nullable))completion {
+    NSLog(@"[WordPack] 导入字数包数据");
+    
+    if (!jsonString || jsonString.length == 0) {
+        NSError *error = [NSError errorWithDomain:@"AIUAWordPackManager"
+                                             code:-1
+                                         userInfo:@{NSLocalizedDescriptionKey: @"导入数据为空"}];
+        if (completion) {
+            completion(NO, error);
+        }
+        return;
+    }
+    
+    // 解析JSON字符串
+    NSData *jsonData = [jsonString dataUsingEncoding:NSUTF8StringEncoding];
+    NSError *error = nil;
+    NSDictionary *data = [NSJSONSerialization JSONObjectWithData:jsonData options:0 error:&error];
+    
+    if (error || !data) {
+        NSLog(@"[WordPack] 导入失败：JSON解析错误 - %@", error.localizedDescription);
+        if (completion) {
+            completion(NO, error);
+        }
+        return;
+    }
+    
+    // 验证版本号
+    NSInteger version = [data[@"version"] integerValue];
+    if (version != 1) {
+        NSError *versionError = [NSError errorWithDomain:@"AIUAWordPackManager"
+                                                     code:-2
+                                                 userInfo:@{NSLocalizedDescriptionKey: @"不支持的导入数据版本"}];
+        if (completion) {
+            completion(NO, versionError);
+        }
+        return;
+    }
+    
+    // 导入VIP赠送字数
+    if (data[@"vipGiftedWords"]) {
+        [self setLocalInteger:[data[@"vipGiftedWords"] integerValue] forKey:kAIUAVIPGiftedWords];
+    }
+    
+    // 导入VIP赠送字数上次刷新日期
+    if (data[@"vipGiftedWordsLastRefreshDate"]) {
+        NSTimeInterval timestamp = [data[@"vipGiftedWordsLastRefreshDate"] doubleValue];
+        NSDate *lastRefreshDate = [NSDate dateWithTimeIntervalSince1970:timestamp];
+        [self setLocalObject:lastRefreshDate forKey:kAIUAVIPGiftedWordsLastRefreshDate];
+    }
+    
+    // 导入购买记录
+    if (data[@"purchases"]) {
+        NSArray *purchasesJSON = data[@"purchases"];
+        NSMutableArray *purchases = [NSMutableArray array];
+        
+        for (NSDictionary *purchaseJSON in purchasesJSON) {
+            NSMutableDictionary *purchase = [purchaseJSON mutableCopy];
+            
+            // 转换时间戳为NSDate
+            if (purchaseJSON[@"purchaseDate"]) {
+                NSTimeInterval timestamp = [purchaseJSON[@"purchaseDate"] doubleValue];
+                purchase[@"purchaseDate"] = [NSDate dateWithTimeIntervalSince1970:timestamp];
+            }
+            if (purchaseJSON[@"expiryDate"]) {
+                NSTimeInterval timestamp = [purchaseJSON[@"expiryDate"] doubleValue];
+                purchase[@"expiryDate"] = [NSDate dateWithTimeIntervalSince1970:timestamp];
+            }
+            
+            [purchases addObject:purchase];
+        }
+        
+        [self setLocalObject:purchases forKey:kAIUAWordPackPurchases];
+    }
+    
+    // 导入消耗记录
+    if (data[@"consumedWords"]) {
+        [self setLocalInteger:[data[@"consumedWords"] integerValue] forKey:kAIUAConsumedWords];
+    }
+    
+    NSLog(@"[WordPack] 导入成功");
+    
+    // 如果iCloud可用，同步到iCloud
+    if (self.iCloudSyncEnabled && [self isiCloudAvailable]) {
+        [self syncToiCloud];
+    }
+    
+    // 发送通知
+    [[NSNotificationCenter defaultCenter] postNotificationName:AIUAWordPackPurchasedNotification
+                                                        object:nil
+                                                      userInfo:nil];
+    
+    if (completion) {
+        completion(YES, nil);
+    }
 }
 
 @end

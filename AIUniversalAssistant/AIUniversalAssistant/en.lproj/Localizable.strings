@@ -209,7 +209,7 @@
 "processing" = "Processing...";
 "purchase_success" = "Purchase Successful";
 "insufficient_words" = "Insufficient Words";
-"insufficient_words_message" = "Not enough words remaining. Please purchase word packs or subscribe to VIP";
+"insufficient_words_message" = "Need %@ words, but only %@ words available. Please purchase word packs or subscribe to VIP";
 "word_consumption_record" = "Word Consumption Record";
 "consumed_words" = "Consumed: %@ words";
 "vip_gift_expired" = "VIP gifted words have expired";

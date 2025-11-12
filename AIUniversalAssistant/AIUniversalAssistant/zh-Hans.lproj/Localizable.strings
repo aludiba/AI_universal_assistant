@@ -215,7 +215,7 @@
 "processing" = "处理中...";
 "purchase_success" = "购买成功";
 "insufficient_words" = "字数不足";
-"insufficient_words_message" = "剩余字数不足，请购买字数包或开通会员";
+"insufficient_words_message" = "需要 %@ 字，当前可用 %@ 字。请购买字数包或开通会员";
 "word_consumption_record" = "字数消耗记录";
 "consumed_words" = "已消耗: %@字";
 "vip_gift_expired" = "会员赠送字数已到期";

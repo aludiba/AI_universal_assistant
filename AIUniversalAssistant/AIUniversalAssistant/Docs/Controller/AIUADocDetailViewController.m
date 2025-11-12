@@ -4,6 +4,8 @@
 #import "AIUAMBProgressManager.h"
 #import "AIUAToolsManager.h"
 #import "AIUAVIPManager.h"
+#import "AIUAWordPackManager.h"
+#import "AIUAWordPackViewController.h"
 #import "UITextView+AIUAPlaceholder.h"
 #import <Masonry/Masonry.h>
 #import <MBProgressHUD/MBProgressHUD.h>
@@ -1090,6 +1092,55 @@
         return;
     }
     
+    // 估算需要消耗的字数
+    // 根据当前内容长度和操作类型估算
+    NSInteger baseContentWords = [AIUAWordPackManager countWordsInText:self.currentContent];
+    NSInteger estimatedWords = 0;
+    
+    switch (type) {
+        case AIUAWritingEditTypeContinue:
+            // 续写：估算生成与原文相似长度的内容
+            estimatedWords = MAX(baseContentWords, 500);
+            break;
+        case AIUAWritingEditTypeRewrite:
+            // 改写：生成与原文相似长度的内容
+            estimatedWords = MAX(baseContentWords, 300);
+            break;
+        case AIUAWritingEditTypeExpand:
+            // 扩写：根据选择的长度估算
+            if ([self.selectedLength isEqualToString:L(@"short")]) {
+                estimatedWords = MAX((NSInteger)(baseContentWords * 1.5), 500);
+            } else if ([self.selectedLength isEqualToString:L(@"medium")]) {
+                estimatedWords = MAX((NSInteger)(baseContentWords * 2.0), 1000);
+            } else {
+                estimatedWords = MAX((NSInteger)(baseContentWords * 3.0), 2000);
+            }
+            break;
+        case AIUAWritingEditTypeTranslate:
+            // 翻译：生成与原文相似长度的内容
+            estimatedWords = MAX(baseContentWords, 500);
+            break;
+    }
+    
+    // 检查字数是否足够
+    if (![[AIUAWordPackManager sharedManager] hasEnoughWords:estimatedWords]) {
+        NSInteger availableWords = [[AIUAWordPackManager sharedManager] totalAvailableWords];
+        NSString *message = [NSString stringWithFormat:L(@"insufficient_words_message"), @(estimatedWords), @(availableWords)];
+        
+        [AIUAAlertHelper showAlertWithTitle:L(@"insufficient_words")
+                                   message:message
+                             cancelBtnText:L(@"cancel")
+                            confirmBtnText:L(@"purchase_word_pack")
+                              inController:self
+                              cancelAction:nil
+                             confirmAction:^{
+            // 跳转到字数包购买页面
+            AIUAWordPackViewController *wordPackVC = [[AIUAWordPackViewController alloc] init];
+            [self.navigationController pushViewController:wordPackVC animated:YES];
+        }];
+        return;
+    }
+    
     NSString *prompt = [self buildPromptForType:type];
     
     // 隐藏buttonStack，显示停止生成按钮（停止按钮取代buttonStack的位置）
@@ -1123,11 +1174,13 @@
     [self setUIEnabled:NO];
     
     // 使用流式生成
+    WeakType(self);
     [self.deepSeekWriter generateFullStreamWritingWithPrompt:prompt
                                                    wordCount:0
                                               streamHandler:^(NSString *chunk, BOOL finished, NSError * _Nullable error) {
         
         dispatch_async(dispatch_get_main_queue(), ^{
+            StrongType(self);
             if (error) {
                 [AIUAMBProgressManager hideHUD:self.view];
                 self.isGenerating = NO;
@@ -1186,6 +1239,18 @@
                 }
                 // 恢复输入框和工具栏按钮
                 [self setUIEnabled:YES];
+                
+                // 计算实际生成的字数并消耗
+                NSInteger actualWords = [AIUAWordPackManager countWordsInText:self.generatedContent];
+                if (actualWords > 0) {
+                    [[AIUAWordPackManager sharedManager] consumeWords:actualWords completion:^(BOOL success, NSInteger remainingWords) {
+                        if (success) {
+                            NSLog(@"[DocDetail] 消耗字数成功: %ld 字，剩余: %ld 字", (long)actualWords, (long)remainingWords);
+                        } else {
+                            NSLog(@"[DocDetail] 消耗字数失败，剩余: %ld 字", (long)remainingWords);
+                        }
+                    }];
+                }
             }
         });
     }];

@@ -102,10 +102,25 @@ extern NSString * const AIUAWordConsumedNotification;
  */
 - (BOOL)hasEnoughWords:(NSInteger)words;
 
+/**
+ * 根据字数统计规则计算文本的字数
+ * 规则：1个中文字符、英文字母、数字、标点或空格均计为1字
+ * @param text 要统计的文本
+ * @return 字数
+ */
++ (NSInteger)countWordsInText:(NSString *)text;
+
 #pragma mark - iCloud同步
 
 /**
- * 启用iCloud同步
+ * 检查iCloud是否可用
+ * @return YES表示iCloud可用，NO表示不可用（未登录Apple ID或未开启iCloud Drive）
+ */
+- (BOOL)isiCloudAvailable;
+
+/**
+ * 启用iCloud同步（如果可用）
+ * 如果iCloud不可用，会自动降级到本地存储
  */
 - (void)enableiCloudSync;
 
@@ -118,6 +133,22 @@ extern NSString * const AIUAWordConsumedNotification;
  * 上传数据到iCloud
  */
 - (void)syncToiCloud;
+
+#pragma mark - 数据导出/导入（iCloud不可用时的替代方案）
+
+/**
+ * 导出字数包数据为JSON字符串（用于手动备份）
+ * @return JSON字符串，如果失败返回nil
+ */
+- (NSString * _Nullable)exportWordPackData;
+
+/**
+ * 导入字数包数据（从JSON字符串）
+ * @param jsonString JSON格式的数据字符串
+ * @param completion 导入完成回调，success表示是否成功
+ */
+- (void)importWordPackData:(NSString *)jsonString
+                completion:(void(^)(BOOL success, NSError * _Nullable error))completion;
 
 @end
 
