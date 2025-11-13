@@ -20,6 +20,25 @@
     [self loadData];
 }
 
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    // 监听缓存清理通知
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(cacheCleared:)
+                                                 name:AIUACacheClearedNotification
+                                               object:nil];
+}
+
+- (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
+- (void)cacheCleared:(NSNotification *)notification {
+    // 缓存清理后，刷新写作记录
+    [self loadData];
+}
+
 - (void)setupUI {
     [super setupUI];
     // 设置导航栏标题

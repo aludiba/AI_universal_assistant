@@ -9,6 +9,9 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+// 缓存清理完成通知
+extern NSString * const AIUACacheClearedNotification;
+
 @interface AIUADataManager : NSObject
 
 + (instancetype)sharedManager;
@@ -69,6 +72,30 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSString *)getPlistFilePath:(NSString *)fileName;
 - (NSString *)currentDateString;
 - (void)exportDocument:(NSString *)title withContent:(NSString *)content;
+
+#pragma mark - 缓存管理
+
+/**
+ * 计算缓存总大小（字节）
+ * 包括：AIUARecentUsed.plist、SearchHistory.plist、AIUAWritings.plist
+ */
+- (unsigned long long)calculateCacheSize;
+
+/**
+ * 格式化缓存大小为可读字符串
+ * @param size 字节数
+ * @return 格式化后的字符串，如 "1.2 MB"、"500 KB"
+ */
+- (NSString *)formatCacheSize:(unsigned long long)size;
+
+/**
+ * 清理缓存文件
+ * 清除：AIUARecentUsed.plist、SearchHistory.plist、AIUAWritings.plist
+ * 保留：AIUAFavorites.plist（收藏文件）
+ * 清理完成后会发送 AIUACacheClearedNotification 通知
+ */
+- (void)clearCacheWithCompletion:(void(^)(BOOL success, NSString * _Nullable errorMessage))completion;
+
 @end
 
 NS_ASSUME_NONNULL_END

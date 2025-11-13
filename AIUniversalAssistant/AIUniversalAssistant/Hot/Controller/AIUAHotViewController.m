@@ -74,6 +74,25 @@ static NSString * const kEmptyCellId = @"EmptyCell";
     [self updateContentForSelectedCategory];
     [self refreshFavoritesData];
     [self refreshRecentUsedData];
+    
+    // 监听缓存清理通知
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(cacheCleared:)
+                                                 name:AIUACacheClearedNotification
+                                               object:nil];
+}
+
+- (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
+- (void)cacheCleared:(NSNotification *)notification {
+    // 缓存清理后，刷新最近使用数据
+    [self refreshRecentUsedData];
+    // 如果当前显示的是收藏分类，刷新显示
+    if ([self isFavoriteCategorySelected]) {
+        [self.collectionView reloadData];
+    }
 }
 
 - (void)setupSearchBar {

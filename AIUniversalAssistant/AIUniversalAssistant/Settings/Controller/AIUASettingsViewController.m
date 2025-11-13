@@ -12,8 +12,10 @@
 #import "AIUAMembershipViewController.h"
 #import "AIUAWordPackViewController.h"
 #import "AIUAIAPManager.h"
+#import "AIUADataManager.h"
 #import <Masonry/Masonry.h>
 #import <StoreKit/StoreKit.h>
+#import <MBProgressHUD/MBProgressHUD.h>
 
 @interface AIUASettingsViewController () <UITableViewDelegate, UITableViewDataSource>
 
@@ -33,6 +35,18 @@
                                              selector:@selector(subscriptionStatusChanged:)
                                                  name:@"AIUASubscriptionStatusChanged"
                                                object:nil];
+    
+    // 监听缓存清理完成通知
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(cacheCleared:)
+                                                 name:AIUACacheClearedNotification
+                                               object:nil];
+}
+
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+    // 每次显示时刷新缓存大小
+    [self updateCacheSizeDisplay];
 }
 
 - (void)dealloc {
@@ -49,6 +63,11 @@
     // 订阅状态改变，刷新会员特权行
     NSIndexPath *indexPath = [NSIndexPath indexPathForRow:0 inSection:0];
     [self.tableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationNone];
+}
+
+- (void)cacheCleared:(NSNotification *)notification {
+    // 缓存清理完成，刷新缓存大小显示
+    [self updateCacheSizeDisplay];
 }
 
 - (void)setupTableView {
@@ -72,6 +91,7 @@
         @{@"title": L(@"member_privileges"), @"icon": @"crown.fill", @"color": @"#FFD700", @"action": @"memberPrivileges"},
         @{@"title": L(@"creation_records"), @"icon": @"doc.text.fill", @"color": @"#3B82F6", @"action": @"creationRecords"},
         @{@"title": L(@"writing_word_packs"), @"icon": @"cube.fill", @"color": @"#10B981", @"action": @"wordPacks"},
+        @{@"title": L(@"clear_cache"), @"icon": @"trash.fill", @"color": @"#F97316", @"action": @"clearCache"},
         @{@"title": L(@"rate_app"), @"icon": @"star.fill", @"color": @"#EF4444", @"action": @"rateApp"},
         @{@"title": L(@"share_app"), @"icon": @"square.and.arrow.up.fill", @"color": @"#06B6D4", @"action": @"shareApp"},
         @{@"title": L(@"contact_us"), @"icon": @"envelope.fill", @"color": @"#F59E0B", @"action": @"contactUs"},
@@ -102,10 +122,12 @@
     // 创建带颜色背景的图标
     UIImage *icon = [self createIconWithSystemName:iconName color:[self colorFromHex:colorHex]];
     
-    // 为会员特权添加状态信息
+    // 为会员特权和清理缓存添加状态信息
     NSString *subtitle = nil;
     if ([action isEqualToString:@"memberPrivileges"]) {
         subtitle = [self getMembershipStatusText];
+    } else if ([action isEqualToString:@"clearCache"]) {
+        subtitle = [self getCacheSizeText];
     }
     
     [cell configureWithIcon:icon title:title subtitle:subtitle];
@@ -127,6 +149,8 @@
         [self showCreationRecords];
     } else if ([action isEqualToString:@"wordPacks"]) {
         [self showWordPacks];
+    } else if ([action isEqualToString:@"clearCache"]) {
+        [self showClearCacheAlert];
     } else if ([action isEqualToString:@"rateApp"]) {
         [self rateApp];
     } else if ([action isEqualToString:@"shareApp"]) {
@@ -200,6 +224,99 @@
     AIUAAboutViewController *vc = [[AIUAAboutViewController alloc] init];
     vc.hidesBottomBarWhenPushed = YES;
     [self.navigationController pushViewController:vc animated:YES];
+}
+
+#pragma mark - 清理缓存
+
+- (NSString *)getCacheSizeText {
+    AIUADataManager *dataManager = [AIUADataManager sharedManager];
+    unsigned long long cacheSize = [dataManager calculateCacheSize];
+    NSString *formattedSize = [dataManager formatCacheSize:cacheSize];
+    return formattedSize;
+}
+
+- (void)updateCacheSizeDisplay {
+    // 找到清理缓存行的索引
+    NSInteger cacheIndex = -1;
+    for (NSInteger i = 0; i < self.settingsData.count; i++) {
+        NSDictionary *item = self.settingsData[i];
+        if ([item[@"action"] isEqualToString:@"clearCache"]) {
+            cacheIndex = i;
+            break;
+        }
+    }
+    
+    if (cacheIndex >= 0) {
+        NSIndexPath *indexPath = [NSIndexPath indexPathForRow:cacheIndex inSection:0];
+        [self.tableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationNone];
+    }
+}
+
+- (void)showClearCacheAlert {
+    AIUADataManager *dataManager = [AIUADataManager sharedManager];
+    unsigned long long cacheSize = [dataManager calculateCacheSize];
+    NSString *formattedSize = [dataManager formatCacheSize:cacheSize];
+    
+    // 如果缓存为0，显示提示
+    if (cacheSize == 0) {
+        UIAlertController *alert = [UIAlertController alertControllerWithTitle:L(@"prompt")
+                                                                       message:L(@"cache_already_empty")
+                                                                preferredStyle:UIAlertControllerStyleAlert];
+        UIAlertAction *okAction = [UIAlertAction actionWithTitle:L(@"confirm")
+                                                           style:UIAlertActionStyleDefault
+                                                         handler:nil];
+        [alert addAction:okAction];
+        [self presentViewController:alert animated:YES completion:nil];
+        return;
+    }
+    
+    NSString *message = [NSString stringWithFormat:L(@"clear_cache_message"), formattedSize];
+    
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:L(@"clear_cache")
+                                                                   message:message
+                                                            preferredStyle:UIAlertControllerStyleAlert];
+    
+    UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:L(@"cancel")
+                                                           style:UIAlertActionStyleCancel
+                                                         handler:nil];
+    
+    UIAlertAction *confirmAction = [UIAlertAction actionWithTitle:L(@"confirm")
+                                                            style:UIAlertActionStyleDestructive
+                                                          handler:^(UIAlertAction * _Nonnull action) {
+        [self performClearCache];
+    }];
+    
+    [alert addAction:cancelAction];
+    [alert addAction:confirmAction];
+    
+    [self presentViewController:alert animated:YES completion:nil];
+}
+
+- (void)performClearCache {
+    MBProgressHUD *hud = [MBProgressHUD showHUDAddedTo:self.view animated:YES];
+    hud.label.text = L(@"clearing_cache");
+    hud.mode = MBProgressHUDModeIndeterminate;
+    
+    [[AIUADataManager sharedManager] clearCacheWithCompletion:^(BOOL success, NSString * _Nullable errorMessage) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [hud hideAnimated:YES];
+            
+            if (success) {
+                // 显示成功提示
+                MBProgressHUD *successHud = [MBProgressHUD showHUDAddedTo:self.view animated:YES];
+                successHud.mode = MBProgressHUDModeText;
+                successHud.label.text = L(@"cache_cleared_success");
+                successHud.label.numberOfLines = 0;
+                [successHud hideAnimated:YES afterDelay:1.5];
+                
+                // 刷新缓存大小显示
+                [self updateCacheSizeDisplay];
+            } else {
+                // 显示错误提示
+                [self showAlertWithTitle:L(@"error") message:errorMessage ?: L(@"cache_clear_failed")];
+            }
+        });
+    }];
 }
 
 #pragma mark - 评分和分享

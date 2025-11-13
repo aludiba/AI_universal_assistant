@@ -87,6 +87,22 @@
     self.showHistory = NO;
     self.allCategories = [[NSMutableArray alloc] initWithArray:[[AIUADataManager sharedManager] loadSearchCategoriesData]];
     [self loadHistorySearches];
+    
+    // 监听缓存清理通知
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(cacheCleared:)
+                                                 name:AIUACacheClearedNotification
+                                               object:nil];
+}
+
+- (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
+- (void)cacheCleared:(NSNotification *)notification {
+    // 缓存清理后，刷新搜索历史
+    [self loadHistorySearches];
+    [self updateUI];
 }
 
 - (void)setupSearchBar {

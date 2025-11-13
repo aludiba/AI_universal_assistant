@@ -223,3 +223,12 @@
 "icloud_unavailable_title" = "iCloud不可用";
 "icloud_unavailable_message" = "检测到您的设备未登录Apple ID或未开启iCloud Drive。为了使用数据同步功能，请在设置中登录Apple ID并开启iCloud Drive。";
 "go_to_settings" = "前往设置";
+
+// 清理缓存
+"clear_cache" = "清理缓存";
+"clear_cache_message" = "将清除最近使用记录、搜索历史和创作记录，共 %@。收藏内容不会被清除。";
+"clearing_cache" = "正在清理...";
+"cache_cleared_success" = "缓存清理成功";
+"cache_clear_failed" = "缓存清理失败";
+"cache_already_empty" = "当前没有缓存数据，无需清理";
+"error" = "错误";

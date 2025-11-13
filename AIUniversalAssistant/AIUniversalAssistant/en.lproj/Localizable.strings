@@ -217,3 +217,12 @@
 "icloud_unavailable_title" = "iCloud Unavailable";
 "icloud_unavailable_message" = "Your device is not signed in with an Apple ID or iCloud Drive is not enabled. To use data sync, please sign in with your Apple ID and enable iCloud Drive in Settings.";
 "go_to_settings" = "Go to Settings";
+
+// Clear Cache
+"clear_cache" = "Clear Cache";
+"clear_cache_message" = "This will clear recent usage, search history, and writing records (%@ total). Favorites will not be cleared.";
+"clearing_cache" = "Clearing...";
+"cache_cleared_success" = "Cache cleared successfully";
+"cache_clear_failed" = "Failed to clear cache";
+"cache_already_empty" = "No cache data to clear";
+"error" = "Error";

@@ -9,6 +9,9 @@
 #import "AIUAMBProgressManager.h"
 #import "AIUAToolsManager.h"
 
+// 缓存清理完成通知
+NSString * const AIUACacheClearedNotification = @"AIUACacheClearedNotification";
+
 @implementation AIUADataManager
 
 + (instancetype)sharedManager {
@@ -486,6 +489,101 @@
     UIActivityViewController *activityVC = [[UIActivityViewController alloc] initWithActivityItems:@[tempFileURL] applicationActivities:nil];
     
     [[AIUAToolsManager topViewController] presentViewController:activityVC animated:YES completion:nil];
+}
+
+#pragma mark - 缓存管理
+
+- (unsigned long long)calculateCacheSize {
+    unsigned long long totalSize = 0;
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    NSString *documentsDirectory = [paths firstObject];
+    
+    // 需要计算大小的文件列表
+    NSArray *cacheFiles = @[
+        @"AIUARecentUsed.plist",
+        @"SearchHistory.plist",
+        @"AIUAWritings.plist"
+    ];
+    
+    for (NSString *fileName in cacheFiles) {
+        NSString *filePath = [documentsDirectory stringByAppendingPathComponent:fileName];
+        if ([fileManager fileExistsAtPath:filePath]) {
+            NSDictionary *attributes = [fileManager attributesOfItemAtPath:filePath error:nil];
+            if (attributes) {
+                NSNumber *fileSize = attributes[NSFileSize];
+                if (fileSize) {
+                    totalSize += [fileSize unsignedLongLongValue];
+                }
+            }
+        }
+    }
+    
+    return totalSize;
+}
+
+- (NSString *)formatCacheSize:(unsigned long long)size {
+    if (size == 0) {
+        return @"0 B";
+    }
+    
+    double sizeInKB = size / 1024.0;
+    if (sizeInKB < 1024) {
+        return [NSString stringWithFormat:@"%.1f KB", sizeInKB];
+    }
+    
+    double sizeInMB = sizeInKB / 1024.0;
+    if (sizeInMB < 1024) {
+        return [NSString stringWithFormat:@"%.2f MB", sizeInMB];
+    }
+    
+    double sizeInGB = sizeInMB / 1024.0;
+    return [NSString stringWithFormat:@"%.2f GB", sizeInGB];
+}
+
+- (void)clearCacheWithCompletion:(void(^)(BOOL success, NSString * _Nullable errorMessage))completion {
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    NSString *documentsDirectory = [paths firstObject];
+    
+    // 需要清除的文件列表
+    NSArray *cacheFiles = @[
+        @"AIUARecentUsed.plist",
+        @"SearchHistory.plist",
+        @"AIUAWritings.plist"
+    ];
+    
+    NSMutableArray *errors = [NSMutableArray array];
+    
+    for (NSString *fileName in cacheFiles) {
+        NSString *filePath = [documentsDirectory stringByAppendingPathComponent:fileName];
+        if ([fileManager fileExistsAtPath:filePath]) {
+            NSError *error = nil;
+            BOOL success = [fileManager removeItemAtPath:filePath error:&error];
+            if (!success) {
+                NSString *errorMsg = [NSString stringWithFormat:@"删除 %@ 失败: %@", fileName, error.localizedDescription];
+                [errors addObject:errorMsg];
+                NSLog(@"[DataManager] %@", errorMsg);
+            } else {
+                NSLog(@"[DataManager] 成功删除缓存文件: %@", fileName);
+            }
+        }
+    }
+    
+    // 发送通知，通知相关页面更新
+    [[NSNotificationCenter defaultCenter] postNotificationName:AIUACacheClearedNotification object:nil];
+    
+    if (errors.count > 0) {
+        NSString *errorMessage = [errors componentsJoinedByString:@"\n"];
+        if (completion) {
+            completion(NO, errorMessage);
+        }
+    } else {
+        NSLog(@"[DataManager] 缓存清理完成");
+        if (completion) {
+            completion(YES, nil);
+        }
+    }
 }
 
 @end
