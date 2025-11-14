@@ -1092,40 +1092,42 @@
         return;
     }
     
-    // 估算需要消耗的字数
+    // 估算需要消耗的字数（输入 + 输出）
     // 根据当前内容长度和操作类型估算
-    NSInteger baseContentWords = [AIUAWordPackManager countWordsInText:self.currentContent];
-    NSInteger estimatedWords = 0;
+    NSInteger inputWords = [AIUAWordPackManager countWordsInText:self.currentContent];
+    NSInteger estimatedOutputWords = 0;
     
     switch (type) {
         case AIUAWritingEditTypeContinue:
             // 续写：估算生成与原文相似长度的内容
-            estimatedWords = MAX(baseContentWords, 500);
+            estimatedOutputWords = MAX(inputWords, 500);
             break;
         case AIUAWritingEditTypeRewrite:
             // 改写：生成与原文相似长度的内容
-            estimatedWords = MAX(baseContentWords, 300);
+            estimatedOutputWords = MAX(inputWords, 300);
             break;
         case AIUAWritingEditTypeExpand:
             // 扩写：根据选择的长度估算
             if ([self.selectedLength isEqualToString:L(@"short")]) {
-                estimatedWords = MAX((NSInteger)(baseContentWords * 1.5), 500);
+                estimatedOutputWords = MAX((NSInteger)(inputWords * 1.5), 500);
             } else if ([self.selectedLength isEqualToString:L(@"medium")]) {
-                estimatedWords = MAX((NSInteger)(baseContentWords * 2.0), 1000);
+                estimatedOutputWords = MAX((NSInteger)(inputWords * 2.0), 1000);
             } else {
-                estimatedWords = MAX((NSInteger)(baseContentWords * 3.0), 2000);
+                estimatedOutputWords = MAX((NSInteger)(inputWords * 3.0), 2000);
             }
             break;
         case AIUAWritingEditTypeTranslate:
             // 翻译：生成与原文相似长度的内容
-            estimatedWords = MAX(baseContentWords, 500);
+            estimatedOutputWords = MAX(inputWords, 500);
             break;
     }
     
+    NSInteger estimatedTotalWords = inputWords + estimatedOutputWords;
+    
     // 检查字数是否足够
-    if (![[AIUAWordPackManager sharedManager] hasEnoughWords:estimatedWords]) {
+    if (![[AIUAWordPackManager sharedManager] hasEnoughWords:estimatedTotalWords]) {
         NSInteger availableWords = [[AIUAWordPackManager sharedManager] totalAvailableWords];
-        NSString *message = [NSString stringWithFormat:L(@"insufficient_words_message"), @(estimatedWords), @(availableWords)];
+        NSString *message = [NSString stringWithFormat:L(@"insufficient_words_message"), @(estimatedTotalWords), @(availableWords)];
         
         [AIUAAlertHelper showAlertWithTitle:L(@"insufficient_words")
                                    message:message
@@ -1240,12 +1242,16 @@
                 // 恢复输入框和工具栏按钮
                 [self setUIEnabled:YES];
                 
-                // 计算实际生成的字数并消耗
-                NSInteger actualWords = [AIUAWordPackManager countWordsInText:self.generatedContent];
-                if (actualWords > 0) {
-                    [[AIUAWordPackManager sharedManager] consumeWords:actualWords completion:^(BOOL success, NSInteger remainingWords) {
+                // 计算实际消耗的字数（输入 + 输出）
+                NSInteger inputWords = [AIUAWordPackManager countWordsInText:self.currentContent ?: @""];
+                NSInteger outputWords = [AIUAWordPackManager countWordsInText:self.generatedContent];
+                NSInteger totalWords = inputWords + outputWords;
+                
+                if (totalWords > 0) {
+                    [[AIUAWordPackManager sharedManager] consumeWords:totalWords completion:^(BOOL success, NSInteger remainingWords) {
                         if (success) {
-                            NSLog(@"[DocDetail] 消耗字数成功: %ld 字，剩余: %ld 字", (long)actualWords, (long)remainingWords);
+                            NSLog(@"[DocDetail] 消耗字数成功: 输入 %ld 字 + 输出 %ld 字 = 总计 %ld 字，剩余: %ld 字", 
+                                  (long)inputWords, (long)outputWords, (long)totalWords, (long)remainingWords);
                         } else {
                             NSLog(@"[DocDetail] 消耗字数失败，剩余: %ld 字", (long)remainingWords);
                         }

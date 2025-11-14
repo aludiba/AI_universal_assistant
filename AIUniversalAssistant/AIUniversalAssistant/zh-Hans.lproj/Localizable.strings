@@ -209,7 +209,7 @@
 "word_pack_note_1" = "字数包购买后90天内有效，逾期未使用将自动失效";
 "word_pack_note_2" = "使用时将优先消耗会员每日赠送字数，其次消耗购买字数包";
 "word_pack_note_3" = "订阅会员每日赠送50万字";
-"word_pack_note_4" = "字数统计规则：1个中文字符、英文字母、数字、标点或空格均计为1字";
+"word_pack_note_4" = "字数统计规则：输入+输出字数，1个中文字符、英文字母、数字、标点或空格均计为1字";
 "confirm_purchase_word_pack" = "确认购买 %@ 字数包，需支付 ¥%@？";
 "word_pack_purchase_success" = "购买成功！已获得 %@ 字";
 "processing" = "处理中...";

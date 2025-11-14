@@ -321,13 +321,15 @@
 #pragma mark - 写作逻辑
 
 - (void)startWriting {
-    // 估算需要消耗的字数（基于用户设置的wordCount或默认值）
-    NSInteger estimatedWords = self.wordCount > 0 ? self.wordCount : 1000; // 默认估算1000字
+    // 估算需要消耗的字数（输入 + 输出）
+    NSInteger inputWords = [AIUAWordPackManager countWordsInText:self.prompt ?: @""];
+    NSInteger estimatedOutputWords = self.wordCount > 0 ? self.wordCount : 1000; // 默认估算输出1000字
+    NSInteger estimatedTotalWords = inputWords + estimatedOutputWords;
     
     // 检查字数是否足够
-    if (![[AIUAWordPackManager sharedManager] hasEnoughWords:estimatedWords]) {
+    if (![[AIUAWordPackManager sharedManager] hasEnoughWords:estimatedTotalWords]) {
         NSInteger availableWords = [[AIUAWordPackManager sharedManager] totalAvailableWords];
-        NSString *message = [NSString stringWithFormat:L(@"insufficient_words_message"), @(estimatedWords), @(availableWords)];
+        NSString *message = [NSString stringWithFormat:L(@"insufficient_words_message"), @(estimatedTotalWords), @(availableWords)];
         
         [AIUAAlertHelper showAlertWithTitle:L(@"insufficient_words")
                                    message:message
@@ -443,12 +445,16 @@
     NSString *finalText = attributedContent.string;
     [self processFinalContent:finalText];
     
-    // 计算实际生成的字数并消耗
-    NSInteger actualWords = [AIUAWordPackManager countWordsInText:finalText];
-    if (actualWords > 0) {
-        [[AIUAWordPackManager sharedManager] consumeWords:actualWords completion:^(BOOL success, NSInteger remainingWords) {
+    // 计算实际消耗的字数（输入 + 输出）
+    NSInteger inputWords = [AIUAWordPackManager countWordsInText:self.prompt ?: @""];
+    NSInteger outputWords = [AIUAWordPackManager countWordsInText:finalText];
+    NSInteger totalWords = inputWords + outputWords;
+    
+    if (totalWords > 0) {
+        [[AIUAWordPackManager sharedManager] consumeWords:totalWords completion:^(BOOL success, NSInteger remainingWords) {
             if (success) {
-                NSLog(@"[Writing] 消耗字数成功: %ld 字，剩余: %ld 字", (long)actualWords, (long)remainingWords);
+                NSLog(@"[Writing] 消耗字数成功: 输入 %ld 字 + 输出 %ld 字 = 总计 %ld 字，剩余: %ld 字", 
+                      (long)inputWords, (long)outputWords, (long)totalWords, (long)remainingWords);
             } else {
                 NSLog(@"[Writing] 消耗字数失败，剩余: %ld 字", (long)remainingWords);
             }
