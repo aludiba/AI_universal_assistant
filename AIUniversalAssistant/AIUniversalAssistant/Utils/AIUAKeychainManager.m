@@ -126,14 +126,22 @@ static NSString * const kAIUAKeychainService = @"com.yourcompany.aiassistant.key
     }
     
     NSError *error = nil;
-    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:object options:0 error:&error];
+    NSData *archived = nil;
+    if (@available(iOS 11.0, *)) {
+        archived = [NSKeyedArchiver archivedDataWithRootObject:object requiringSecureCoding:NO error:&error];
+    } else {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+        archived = [NSKeyedArchiver archivedDataWithRootObject:object];
+#pragma clang diagnostic pop
+    }
     
-    if (error || !jsonData) {
-        NSLog(@"[Keychain] JSON序列化失败: %@", error.localizedDescription);
+    if (error || !archived) {
+        NSLog(@"[Keychain] 对象归档失败: %@", error.localizedDescription);
         return NO;
     }
     
-    return [self setData:jsonData forKey:key];
+    return [self setData:archived forKey:key];
 }
 
 - (id)objectForKey:(NSString *)key {
@@ -143,13 +151,21 @@ static NSString * const kAIUAKeychainService = @"com.yourcompany.aiassistant.key
     }
     
     NSError *error = nil;
-    id object = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
-    
-    if (error) {
-        NSLog(@"[Keychain] JSON反序列化失败: %@", error.localizedDescription);
-        return nil;
+    id object = nil;
+    if (@available(iOS 11.0, *)) {
+        NSSet *allowed = [NSSet setWithArray:@[[NSArray class], [NSDictionary class], [NSString class], [NSNumber class], [NSDate class], [NSData class], [NSNull class]]];
+        object = [NSKeyedUnarchiver unarchivedObjectOfClasses:allowed fromData:data error:&error];
+    } else {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+        object = [NSKeyedUnarchiver unarchiveObjectWithData:data];
+#pragma clang diagnostic pop
     }
     
+    if (error) {
+        NSLog(@"[Keychain] 对象解档失败: %@", error.localizedDescription);
+        return nil;
+    }
     return object;
 }
 

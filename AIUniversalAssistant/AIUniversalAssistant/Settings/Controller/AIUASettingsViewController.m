@@ -16,6 +16,8 @@
 #import <Masonry/Masonry.h>
 #import <StoreKit/StoreKit.h>
 #import <MBProgressHUD/MBProgressHUD.h>
+#import "AIUAWordPackManager.h"
+#import "AIUARewardAdManager.h"
 
 @interface AIUASettingsViewController () <UITableViewDelegate, UITableViewDataSource>
 
@@ -61,6 +63,14 @@
 
 - (void)subscriptionStatusChanged:(NSNotification *)notification {
     // 订阅状态改变，刷新会员特权行
+    // 同步更新数据源中的副标题，避免出现先空后刷新的延迟感
+    if (self.settingsData.count > 0) {
+        NSMutableArray *mutable = [self.settingsData mutableCopy];
+        NSMutableDictionary *first = [mutable[0] mutableCopy];
+        first[@"subtitle"] = [self getMembershipStatusText];
+        mutable[0] = first;
+        self.settingsData = [mutable copy];
+    }
     NSIndexPath *indexPath = [NSIndexPath indexPathForRow:0 inSection:0];
     [self.tableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationNone];
 }
@@ -68,6 +78,24 @@
 - (void)cacheCleared:(NSNotification *)notification {
     // 缓存清理完成，刷新缓存大小显示
     [self updateCacheSizeDisplay];
+}
+
+#pragma mark - VIP Gate
+- (BOOL)ensureVIPOrPrompt {
+    BOOL isVIP = [[AIUAIAPManager sharedManager] isVIPMember];
+    if (!isVIP) {
+        UIAlertController *alert = [UIAlertController alertControllerWithTitle:L(@"vip_unlock_required")
+                                                                       message:L(@"vip_general_locked_message")
+                                                                preferredStyle:UIAlertControllerStyleAlert];
+        UIAlertAction *cancel = [UIAlertAction actionWithTitle:L(@"cancel") style:UIAlertActionStyleCancel handler:nil];
+        UIAlertAction *go = [UIAlertAction actionWithTitle:L(@"activate_now") style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+            [self showMemberPrivileges];
+        }];
+        [alert addAction:cancel];
+        [alert addAction:go];
+        [self presentViewController:alert animated:YES completion:nil];
+    }
+    return isVIP;
 }
 
 - (void)setupTableView {
@@ -87,13 +115,16 @@
 }
 
 - (void)setupData {
+    // 预计算会员状态文案，避免Cell里二次计算导致的视觉延迟
+    NSString *memberSubtitle = [self getMembershipStatusText];
     self.settingsData = @[
-        @{@"title": L(@"member_privileges"), @"icon": @"crown.fill", @"color": @"#FFD700", @"action": @"memberPrivileges"},
+        @{@"title": L(@"member_privileges"), @"icon": @"crown.fill", @"color": @"#FFD700", @"action": @"memberPrivileges", @"subtitle": memberSubtitle ?: @""},
         @{@"title": L(@"creation_records"), @"icon": @"doc.text.fill", @"color": @"#3B82F6", @"action": @"creationRecords"},
         @{@"title": L(@"writing_word_packs"), @"icon": @"cube.fill", @"color": @"#10B981", @"action": @"wordPacks"},
         @{@"title": L(@"clear_cache"), @"icon": @"trash.fill", @"color": @"#F97316", @"action": @"clearCache"},
         @{@"title": L(@"rate_app"), @"icon": @"star.fill", @"color": @"#EF4444", @"action": @"rateApp"},
         @{@"title": L(@"share_app"), @"icon": @"square.and.arrow.up.fill", @"color": @"#06B6D4", @"action": @"shareApp"},
+        @{@"title": L(@"watch_reward_title"), @"icon": @"play.rectangle.on.rectangle.fill", @"color": @"#22C55E", @"action": @"watchReward"},
         @{@"title": L(@"contact_us"), @"icon": @"envelope.fill", @"color": @"#F59E0B", @"action": @"contactUs"},
         @{@"title": L(@"about_us"), @"icon": @"info.circle.fill", @"color": @"#8B5CF6", @"action": @"aboutUs"}
     ];
@@ -123,11 +154,24 @@
     UIImage *icon = [self createIconWithSystemName:iconName color:[self colorFromHex:colorHex]];
     
     // 为会员特权和清理缓存添加状态信息
-    NSString *subtitle = nil;
+    NSString *subtitle = item[@"subtitle"]; // 优先使用预计算的，避免刷新延迟
     if ([action isEqualToString:@"memberPrivileges"]) {
-        subtitle = [self getMembershipStatusText];
+        // 如果未预置，兜底计算一次
+        if (subtitle.length == 0) subtitle = [self getMembershipStatusText];
     } else if ([action isEqualToString:@"clearCache"]) {
         subtitle = [self getCacheSizeText];
+    } else if ([action isEqualToString:@"watchReward"]) {
+        // 展示今日已观看次数
+        NSUserDefaults *ud = NSUserDefaults.standardUserDefaults;
+        NSDateFormatter *fmt = [[NSDateFormatter alloc] init];
+        fmt.dateFormat = @"yyyy-MM-dd";
+        NSString *today = [fmt stringFromDate:[NSDate date]];
+        NSString *savedDate = [ud stringForKey:@"AIUARewardWatchDate"];
+        NSInteger count = [ud integerForKey:@"AIUARewardWatchCount"];
+        if (savedDate == nil || ![savedDate isEqualToString:today]) {
+            count = 0;
+        }
+        subtitle = [NSString stringWithFormat:L(@"watch_reward_progress"), (long)count, (long)4];
     }
     
     [cell configureWithIcon:icon title:title subtitle:subtitle];
@@ -148,6 +192,7 @@
     } else if ([action isEqualToString:@"creationRecords"]) {
         [self showCreationRecords];
     } else if ([action isEqualToString:@"wordPacks"]) {
+        if (![self ensureVIPOrPrompt]) return; // 非VIP禁止进入
         [self showWordPacks];
     } else if ([action isEqualToString:@"clearCache"]) {
         [self showClearCacheAlert];
@@ -155,6 +200,9 @@
         [self rateApp];
     } else if ([action isEqualToString:@"shareApp"]) {
         [self shareApp];
+    } else if ([action isEqualToString:@"watchReward"]) {
+        if (![self ensureVIPOrPrompt]) return; // 非VIP禁止观看
+        [self watchReward];
     } else if ([action isEqualToString:@"contactUs"]) {
         [self showContactUs];
     } else if ([action isEqualToString:@"aboutUs"]) {
@@ -224,6 +272,64 @@
     AIUAAboutViewController *vc = [[AIUAAboutViewController alloc] init];
     vc.hidesBottomBarWhenPushed = YES;
     [self.navigationController pushViewController:vc animated:YES];
+}
+
+#pragma mark - 激励视频（每日4次，每次+5万字）
+
+- (void)watchReward {
+    // VIP 门禁
+    if (![[AIUAIAPManager sharedManager] isVIPMember]) {
+        [self showAlertWithTitle:L(@"vip_unlock_required") message:L(@"vip_general_locked_message")];
+        return;
+    }
+    NSInteger dailyLimit = 4;
+    NSString *dateKey = @"AIUARewardWatchDate";
+    NSString *countKey = @"AIUARewardWatchCount";
+    NSUserDefaults *ud = NSUserDefaults.standardUserDefaults;
+    
+    NSDateFormatter *fmt = [[NSDateFormatter alloc] init];
+    fmt.dateFormat = @"yyyy-MM-dd";
+    NSString *today = [fmt stringFromDate:[NSDate date]];
+    
+    NSString *savedDate = [ud stringForKey:dateKey];
+    NSInteger count = [ud integerForKey:countKey];
+    if (savedDate == nil || ![savedDate isEqualToString:today]) {
+        savedDate = today;
+        count = 0;
+        [ud setObject:savedDate forKey:dateKey];
+        [ud setInteger:count forKey:countKey];
+        [ud synchronize];
+    }
+    if (count >= dailyLimit) {
+        [self showAlertWithTitle:L(@"limit_reached_title") message:L(@"reward_daily_limit_reached")];
+        return;
+    }
+    
+    [MBProgressHUD showHUDAddedTo:self.view animated:YES];
+    __weak typeof(self) weakSelf = self;
+    [[AIUARewardAdManager sharedManager] loadAndShowFromViewController:self loaded:^{
+        NSLog(@"[Reward] 激励视频已加载");
+    } earnedReward:^{
+        // 发放5万字（90天有效）
+        [[AIUAWordPackManager sharedManager] awardBonusWords:50000 validDays:90 completion:^{
+            // 刷新显示
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [weakSelf.tableView reloadData];
+            });
+        }];
+        NSInteger newCount = count + 1;
+        [ud setObject:today forKey:dateKey];
+        [ud setInteger:newCount forKey:countKey];
+        [ud synchronize];
+        NSLog(@"[Reward] 已发放50000字，今日第 %ld 次", (long)newCount);
+    } closed:^{
+        [MBProgressHUD hideHUDForView:weakSelf.view animated:YES];
+        // 刷新该行显示今日次数
+        [weakSelf.tableView reloadData];
+    } failed:^(NSError *error) {
+        [MBProgressHUD hideHUDForView:weakSelf.view animated:YES];
+        [weakSelf showAlertWithTitle:L(@"reward_failed_title") message:error.localizedDescription ?: @"加载失败"];
+    }];
 }
 
 #pragma mark - 清理缓存

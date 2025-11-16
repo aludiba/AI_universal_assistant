@@ -79,6 +79,14 @@ extern NSString * const AIUAWordConsumedNotification;
  */
 - (NSString *)productIDForPackType:(AIUAWordPackType)type;
 
+#pragma mark - 奖励字数（激励视频等）
+/**
+ * 发放奖励字数（追加记录，不覆盖既有购买记录）
+ * @param words 奖励字数
+ * @param days 有效天数（如90天）
+ */
+- (void)awardBonusWords:(NSInteger)words validDays:(NSInteger)days completion:(void (^ _Nullable)(void))completion;
+
 #pragma mark - VIP赠送
 
 /**

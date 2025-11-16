@@ -317,7 +317,7 @@
     NSLog(@"[WordPack] setupPurchaseButton 开始");
     
     self.purchaseButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    [self.purchaseButton setTitle:L(@"activate_now") forState:UIControlStateNormal];
+    [self.purchaseButton setTitle:L(@"buy_now") forState:UIControlStateNormal];
     [self.purchaseButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
     self.purchaseButton.titleLabel.font = AIUAUIFontBold(16);
     self.purchaseButton.backgroundColor = [UIColor systemGreenColor];

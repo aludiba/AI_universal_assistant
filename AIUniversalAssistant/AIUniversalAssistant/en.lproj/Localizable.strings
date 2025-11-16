@@ -226,3 +226,5 @@
 "cache_clear_failed" = "Failed to clear cache";
 "cache_already_empty" = "No cache data to clear";
 "error" = "Error";
+"cannot_open_app_store" = "Unable to open the App Store. Please try again later";
+"buy_now" = "Buy Now";

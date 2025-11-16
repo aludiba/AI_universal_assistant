@@ -68,6 +68,13 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
                                                  selector:@selector(subscriptionStatusChanged:)
                                                      name:@"AIUASubscriptionStatusChanged"
                                                    object:nil];
+
+        // 非VIP用户不应有每日赠送字数，启动时兜底重置
+        BOOL isVIP = [[AIUAIAPManager sharedManager] isVIPMember];
+        if (!isVIP) {
+            [self setLocalInteger:0 forKey:kAIUAVIPGiftedWords];
+            [self setLocalObject:nil forKey:kAIUAVIPGiftedWordsLastRefreshDate];
+        }
     }
     return self;
 }
@@ -265,6 +272,37 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
     [self setLocalObject:purchases forKey:kAIUAWordPackPurchases];
     
     NSLog(@"[WordPack] 购买记录已保存: %@ 字，过期时间: %@", @(words), expiryDate);
+}
+
+#pragma mark - 奖励字数（追加，不覆盖）
+
+- (void)awardBonusWords:(NSInteger)words validDays:(NSInteger)days completion:(void (^ _Nullable)(void))completion {
+    if (words <= 0) {
+        if (completion) completion();
+        return;
+    }
+    NSArray *existingPurchases = [self localObjectForKey:kAIUAWordPackPurchases];
+    NSMutableArray *purchases = existingPurchases ? [existingPurchases mutableCopy] : [NSMutableArray array];
+    NSDate *now = [NSDate date];
+    NSDate *expiryDate = [now dateByAddingTimeInterval:MAX(1, days) * 24 * 60 * 60];
+    NSDictionary *purchase = @{
+        @"productID": @"reward.bonus",
+        @"words": @(words),
+        @"remainingWords": @(words),
+        @"purchaseDate": now,
+        @"expiryDate": expiryDate
+    };
+    [purchases addObject:purchase];
+    [self setLocalObject:purchases forKey:kAIUAWordPackPurchases];
+
+    // iCloud 同步
+    if (self.iCloudSyncEnabled) {
+        [self syncToiCloud];
+    }
+    // 通知刷新
+    [[NSNotificationCenter defaultCenter] postNotificationName:AIUAWordPackPurchasedNotification object:nil userInfo:@{ @"words": @(words) }];
+    NSLog(@"[WordPack] 奖励入账: %ld 字，当前记录数: %lu", (long)words, (unsigned long)purchases.count);
+    if (completion) completion();
 }
 
 - (NSInteger)wordsForPackType:(AIUAWordPackType)type {

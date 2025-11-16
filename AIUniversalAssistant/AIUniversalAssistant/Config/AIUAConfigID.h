@@ -22,11 +22,13 @@
 // ========== 测试配置（当前使用，可以立即看到广告） ==========
 #define AIUA_APPID               @"5755016"      // 测试AppID
 #define AIUA_SPLASH_AD_SLOT_ID   @"893331808"   // 测试开屏广告代码位
+#define AIUA_REWARD_AD_SLOT_ID   @"972751105"   // 测试激励视频代码位（请在平台替换为你的正式ID）
 
 // ========== 你的正式配置（等测试成功后再使用） ==========
 // 新创建的代码位需要1-3天审核激活，激活后再替换下面的配置
 // #define AIUA_APPID               @"5755016"      // 你的正式AppID
 // #define AIUA_SPLASH_AD_SLOT_ID   @"893331808"   // 你的正式代码位
+// #define AIUA_REWARD_AD_SLOT_ID   @"945113162"   // 你的正式激励视频代码位
 
 #define AIUA_APPName             @"AI Universal Assistant"  // 应用名称
 #define AIUA_BU_APP_KEY          @""  // 穿山甲AppKey（已废弃，使用AIUA_APPID）
