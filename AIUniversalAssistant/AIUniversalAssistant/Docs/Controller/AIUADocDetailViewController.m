@@ -1452,6 +1452,13 @@
         return;
     }
     [self updateWritingItem];
+    
+    // 安全检查：确保 writingItem 不为 nil
+    if (!self.writingItem || ![self.writingItem isKindOfClass:[NSDictionary class]]) {
+        NSLog(@"❌ saveDocumentIfNeeded: writingItem 为 nil 或不是有效的字典");
+        return;
+    }
+    
     NSString *documentID = self.writingItem[@"id"] ?: @"";
     BOOL success = NO;
     if (documentID.length > 0) {

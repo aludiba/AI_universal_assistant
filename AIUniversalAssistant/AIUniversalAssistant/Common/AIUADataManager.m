@@ -223,6 +223,12 @@ NSString * const AIUACacheClearedNotification = @"AIUACacheClearedNotification";
 
 // 保存写作详情到plist文件
 - (void)saveWritingToPlist:(NSDictionary *)writingRecord {
+    // 安全检查：确保 writingRecord 不为 nil
+    if (!writingRecord || ![writingRecord isKindOfClass:[NSDictionary class]]) {
+        NSLog(@"❌ saveWritingToPlist: writingRecord 为 nil 或不是有效的字典");
+        return;
+    }
+    
     NSLog(@"saveWritingToPlist-writingRecord:%@", writingRecord[@"content"]);
     // 获取沙盒Documents目录
     NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
@@ -232,23 +238,42 @@ NSString * const AIUACacheClearedNotification = @"AIUACacheClearedNotification";
     NSMutableArray *writingsArray = [NSMutableArray array];
     if ([[NSFileManager defaultManager] fileExistsAtPath:plistPath]) {
         NSArray *existingWritings = [NSArray arrayWithContentsOfFile:plistPath];
-        if (existingWritings) {
-            [writingsArray addObjectsFromArray:existingWritings];
+        if (existingWritings && [existingWritings isKindOfClass:[NSArray class]]) {
+            // 确保所有元素都是字典类型
+            for (id item in existingWritings) {
+                if ([item isKindOfClass:[NSDictionary class]]) {
+                    [writingsArray addObject:item];
+                }
+            }
         }
     }
     
+    // 确保 writingsArray 是有效的可变数组
+    if (!writingsArray || ![writingsArray isKindOfClass:[NSMutableArray class]]) {
+        NSLog(@"❌ saveWritingToPlist: writingsArray 初始化失败，重新创建");
+        writingsArray = [NSMutableArray array];
+    }
+    
     // 添加到数组开头（最新的在最前面）
-    [writingsArray insertObject:writingRecord atIndex:0];
+    // 安全检查：确保索引有效
+    if (writingsArray.count == 0) {
+        [writingsArray addObject:writingRecord];
+    } else {
+        [writingsArray insertObject:writingRecord atIndex:0];
+    }
     
     NSData *plistData = [NSPropertyListSerialization dataWithPropertyList:writingsArray format:NSPropertyListXMLFormat_v1_0 options:0 error:nil];
     
     // 保存到plist文件
-    BOOL success = [plistData writeToFile:plistPath atomically:YES];
-    
-    if (success) {
-        NSLog(@"写作内容已保存到: %@", plistPath);
+    if (plistData) {
+        BOOL success = [plistData writeToFile:plistPath atomically:YES];
+        if (success) {
+            NSLog(@"✅ 写作内容已保存到: %@", plistPath);
+        } else {
+            NSLog(@"❌ 保存失败: 无法写入文件");
+        }
     } else {
-        NSLog(@"保存失败");
+        NSLog(@"❌ 保存失败: 无法序列化数据");
     }
 }
 
