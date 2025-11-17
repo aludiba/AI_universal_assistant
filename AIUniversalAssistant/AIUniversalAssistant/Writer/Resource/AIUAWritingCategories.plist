@@ -11,75 +11,75 @@
     <array>
         <dict>
             <key>title</key>
-            <string>灵感启发</string>
+            <string>创意火花</string>
             <key>items</key>
             <array>
                 <dict>
                     <key>title</key>
-                    <string>书籍解读</string>
+                    <string>名著精读</string>
                     <key>content</key>
-                    <string>请用简明易懂的方式总结《基督山伯爵》一书的主要观点和内容</string>
+                    <string>用通俗易懂的语言，为我解读《基督山伯爵》的核心思想与精彩情节</string>
                 </dict>
                 <dict>
                     <key>title</key>
-                    <string>视频文案</string>
+                    <string>短视频脚本</string>
                     <key>content</key>
-                    <string>你是一位拥有百万粉丝的短视频创作者，帮我生成一份讲述父母爱情的短视频文案</string>
+                    <string>作为百万级短视频博主，请为我创作一段关于父母爱情的短视频脚本</string>
                 </dict>
                 <dict>
                     <key>title</key>
-                    <string>真诚致歉</string>
+                    <string>萌宠道歉</string>
                     <key>content</key>
-                    <string>帮忙写个给猫咪的道歉信，原因是我忘了给它铲屎</string>
+                    <string>帮我写一封给猫咪的道歉信，因为我忘记给它清理猫砂了</string>
                 </dict>
                 <dict>
                     <key>title</key>
-                    <string>走心感悟</string>
+                    <string>活动心得</string>
                     <key>content</key>
-                    <string>写一篇社区举办的"关爱留守儿童教育"活动的感悟</string>
+                    <string>为社区举办的"关爱留守儿童教育"活动写一篇真情实感的心得体会</string>
                 </dict>
                 <dict>
                     <key>title</key>
-                    <string>感谢致辞</string>
+                    <string>感恩致辞</string>
                     <key>content</key>
-                    <string>帮我写一段300字的致谢词，包含对导师的感谢</string>
+                    <string>请帮我撰写一份300字的感谢词，重点表达对导师的感激之情</string>
                 </dict>
             </array>
         </dict>
         <dict>
             <key>title</key>
-            <string>热门创作</string>
+            <string>爆款模板</string>
             <key>items</key>
             <array>
                 <dict>
                     <key>title</key>
-                    <string>产品广告</string>
+                    <string>产品推广</string>
                     <key>content</key>
-                    <string>请帮我为宝宝乐安抚奶嘴生成3条广告文案，每条字数50字以内</string>
+                    <string>为"宝宝乐安抚奶嘴"创作3条广告文案，每条控制在50字以内</string>
                 </dict>
                 <dict>
                     <key>title</key>
-                    <string>科技新闻</string>
+                    <string>科技资讯</string>
                     <key>content</key>
-                    <string>写一篇"AR眼镜让虚拟生活与现实相结合"的科技新闻</string>
+                    <string>撰写一篇关于"AR眼镜实现虚拟与现实融合"的科技资讯文章</string>
                 </dict>
                 <dict>
                     <key>title</key>
-                    <string>影评分享</string>
+                    <string>电影评论</string>
                     <key>content</key>
-                    <string>帮我为《肖申克的救赎》写一篇影评，强调电影给我带来的感受</string>
+                    <string>为《肖申克的救赎》写一篇影评，重点分享这部电影带给我的深刻感受</string>
                 </dict>
                 <dict>
                     <key>title</key>
-                    <string>生日祝福</string>
+                    <string>生日贺词</string>
                     <key>content</key>
-                    <string>帮我为我的朋友小李写一份真挚的生日祝福</string>
+                    <string>为我的朋友小李写一份充满真情的生日祝福语</string>
                 </dict>
                 <dict>
                     <key>title</key>
-                    <string>推荐文书</string>
+                    <string>推荐信函</string>
                     <key>content</key>
-                    <string>请你做为推荐人为一位优秀的求职者编写一封有力的推荐信</string>
+                    <string>以推荐人的身份，为一位优秀的求职者撰写一封强有力的推荐信</string>
                 </dict>
             </array>
         </dict>

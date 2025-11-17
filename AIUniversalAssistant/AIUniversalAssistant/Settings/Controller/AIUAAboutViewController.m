@@ -46,19 +46,40 @@
 }
 
 - (void)setupContent {
-    // Logo
+    // Logo - 使用App Icon
     UIView *logoContainer = [[UIView alloc] init];
-    logoContainer.backgroundColor = AIUAUIColorRGB(59, 130, 246);
-    logoContainer.layer.cornerRadius = 30;
+    logoContainer.layer.cornerRadius = 20;
     logoContainer.layer.masksToBounds = YES;
     [self.contentView addSubview:logoContainer];
     
-    UILabel *logoLabel = [[UILabel alloc] init];
-    logoLabel.text = @"AI";
-    logoLabel.font = AIUAUIFontBold(32);
-    logoLabel.textColor = [UIColor whiteColor];
-    logoLabel.textAlignment = NSTextAlignmentCenter;
-    [logoContainer addSubview:logoLabel];
+    // 尝试获取 App Icon
+    UIImage *appIcon = [self getAppIcon];
+    
+    if (appIcon) {
+        // 成功获取到图标，使用ImageView显示
+        UIImageView *iconImageView = [[UIImageView alloc] init];
+        iconImageView.image = appIcon;
+        iconImageView.contentMode = UIViewContentModeScaleAspectFit;
+        [logoContainer addSubview:iconImageView];
+        
+        [iconImageView mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.edges.equalTo(logoContainer);
+        }];
+    } else {
+        // 如果获取不到，使用蓝色背景和文字作为占位
+        logoContainer.backgroundColor = AIUAUIColorRGB(59, 130, 246);
+        
+        UILabel *placeholderLabel = [[UILabel alloc] init];
+        placeholderLabel.text = @"AI";
+        placeholderLabel.font = AIUAUIFontBold(40);
+        placeholderLabel.textColor = [UIColor whiteColor];
+        placeholderLabel.textAlignment = NSTextAlignmentCenter;
+        [logoContainer addSubview:placeholderLabel];
+        
+        [placeholderLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.center.equalTo(logoContainer);
+        }];
+    }
     
     // App名称
     UILabel *appNameLabel = [[UILabel alloc] init];
@@ -109,11 +130,7 @@
     [logoContainer mas_makeConstraints:^(MASConstraintMaker *make) {
         make.top.equalTo(self.contentView).offset(40);
         make.centerX.equalTo(self.contentView);
-        make.width.height.equalTo(@80);
-    }];
-    
-    [logoLabel mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.center.equalTo(logoContainer);
+        make.width.height.equalTo(@100);
     }];
     
     [appNameLabel mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -214,6 +231,41 @@
     }];
     
     return button;
+}
+
+- (UIImage *)getAppIcon {
+    // 尝试多种方式获取 App Icon
+    UIImage *icon = nil;
+    
+    // 方式1：iOS 10.3+ 直接获取 AppIcon
+    if (@available(iOS 10.3, *)) {
+        icon = [UIImage imageNamed:@"AppIcon"];
+        if (icon) {
+            return icon;
+        }
+    }
+    
+    // 方式2：从bundle中获取已安装应用的图标
+    NSString *iconFilename = [[[[[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleIcons"] objectForKey:@"CFBundlePrimaryIcon"] objectForKey:@"CFBundleIconFiles"] lastObject];
+    if (iconFilename) {
+        icon = [UIImage imageNamed:iconFilename];
+        if (icon) {
+            return icon;
+        }
+    }
+    
+    // 方式3：尝试从文件路径加载（针对开发环境）
+    NSString *bundlePath = [[NSBundle mainBundle] bundlePath];
+    NSString *iconPath = [bundlePath stringByAppendingPathComponent:@"Assets.xcassets/AppIcon.appiconset/ai_writing_cat_logo_bright.png"];
+    icon = [UIImage imageWithContentsOfFile:iconPath];
+    if (icon) {
+        return icon;
+    }
+    
+    // 方式4：直接通过Assets加载（需要先将图片添加为独立的Image Set）
+    icon = [UIImage imageNamed:@"ai_writing_cat_logo_bright"];
+    
+    return icon;
 }
 
 #pragma mark - Actions

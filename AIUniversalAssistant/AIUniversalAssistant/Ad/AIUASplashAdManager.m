@@ -100,8 +100,8 @@
     self.splashAd.delegate = self;
     
     // 设置超时时间（秒）- 增加到5秒，真机网络可能较慢
-    self.splashAd.tolerateTimeout = 5.0;
-    NSLog(@"[穿山甲] 设置超时时间: 5秒");
+    self.splashAd.tolerateTimeout = 30.0;
+    NSLog(@"[穿山甲] 设置超时时间: 30秒");
     
     // 设置超时回调（作为兜底方案，防止SDK没有回调）
     __weak typeof(self) weakSelf = self;
@@ -112,7 +112,6 @@
             NSLog(@"   1. 网络连接问题");
             NSLog(@"   2. 代码位无广告填充");
             NSLog(@"   3. 账号或代码位未激活");
-            NSLog(@"   建议：使用测试代码位验证 (AppID: 5001121, 代码位: 887382973)");
             
             if (strongSelf.failedBlock) {
                 NSError *error = [NSError errorWithDomain:@"AIUASplashAdManager"

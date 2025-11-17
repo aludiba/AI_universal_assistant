@@ -67,9 +67,20 @@ static const void *placeholderLabelKey = &placeholderLabelKey;
     
     CGFloat x = lineFragmentPadding + textContainerInset.left;
     CGFloat y = textContainerInset.top;
-//    CGFloat width = CGRectGetWidth(self.bounds) - x - lineFragmentPadding - textContainerInset.right;
-    CGFloat width = 100;
-    CGFloat height = [self.placeholderLabel sizeThatFits:CGSizeMake(width, 0)].height;
+    
+    // 使用完整宽度，避免文字挤压
+    CGFloat maxWidth = self.bounds.size.width;
+    if (maxWidth <= 0) {
+        maxWidth = [UIScreen mainScreen].bounds.size.width;
+    }
+    CGFloat width = maxWidth - x - lineFragmentPadding - textContainerInset.right;
+    
+    // 确保宽度合理
+    if (width < 100) {
+        width = maxWidth - 20; // 最小留20的边距
+    }
+    
+    CGFloat height = [self.placeholderLabel sizeThatFits:CGSizeMake(width, CGFLOAT_MAX)].height;
     
     self.placeholderLabel.frame = CGRectMake(x, y, width, height);
 }

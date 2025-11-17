@@ -11,9 +11,9 @@
 		<array>
 			<dict>
 				<key>title</key>
-				<string>演讲稿</string>
+				<string>演讲词</string>
 				<key>subtitle</key>
-				<string>机会留给准备更充分的人</string>
+				<string>充分准备，把握每一次机会</string>
 				<key>icon</key>
 				<string>mic</string>
 				<key>type</key>
@@ -25,9 +25,9 @@
 			</dict>
 			<dict>
 				<key>title</key>
-				<string>心得体会</string>
+				<string>校园感悟</string>
 				<key>subtitle</key>
-				<string>你在校园里获得的心得体会，真情实感</string>
+				<string>记录校园生活的真实感受与成长</string>
 				<key>icon</key>
 				<string>heart</string>
 				<key>type</key>
@@ -39,9 +39,9 @@
 			</dict>
 			<dict>
 				<key>title</key>
-				<string>检讨书</string>
+				<string>反思检讨</string>
 				<key>subtitle</key>
-				<string>知错能改善莫大焉</string>
+				<string>承认错误，改正就是最大的进步</string>
 				<key>icon</key>
 				<string>edit</string>
 				<key>type</key>
@@ -53,9 +53,9 @@
 			</dict>
 			<dict>
 				<key>title</key>
-				<string>大学生实习报告</string>
+				<string>实习总结</string>
 				<key>subtitle</key>
-				<string>你也来临时抱佛脚啦？</string>
+				<string>临时抱佛脚？不存在的，现在开始准备</string>
 				<key>icon</key>
 				<string>graduationcap</string>
 				<key>type</key>
@@ -67,9 +67,9 @@
 			</dict>
 			<dict>
 				<key>title</key>
-				<string>小红书爆款文案</string>
+				<string>小红书种草</string>
 				<key>subtitle</key>
-				<string>标题、笔记、标签，一键全搞定～</string>
+				<string>标题、正文、话题标签，一站式搞定</string>
 				<key>icon</key>
 				<string>square.and.pencil</string>
 				<key>type</key>
@@ -81,9 +81,9 @@
 			</dict>
 			<dict>
 				<key>title</key>
-				<string>诗词写作</string>
+				<string>古诗词创作</string>
 				<key>subtitle</key>
-				<string>输入主题，我来帮您写唐诗。</string>
+				<string>输入主题，我来为你赋诗一首</string>
 				<key>icon</key>
 				<string>book</string>
 				<key>type</key>
@@ -114,9 +114,9 @@
 		<array>
 			<dict>
 				<key>title</key>
-				<string>今日头条文章撰写</string>
+				<string>头条文章</string>
 				<key>subtitle</key>
-				<string>震惊！头条又更新了</string>
+				<string>头条又出新功能了，快来试试</string>
 				<key>icon</key>
 				<string>newspaper</string>
 				<key>type</key>
@@ -128,9 +128,9 @@
 			</dict>
 			<dict>
 				<key>title</key>
-				<string>公众号风格文章</string>
+				<string>微信推文</string>
 				<key>subtitle</key>
-				<string>刷爆朋友圈</string>
+				<string>打造朋友圈爆款文章</string>
 				<key>icon</key>
 				<string>doc.richtext</string>
 				<key>type</key>
@@ -142,9 +142,9 @@
 			</dict>
 			<dict>
 				<key>title</key>
-				<string>知乎回答生成</string>
+				<string>知乎回答</string>
 				<key>subtitle</key>
-				<string>谢邀，刚下飞机，人在国外（bushi）</string>
+				<string>谢邀，人在现场，刚下飞机（开玩笑的）</string>
 				<key>icon</key>
 				<string>questionmark</string>
 				<key>type</key>
@@ -156,9 +156,9 @@
 			</dict>
 			<dict>
 				<key>title</key>
-				<string>日常朋友圈</string>
+				<string>朋友圈动态</string>
 				<key>subtitle</key>
-				<string>总有人喜欢上你的百变话风</string>
+				<string>你的多样风格，总有人会欣赏</string>
 				<key>icon</key>
 				<string>person.2</string>
 				<key>type</key>
@@ -170,9 +170,9 @@
 			</dict>
 			<dict>
 				<key>title</key>
-				<string>短视频拍摄脚本</string>
+				<string>视频脚本</string>
 				<key>subtitle</key>
-				<string>规划你视频的分分秒秒，让你的视频尽显专业。</string>
+				<string>规划每一秒，让视频更专业更精彩</string>
 				<key>icon</key>
 				<string>play.rectangle</string>
 				<key>type</key>
@@ -193,9 +193,9 @@
 		<array>
 			<dict>
 				<key>title</key>
-				<string>作文写作</string>
+				<string>命题作文</string>
 				<key>subtitle</key>
-				<string>散文、叙事等多种风格的命题作文创作。</string>
+				<string>散文、记叙文等多种文体的命题作文</string>
 				<key>icon</key>
 				<string>pencil</string>
 				<key>type</key>
@@ -207,9 +207,9 @@
 			</dict>
 			<dict>
 				<key>title</key>
-				<string>读后感</string>
+				<string>读书笔记</string>
 				<key>subtitle</key>
-				<string>快速撰写读后感</string>
+				<string>高效完成读后感写作</string>
 				<key>icon</key>
 				<string>book.closed</string>
 				<key>type</key>
@@ -221,9 +221,9 @@
 			</dict>
 			<dict>
 				<key>title</key>
-				<string>研究文章</string>
+				<string>学术论文</string>
 				<key>subtitle</key>
-				<string>生成范文，主题越明确结果越详细。</string>
+				<string>生成参考范文，主题越具体内容越详细</string>
 				<key>icon</key>
 				<string>doc.text</string>
 				<key>type</key>
@@ -235,9 +235,9 @@
 			</dict>
 			<dict>
 				<key>title</key>
-				<string>英语作文</string>
+				<string>英文写作</string>
 				<key>subtitle</key>
-				<string>告别语法与拼写错误。</string>
+				<string>告别语法错误和拼写问题</string>
 				<key>icon</key>
 				<string>a.square</string>
 				<key>type</key>
@@ -251,7 +251,7 @@
 				<key>title</key>
 				<string>高考作文</string>
 				<key>subtitle</key>
-				<string>点亮你的思路，让你的作文脱颖而出！</string>
+				<string>激发灵感，让你的作文在考场上脱颖而出</string>
 				<key>icon</key>
 				<string>lightbulb</string>
 				<key>type</key>
@@ -272,9 +272,9 @@
 		<array>
 			<dict>
 				<key>title</key>
-				<string>日报/周报/月报</string>
+				<string>工作汇报</string>
 				<key>subtitle</key>
-				<string>优秀的员工不会被&quot;报告&quot;耽误时间（狗头）</string>
+				<string>优秀员工不会被报告占用太多时间（开玩笑）</string>
 				<key>icon</key>
 				<string>calendar</string>
 				<key>type</key>
@@ -286,9 +286,9 @@
 			</dict>
 			<dict>
 				<key>title</key>
-				<string>年终总结</string>
+				<string>年度总结</string>
 				<key>subtitle</key>
-				<string>让AI帮你回忆今年的工作</string>
+				<string>让AI帮你回顾这一年的工作历程</string>
 				<key>icon</key>
 				<string>chart.bar</string>
 				<key>type</key>
@@ -300,9 +300,9 @@
 			</dict>
 			<dict>
 				<key>title</key>
-				<string>PPT大纲生成</string>
+				<string>PPT框架</string>
 				<key>subtitle</key>
-				<string>PPT大纲生成，让你工作、学习效率up！</string>
+				<string>生成PPT大纲，提升工作和学习效率</string>
 				<key>icon</key>
 				<string>square.stack</string>
 				<key>type</key>
@@ -314,9 +314,9 @@
 			</dict>
 			<dict>
 				<key>title</key>
-				<string>OKR撰写</string>
+				<string>目标管理</string>
 				<key>subtitle</key>
-				<string>Markdown格式的OKR，助你达成目标</string>
+				<string>Markdown格式的OKR，助力目标达成</string>
 				<key>icon</key>
 				<string>target</string>
 				<key>type</key>
@@ -328,9 +328,9 @@
 			</dict>
 			<dict>
 				<key>title</key>
-				<string>邮件撰写</string>
+				<string>商务邮件</string>
 				<key>subtitle</key>
-				<string>提供邮件主题，帮你撰写一封工作邮件</string>
+				<string>提供邮件主题，帮你撰写专业工作邮件</string>
 				<key>icon</key>
 				<string>envelope</string>
 				<key>type</key>
@@ -351,9 +351,9 @@
 		<array>
 			<dict>
 				<key>title</key>
-				<string>朋友圈推广文案</string>
+				<string>朋友圈营销</string>
 				<key>subtitle</key>
-				<string>一起来探究：如何在朋友圈打广告更吸引人</string>
+				<string>探索：如何在朋友圈发广告更吸引眼球</string>
 				<key>icon</key>
 				<string>quote.bubble</string>
 				<key>type</key>
@@ -365,9 +365,9 @@
 			</dict>
 			<dict>
 				<key>title</key>
-				<string>爆款标题</string>
+				<string>热门标题</string>
 				<key>subtitle</key>
-				<string>快速输出爆款标题选项</string>
+				<string>快速生成多个爆款标题供选择</string>
 				<key>icon</key>
 				<string>flame</string>
 				<key>type</key>
@@ -379,9 +379,9 @@
 			</dict>
 			<dict>
 				<key>title</key>
-				<string>短视频带货口播稿</string>
+				<string>直播带货稿</string>
 				<key>subtitle</key>
-				<string>撰写优质产品软广推荐文案</string>
+				<string>创作优质产品推荐软文</string>
 				<key>icon</key>
 				<string>megaphone</string>
 				<key>type</key>
@@ -393,9 +393,9 @@
 			</dict>
 			<dict>
 				<key>title</key>
-				<string>广告宣传语</string>
+				<string>品牌口号</string>
 				<key>subtitle</key>
-				<string>简洁明了 过目不忘</string>
+				<string>简洁有力，让人过目不忘</string>
 				<key>icon</key>
 				<string>tag</string>
 				<key>type</key>
@@ -407,9 +407,9 @@
 			</dict>
 			<dict>
 				<key>title</key>
-				<string>营销活动策划</string>
+				<string>活动方案</string>
 				<key>subtitle</key>
-				<string>线上线下广告活动策划书</string>
+				<string>线上线下营销活动策划方案</string>
 				<key>icon</key>
 				<string>party.popper</string>
 				<key>type</key>
@@ -430,9 +430,9 @@
 		<array>
 			<dict>
 				<key>title</key>
-				<string>菜谱</string>
+				<string>美食菜谱</string>
 				<key>subtitle</key>
-				<string>能叫上名的菜，我都会做~</string>
+				<string>叫得上名字的菜，我都能教你做</string>
 				<key>icon</key>
 				<string>frying.pan</string>
 				<key>type</key>
@@ -444,9 +444,9 @@
 			</dict>
 			<dict>
 				<key>title</key>
-				<string>旅行规划</string>
+				<string>旅行攻略</string>
 				<key>subtitle</key>
-				<string>去旅行！合理规划！不做旅行特种兵！</string>
+				<string>去旅行！合理规划！拒绝做旅行特种兵</string>
 				<key>icon</key>
 				<string>airplane</string>
 				<key>type</key>
@@ -458,9 +458,9 @@
 			</dict>
 			<dict>
 				<key>title</key>
-				<string>高情商回复女友</string>
+				<string>女友回复</string>
 				<key>subtitle</key>
-				<string>让送命题变加分题</string>
+				<string>把送命题变成加分题</string>
 				<key>icon</key>
 				<string>heart.text</string>
 				<key>type</key>
@@ -472,9 +472,9 @@
 			</dict>
 			<dict>
 				<key>title</key>
-				<string>万能道歉</string>
+				<string>道歉神器</string>
 				<key>subtitle</key>
-				<string>认错必备神器，一秒Get干字道歉信</string>
+				<string>认错必备，一键生成千字道歉信</string>
 				<key>icon</key>
 				<string>hand.raised</string>
 				<key>type</key>
@@ -486,9 +486,9 @@
 			</dict>
 			<dict>
 				<key>title</key>
-				<string>星座预测</string>
+				<string>星座运势</string>
 				<key>subtitle</key>
-				<string>电子版Alex前来助你</string>
+				<string>AI版Alex为你解读运势</string>
 				<key>icon</key>
 				<string>sparkles</string>
 				<key>type</key>
