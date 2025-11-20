@@ -9,7 +9,7 @@
 #import "AIUATabBarController.h"
 #import "AIUAIAPManager.h"
 #import "AIUAWordPackManager.h"
-#import "AIUASplashAdManager.h"
+#import "AIUASplashViewController.h"
 #import "AIUAToolsManager.h"
 
 // 判断是否已接入穿山甲SDK
@@ -23,7 +23,6 @@
 @interface AppDelegate ()
 
 @property (nonatomic, assign) BOOL splashAdShown; // 开屏广告是否已展示
-@property (nonatomic, assign) BOOL needShowMainWindow; // 是否需要展示主窗口
 
 @end
 
@@ -76,17 +75,14 @@
     
     // 判断是否展示开屏广告
     NSLog(@"[启动] 广告开关: %d", AIUA_AD_ENABLED);
-    NSLog(@"[启动] 是否应展示开屏广告: %d", [self shouldShowSplashAd]);
+    BOOL showAd = [self shouldShowSplashAd];
+    NSLog(@"[启动] 是否应展示开屏广告: %d", showAd);
     
-    if (AIUA_AD_ENABLED && [self shouldShowSplashAd]) {
-        // 先显示一个空白的临时控制器
-        self.window.rootViewController = [[UIViewController alloc] init];
-        self.window.rootViewController.view.backgroundColor = [UIColor whiteColor];
+    if (AIUA_AD_ENABLED && showAd) {
+        // 使用自定义的开屏广告控制器
+        self.window.rootViewController = [[AIUASplashViewController alloc] init];
         [self.window makeKeyAndVisible];
-        NSLog(@"[启动] 准备展示开屏广告");
-        
-        // 展示开屏广告
-        [self showSplashAd];
+        NSLog(@"[启动] 准备展示开屏广告 (AIUASplashViewController)");
     } else {
         // 不展示广告，直接进入主界面
         NSLog(@"[启动] 跳过广告，直接进入主界面");
@@ -142,29 +138,8 @@
     return (slotID && slotID.length > 0);
 }
 
-- (void)showSplashAd {
-    NSLog(@"========== 开屏广告流程开始 ==========");
-    NSLog(@"[穿山甲] 准备展示开屏广告");
-    NSLog(@"[穿山甲] 窗口对象: %@", self.window);
-    NSLog(@"[穿山甲] AppID: %@", AIUA_APPID);
-    NSLog(@"[穿山甲] 代码位ID: %@", AIUA_SPLASH_AD_SLOT_ID);
-    
-    WeakType(self);
-    [[AIUASplashAdManager sharedManager] loadAndShowSplashAdInWindow:self.window loaded:^{
-        NSLog(@"✅ [穿山甲] 开屏广告加载完成");
-    } closed:^{
-        StrongType(self);
-        NSLog(@"✅ [穿山甲] 开屏广告已关闭，进入主界面");
-        [strongself showMainWindow];
-    } failed:^(NSError * _Nullable error) {
-        StrongType(self);
-        NSLog(@"❌ [穿山甲] 开屏广告加载失败");
-        NSLog(@"❌ 错误码: %ld", (long)error.code);
-        NSLog(@"❌ 错误信息: %@", error.localizedDescription);
-        NSLog(@"❌ 错误详情: %@", error.userInfo);
-        NSLog(@"[穿山甲] 直接进入主界面");
-        [strongself showMainWindow];
-    }];
+- (void)enterMainUI {
+    [self showMainWindow];
 }
 
 - (void)showMainWindow {

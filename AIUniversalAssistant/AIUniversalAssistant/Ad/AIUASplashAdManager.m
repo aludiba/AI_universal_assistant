@@ -99,16 +99,16 @@
     self.splashAd = [[BUSplashAd alloc] initWithSlotID:slotID adSize:adSize];
     self.splashAd.delegate = self;
     
-    // 设置超时时间（秒）- 增加到5秒，真机网络可能较慢
-    self.splashAd.tolerateTimeout = 30.0;
-    NSLog(@"[穿山甲] 设置超时时间: 30秒");
+    // 设置超时时间（秒）
+    self.splashAd.tolerateTimeout = 10.0; // 穿山甲建议开屏超时时间不宜过长，这里设为10秒
+    NSLog(@"[穿山甲] 设置超时时间: 10秒");
     
     // 设置超时回调（作为兜底方案，防止SDK没有回调）
     __weak typeof(self) weakSelf = self;
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(8.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(12.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         __strong typeof(weakSelf) strongSelf = weakSelf;
         if (strongSelf && strongSelf.splashAd) {
-            NSLog(@"⚠️ [穿山甲] 广告加载超时（8秒），可能的原因：");
+            NSLog(@"⚠️ [穿山甲] 广告加载超时（12秒），可能的原因：");
             NSLog(@"   1. 网络连接问题");
             NSLog(@"   2. 代码位无广告填充");
             NSLog(@"   3. 账号或代码位未激活");
