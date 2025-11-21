@@ -4,13 +4,12 @@ import '../../services/vip_service.dart';
 import '../../services/ai_service.dart';
 import '../../services/word_pack_service.dart';
 import '../../utils/app_localizations_helper.dart';
-import '../../utils/app_localizations_helper.dart';
 import '../../models/writing_model.dart';
 
 enum EditAction { continueWriting, rewrite, expand, translate }
 
 class DocumentDetailScreen extends StatefulWidget {
-  final WritingRecord? document;
+  final Document? document;
   final bool isNew;
 
   const DocumentDetailScreen({

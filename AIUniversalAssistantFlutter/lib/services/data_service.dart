@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
@@ -9,6 +10,9 @@ class DataService {
   static final DataService _instance = DataService._internal();
   factory DataService() => _instance;
   DataService._internal();
+
+  final _cacheClearedController = StreamController<void>.broadcast();
+  Stream<void> get onCacheCleared => _cacheClearedController.stream;
 
   // 收藏
   static const String _keyFavorites = 'favorites';
@@ -220,6 +224,39 @@ class DataService {
     await clearRecentUsed();
     await clearSearchHistory();
     // 不删除收藏和写作记录
+    
+    // 通知监听者
+    _cacheClearedController.add(null);
+  }
+
+  /// 计算缓存大小
+  Future<int> calculateCacheSize() async {
+    int size = 0;
+    final prefs = await SharedPreferences.getInstance();
+    
+    // Recent Used
+    final recentStr = prefs.getString(_keyRecentUsed);
+    if (recentStr != null) {
+      size += utf8.encode(recentStr).length;
+    }
+    
+    // Search History
+    final searchStr = prefs.getString(_keySearchHistory);
+    if (searchStr != null) {
+      size += utf8.encode(searchStr).length;
+    }
+    
+    return size;
+  }
+
+  /// 格式化缓存大小
+  String formatCacheSize(int bytes) {
+    if (bytes <= 0) return '0 KB';
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) {
+      return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    }
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 
   Future<void> _saveFavorites(List<Map<String, dynamic>> favorites) async {

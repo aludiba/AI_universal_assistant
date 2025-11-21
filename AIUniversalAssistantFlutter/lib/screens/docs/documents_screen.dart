@@ -4,7 +4,6 @@ import '../../utils/app_localizations_helper.dart';
 import '../../models/writing_model.dart';
 import 'document_detail_screen.dart';
 import '../../widgets/empty_widget.dart';
-import 'document_detail_screen.dart';
 
 class DocumentsScreen extends StatefulWidget {
   const DocumentsScreen({super.key});
@@ -15,7 +14,7 @@ class DocumentsScreen extends StatefulWidget {
 
 class _DocumentsScreenState extends State<DocumentsScreen> {
   final DataService _dataService = DataService();
-  List<WritingRecord> _documents = [];
+  List<Document> _documents = [];
   bool _isLoading = true;
 
   @override
@@ -74,7 +73,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
     }
   }
 
-  void _showDeleteDialog(WritingRecord document) {
+  void _showDeleteDialog(Document document) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(

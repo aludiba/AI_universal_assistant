@@ -4,7 +4,7 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: '>=3.10.0 <4.0.0'
 
 dependencies:
   flutter:
@@ -15,7 +15,7 @@ dependencies:
   
   # 状态管理
   provider: ^6.1.1
-  flutter_riverpod: ^2.4.9
+  flutter_riverpod: ^2.6.1
   
   # 网络请求
   dio: ^5.4.0
@@ -27,14 +27,14 @@ dependencies:
   path_provider: ^2.1.1
   
   # 云同步
-  cloud_firestore: ^4.13.6
-  firebase_core: ^2.24.2
+  cloud_firestore: ^6.1.0
+  firebase_core: ^4.2.1
   
   # IAP内购
-  in_app_purchase: ^3.1.11
+  in_app_purchase: ^3.2.3
   
   # 本地化
-  intl: ^0.18.1
+  intl: ^0.20.2
   flutter_localizations:
     sdk: flutter
   
@@ -49,15 +49,18 @@ dependencies:
   flutter_spinkit: ^5.2.0
   
   # 文件操作
-  file_picker: ^6.1.1
-  share_plus: ^7.2.1
+  file_picker: ^10.3.6
+  share_plus: ^12.0.1
   
   # 设备信息
-  device_info_plus: ^9.1.0
-  package_info_plus: ^5.0.1
+  device_info_plus: ^12.2.0
+  package_info_plus: ^9.0.0
   
   # 权限
-  permission_handler: ^11.1.0
+  permission_handler: ^12.0.1
+  
+  # URL启动
+  url_launcher: ^6.3.1
   
   # 广告（可选，根据平台选择）
   # google_mobile_ads: ^4.0.0  # Google Ads
@@ -66,7 +69,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.1
+  flutter_lints: ^6.0.0
   build_runner: ^2.4.7
   json_serializable: ^6.7.1
 
@@ -78,13 +81,13 @@ flutter:
     - assets/images/
     - assets/data/
   
-  # 字体
-  fonts:
-    - family: PingFangSC
-      fonts:
-        - asset: assets/fonts/PingFangSC-Regular.ttf
-        - asset: assets/fonts/PingFangSC-Medium.ttf
-          weight: 500
-        - asset: assets/fonts/PingFangSC-Semibold.ttf
-          weight: 600
+  # 字体（注释掉，因为字体文件不存在）
+  # fonts:
+  #   - family: PingFangSC
+  #     fonts:
+  #       - asset: assets/fonts/PingFangSC-Regular.ttf
+  #       - asset: assets/fonts/PingFangSC-Medium.ttf
+  #         weight: 500
+  #       - asset: assets/fonts/PingFangSC-Semibold.ttf
+  #         weight: 600
 

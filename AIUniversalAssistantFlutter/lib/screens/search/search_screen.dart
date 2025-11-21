@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../services/data_service.dart';
 import '../../utils/app_localizations_helper.dart';
@@ -18,15 +19,20 @@ class _SearchScreenState extends State<SearchScreen> {
   List<String> _searchHistory = [];
   List<Map<String, dynamic>> _searchResults = [];
   bool _isSearching = false;
+  StreamSubscription? _cacheSubscription;
 
   @override
   void initState() {
     super.initState();
     _loadSearchHistory();
+    _cacheSubscription = _dataService.onCacheCleared.listen((_) {
+      _loadSearchHistory();
+    });
   }
 
   @override
   void dispose() {
+    _cacheSubscription?.cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -108,7 +114,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Widget _buildSearchHistory() {
     if (_searchHistory.isEmpty) {
-      return const EmptyWidget(message: '暂无搜索历史');
+      return EmptyWidget(message: '暂无搜索历史');
     }
 
     return ListView(

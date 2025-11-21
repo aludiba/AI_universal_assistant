@@ -107,7 +107,8 @@ class _WritingDetailScreenState extends State<WritingDetailScreen> {
     // 消耗字数
     final finalText = _contentController.text;
     if (finalText.isNotEmpty) {
-      final inputWords = WordCounter.countWords(widget.record.requirement ?? '');
+      // 输入字数以prompt为准
+      final inputWords = WordCounter.countWords(widget.record.prompt ?? '');
       final outputWords = WordCounter.countWords(finalText);
       final totalWords = inputWords + outputWords;
 

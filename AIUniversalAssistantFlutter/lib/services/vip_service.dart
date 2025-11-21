@@ -1,7 +1,7 @@
+import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/subscription_model.dart';
 import 'iap_service.dart';
-
 import 'package:flutter/foundation.dart';
 
 /// VIP服务
@@ -37,21 +37,16 @@ class VIPService extends ChangeNotifier {
 
     if (subscriptionJson != null) {
       try {
-        final Map<String, dynamic> json = 
-            Map<String, dynamic>.from(
-              Map<String, dynamic>.from(
-                // 这里需要根据实际存储格式解析
-                // 简化处理
-              )
-            );
-        // 实际应该从IAP服务获取
+        // 解析订阅JSON（如果需要从本地存储恢复）
+        // 实际应该从IAP服务获取，这里暂时不使用本地存储的json
+        jsonDecode(subscriptionJson);
       } catch (e) {
         // 解析失败，返回默认值
       }
     }
 
     // 从IAP服务获取最新状态
-    final isVIP = await _iapService.isVIPMember;
+    final isVIP = _iapService.isVIPMember;
     final subscriptionType = await _iapService.getCurrentSubscriptionType();
     final expiryDate = await _iapService.getSubscriptionExpiryDate();
 

@@ -150,9 +150,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<String> _getCacheSizeText() async {
-    // 这里可以计算实际的缓存大小
-    // 简化处理，返回固定文本
-    return '0 KB';
+    final size = await _dataService.calculateCacheSize();
+    return _dataService.formatCacheSize(size);
   }
 
   Future<String> _getRewardProgressText() async {
@@ -244,12 +243,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showClearCacheDialog() {
+  Future<void> _showClearCacheDialog() async {
+    final cacheSize = await _dataService.calculateCacheSize();
+    if (cacheSize == 0) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_translate('cache_already_empty'))),
+        );
+      }
+      return;
+    }
+
+    final sizeText = _dataService.formatCacheSize(cacheSize);
+    
+    if (!mounted) return;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(_translate('clear_cache')),
-        content: Text(_translate('clear_cache_message', ['0 KB'])),
+        content: Text(_translate('clear_cache_message', [sizeText])),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),

@@ -23,6 +23,18 @@ class IAPService extends ChangeNotifier {
   bool get isVIPMember => _isVIPMember;
   SubscriptionType get currentSubscriptionType => _currentSubscriptionType;
   DateTime? get subscriptionExpiryDate => _subscriptionExpiryDate;
+  
+  /// 获取当前订阅类型（用于VIPService）
+  Future<SubscriptionType> getCurrentSubscriptionType() async {
+    await checkSubscriptionStatus();
+    return _currentSubscriptionType;
+  }
+  
+  /// 获取订阅到期日期（用于VIPService）
+  Future<DateTime?> getSubscriptionExpiryDate() async {
+    await checkSubscriptionStatus();
+    return _subscriptionExpiryDate;
+  }
 
   /// 初始化
   Future<void> initialize() async {

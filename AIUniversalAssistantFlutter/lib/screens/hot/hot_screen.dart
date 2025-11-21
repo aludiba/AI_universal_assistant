@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/data_service.dart';
@@ -6,7 +7,7 @@ import '../../services/vip_service.dart';
 import '../../utils/app_localizations_helper.dart';
 import '../../widgets/card_widget.dart';
 import '../../widgets/loading_widget.dart';
-import '../../widgets/empty_widget.dart';
+import '../../widgets/empty_widget.dart' show EmptyWidget;
 import '../search/search_screen.dart';
 import '../writing_input/writing_input_screen.dart';
 
@@ -27,10 +28,21 @@ class _HotScreenState extends State<HotScreen> {
   List<Map<String, dynamic>> _favorites = [];
   List<Map<String, dynamic>> _recentUsed = [];
 
+  StreamSubscription? _cacheSubscription;
+
   @override
   void initState() {
     super.initState();
     _loadData();
+    _cacheSubscription = _dataService.onCacheCleared.listen((_) {
+      _refreshFavorites();
+    });
+  }
+
+  @override
+  void dispose() {
+    _cacheSubscription?.cancel();
+    super.dispose();
   }
 
   @override
