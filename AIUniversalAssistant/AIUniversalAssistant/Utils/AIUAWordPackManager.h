@@ -91,7 +91,7 @@ extern NSString * const AIUAWordConsumedNotification;
 
 /**
  * 刷新VIP赠送字数
- * 当用户订阅VIP时调用，赠送50万字
+ * 当用户订阅VIP时调用，首次订阅一次性赠送50万字
  */
 - (void)refreshVIPGiftedWords;
 

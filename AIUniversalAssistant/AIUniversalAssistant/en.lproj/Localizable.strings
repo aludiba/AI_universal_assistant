@@ -144,8 +144,8 @@
 "unlock_all_features" = "Unlock all creation templates and member benefits";
 "unlock_templates" = "Unlock Templates";
 "unlock_templates_desc" = "Templates cover all scenarios";
-"daily_word_quota" = "Daily Word Gift";
-"daily_word_quota_desc" = "500,000 words daily for AI creation";
+"daily_word_quota" = "Subscription Word Gift";
+"daily_word_quota_desc" = "500,000 words one-time gift after subscription for AI creation";
 "ai_writing_assist" = "AI Writing Assist";
 "ai_writing_assist_desc" = "Continuation, rewriting, expansion, translation";
 "cross_platform" = "Cross-Platform";
@@ -195,14 +195,14 @@
 
 // Word Pack
 "writing_word_packs" = "Writing Word Packs";
-"vip_gifted_words" = "Today's Gift: %@ words";
+"vip_gifted_words" = "Subscription Gift: %@ words";
 "purchased_words" = "Purchased: %@ words";
 "total_remaining_words" = "Total Available: %@ words";
 "purchase_word_pack" = "Purchase Word Pack";
 "purchase_notes" = "Purchase Notes";
 "word_pack_note_1" = "Word packs are valid for 90 days after purchase and will expire if unused";
-"word_pack_note_2" = "VIP daily gifted words will be consumed first, followed by purchased word packs";
-"word_pack_note_3" = "VIP members receive 500,000 words daily";
+"word_pack_note_2" = "VIP subscription gifted words will be consumed first, followed by purchased word packs";
+"word_pack_note_3" = "VIP members receive 500,000 words one-time after subscription";
 "word_pack_note_4" = "Word counting: Input + Output, 1 Chinese character, letter, digit, punctuation, or space counts as 1 word";
 "confirm_purchase_word_pack" = "Confirm purchase of %@ word pack for ¥%@?";
 "word_pack_purchase_success" = "Purchase successful! You've received %@ words";

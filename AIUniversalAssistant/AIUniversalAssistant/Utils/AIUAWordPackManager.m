@@ -19,7 +19,8 @@ NSString * const AIUAWordConsumedNotification = @"AIUAWordConsumedNotification";
 
 // 本地存储Key
 static NSString * const kAIUAVIPGiftedWords = @"kAIUAVIPGiftedWords";
-static NSString * const kAIUAVIPGiftedWordsLastRefreshDate = @"kAIUAVIPGiftedWordsLastRefreshDate"; // 上次刷新日期
+static NSString * const kAIUAVIPGiftedWordsLastRefreshDate = @"kAIUAVIPGiftedWordsLastRefreshDate"; // 已废弃，保留用于兼容
+static NSString * const kAIUAVIPGiftAwarded = @"kAIUAVIPGiftAwarded"; // 标记是否已赠送过一次性50万字
 static NSString * const kAIUAPurchasedWords = @"kAIUAPurchasedWords";
 static NSString * const kAIUAConsumedWords = @"kAIUAConsumedWords";
 static NSString * const kAIUAWordPackPurchases = @"kAIUAWordPackPurchases";
@@ -28,7 +29,7 @@ static NSString * const kAIUAWordPackPurchases = @"kAIUAWordPackPurchases";
 static NSString * const kAIUAiCloudWordPackData = @"AIUAWordPackData";
 
 // VIP赠送字数常量
-static const NSInteger kVIPDailyGiftWords = 500000; // 每天赠送50万字
+static const NSInteger kVIPOneTimeGiftWords = 500000; // 订阅后一次性赠送50万字
 
 // 字数包产品ID
 static NSString * const kProductIDWordPack500K = @"com.yourcompany.aiassistant.wordpack.500k";
@@ -69,11 +70,11 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
                                                      name:@"AIUASubscriptionStatusChanged"
                                                    object:nil];
 
-        // 非VIP用户不应有每日赠送字数，启动时兜底重置
+        // 非VIP用户不应有赠送字数，启动时兜底重置
+        // 注意：不清除 kAIUAVIPGiftAwarded 标记，防止用户退订后重新订阅时重复赠送
         BOOL isVIP = [[AIUAIAPManager sharedManager] isVIPMember];
         if (!isVIP) {
             [self setLocalInteger:0 forKey:kAIUAVIPGiftedWords];
-            [self setLocalObject:nil forKey:kAIUAVIPGiftedWordsLastRefreshDate];
         }
     }
     return self;
@@ -100,6 +101,14 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
     return [self.keychainManager integerForKey:key];
 }
 
+- (void)setLocalBool:(BOOL)value forKey:(NSString *)key {
+    [self.keychainManager setInteger:value ? 1 : 0 forKey:key];
+}
+
+- (BOOL)localBoolForKey:(NSString *)key {
+    return [self.keychainManager integerForKey:key] != 0;
+}
+
 - (void)setLocalObject:(id)object forKey:(NSString *)key {
     [self.keychainManager setObject:object forKey:key];
 }
@@ -114,53 +123,14 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
     // 检查VIP状态
     BOOL isVIP = [[AIUAIAPManager sharedManager] isVIPMember];
     if (!isVIP) {
-        NSLog(@"[WordPack] 用户不是VIP，每日赠送字数为0");
+        NSLog(@"[WordPack] 用户不是VIP，赠送字数为0");
         return 0;
     }
     
-    // 检查是否需要刷新（新的一天）
-    [self checkAndRefreshDailyGift];
-    
+    // 不再每日刷新，直接返回已赠送的字数
     NSInteger giftedWords = [self localIntegerForKey:kAIUAVIPGiftedWords];
-    NSLog(@"[WordPack] VIP今日剩余赠送字数: %ld", (long)giftedWords);
+    NSLog(@"[WordPack] VIP剩余赠送字数: %ld", (long)giftedWords);
     return MAX(0, giftedWords);
-}
-
-// 检查并刷新每日赠送
-- (void)checkAndRefreshDailyGift {
-    NSDate *lastRefreshDate = [self localObjectForKey:kAIUAVIPGiftedWordsLastRefreshDate];
-    NSDate *now = [NSDate date];
-    
-    // 检查是否是新的一天
-    if (![self isSameDay:lastRefreshDate date2:now]) {
-        NSLog(@"[WordPack] 新的一天，刷新VIP每日赠送字数为 %ld", (long)kVIPDailyGiftWords);
-        
-        // 重置为50万字
-        [self setLocalInteger:kVIPDailyGiftWords forKey:kAIUAVIPGiftedWords];
-        [self setLocalObject:now forKey:kAIUAVIPGiftedWordsLastRefreshDate];
-        
-        // 同步到iCloud
-        if (self.iCloudSyncEnabled) {
-            [self syncToiCloud];
-        }
-    }
-}
-
-// 判断两个日期是否是同一天
-- (BOOL)isSameDay:(NSDate *)date1 date2:(NSDate *)date2 {
-    if (!date1 || !date2) {
-        return NO;
-    }
-    
-    NSCalendar *calendar = [NSCalendar currentCalendar];
-    NSDateComponents *components1 = [calendar components:NSCalendarUnitYear | NSCalendarUnitMonth | NSCalendarUnitDay
-                                                 fromDate:date1];
-    NSDateComponents *components2 = [calendar components:NSCalendarUnitYear | NSCalendarUnitMonth | NSCalendarUnitDay
-                                                 fromDate:date2];
-    
-    return components1.year == components2.year &&
-           components1.month == components2.month &&
-           components1.day == components2.day;
 }
 
 - (NSInteger)purchasedWords {
@@ -344,29 +314,31 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
     BOOL isVIP = [[AIUAIAPManager sharedManager] isVIPMember];
     
     if (isVIP) {
-        NSLog(@"[WordPack] 检测到VIP用户，检查每日赠送字数");
+        // 检查是否已经赠送过一次性50万字
+        BOOL hasAwarded = [self localBoolForKey:kAIUAVIPGiftAwarded];
         
-        // 获取上次刷新日期
-        NSDate *lastRefreshDate = [self localObjectForKey:kAIUAVIPGiftedWordsLastRefreshDate];
-        NSDate *now = [NSDate date];
-        
-        // 如果是新的一天或首次使用，则刷新为50万字
-        if (![self isSameDay:lastRefreshDate date2:now]) {
-            NSLog(@"[WordPack] 新的一天，重置VIP每日赠送字数为 %ld", (long)kVIPDailyGiftWords);
-            [self setLocalInteger:kVIPDailyGiftWords forKey:kAIUAVIPGiftedWords];
-            [self setLocalObject:now forKey:kAIUAVIPGiftedWordsLastRefreshDate];
+        if (!hasAwarded) {
+            // 首次订阅，一次性赠送50万字
+            NSLog(@"[WordPack] 检测到新VIP用户，一次性赠送 %ld 字", (long)kVIPOneTimeGiftWords);
+            [self setLocalInteger:kVIPOneTimeGiftWords forKey:kAIUAVIPGiftedWords];
+            [self setLocalBool:YES forKey:kAIUAVIPGiftAwarded];
             
             // 同步到iCloud
             if (self.iCloudSyncEnabled) {
                 [self syncToiCloud];
             }
+            
+            // 发送通知
+            [[NSNotificationCenter defaultCenter] postNotificationName:AIUAWordPackPurchasedNotification 
+                                                                object:nil 
+                                                              userInfo:@{ @"words": @(kVIPOneTimeGiftWords) }];
         } else {
             NSInteger currentWords = [self localIntegerForKey:kAIUAVIPGiftedWords];
-            NSLog(@"[WordPack] 今日VIP赠送字数已刷新过，当前剩余: %ld", (long)currentWords);
+            NSLog(@"[WordPack] VIP用户已赠送过一次性字数，当前剩余: %ld", (long)currentWords);
         }
     } else {
-        NSLog(@"[WordPack] 用户不是VIP，无每日赠送字数");
-        // 清除赠送字数
+        NSLog(@"[WordPack] 用户不是VIP，无赠送字数");
+        // 清除赠送字数，但保留已赠送标记（防止用户退订后重新订阅时重复赠送）
         [self setLocalInteger:0 forKey:kAIUAVIPGiftedWords];
     }
 }
@@ -624,7 +596,12 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
         [self setLocalInteger:[iCloudData[@"vipGiftedWords"] integerValue] forKey:kAIUAVIPGiftedWords];
     }
     
-    // 同步上次刷新日期
+    // 同步是否已赠送标记
+    if (iCloudData[@"vipGiftAwarded"] != nil) {
+        [self setLocalBool:[iCloudData[@"vipGiftAwarded"] boolValue] forKey:kAIUAVIPGiftAwarded];
+    }
+    
+    // 同步上次刷新日期（保留兼容性，但不再使用）
     if (iCloudData[@"vipGiftedWordsLastRefreshDate"]) {
         [self setLocalObject:iCloudData[@"vipGiftedWordsLastRefreshDate"] forKey:kAIUAVIPGiftedWordsLastRefreshDate];
     }
@@ -651,10 +628,13 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
     // 构建要上传的数据
     NSMutableDictionary *data = [NSMutableDictionary dictionary];
     
-    // VIP赠送字数（每日）
+    // VIP赠送字数（一次性）
     data[@"vipGiftedWords"] = @([self localIntegerForKey:kAIUAVIPGiftedWords]);
     
-    // VIP赠送字数上次刷新日期
+    // VIP是否已赠送标记
+    data[@"vipGiftAwarded"] = @([self localBoolForKey:kAIUAVIPGiftAwarded]);
+    
+    // VIP赠送字数上次刷新日期（保留兼容性，但不再使用）
     NSDate *lastRefreshDate = [self localObjectForKey:kAIUAVIPGiftedWordsLastRefreshDate];
     if (lastRefreshDate) {
         data[@"vipGiftedWordsLastRefreshDate"] = lastRefreshDate;
@@ -687,7 +667,10 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
     // VIP赠送字数
     data[@"vipGiftedWords"] = @([self localIntegerForKey:kAIUAVIPGiftedWords]);
     
-    // VIP赠送字数上次刷新日期
+    // VIP是否已赠送标记
+    data[@"vipGiftAwarded"] = @([self localBoolForKey:kAIUAVIPGiftAwarded]);
+    
+    // VIP赠送字数上次刷新日期（保留兼容性，但不再使用）
     NSDate *lastRefreshDate = [self localObjectForKey:kAIUAVIPGiftedWordsLastRefreshDate];
     if (lastRefreshDate) {
         data[@"vipGiftedWordsLastRefreshDate"] = @([lastRefreshDate timeIntervalSince1970]);
@@ -778,7 +761,12 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
         [self setLocalInteger:[data[@"vipGiftedWords"] integerValue] forKey:kAIUAVIPGiftedWords];
     }
     
-    // 导入VIP赠送字数上次刷新日期
+    // 导入VIP是否已赠送标记
+    if (data[@"vipGiftAwarded"] != nil) {
+        [self setLocalBool:[data[@"vipGiftAwarded"] boolValue] forKey:kAIUAVIPGiftAwarded];
+    }
+    
+    // 导入VIP赠送字数上次刷新日期（保留兼容性，但不再使用）
     if (data[@"vipGiftedWordsLastRefreshDate"]) {
         NSTimeInterval timestamp = [data[@"vipGiftedWordsLastRefreshDate"] doubleValue];
         NSDate *lastRefreshDate = [NSDate dateWithTimeIntervalSince1970:timestamp];

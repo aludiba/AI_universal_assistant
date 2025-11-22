@@ -142,8 +142,8 @@
 "unlock_all_features" = "即刻解锁全部创作模板及会员权益";
 "unlock_templates" = "解锁创作模板";
 "unlock_templates_desc" = "创作模板覆盖所有应用场景";
-"daily_word_quota" = "每日赠送字数";
-"daily_word_quota_desc" = "每日赠送50万字用于AI创作";
+"daily_word_quota" = "订阅赠送字数";
+"daily_word_quota_desc" = "订阅后一次性赠送50万字用于AI创作";
 "ai_writing_assist" = "AI辅助写作";
 "ai_writing_assist_desc" = "支持续写、改写、扩写、翻译";
 "cross_platform" = "全平台使用";
@@ -199,14 +199,14 @@
 
 // 创作字数包
 "writing_word_packs" = "创作字数包";
-"vip_gifted_words" = "今日赠送: %@字";
+"vip_gifted_words" = "订阅赠送: %@字";
 "purchased_words" = "已购买: %@字";
 "total_remaining_words" = "可用总字数: %@字";
 "purchase_word_pack" = "购买字数包";
 "purchase_notes" = "购买须知";
 "word_pack_note_1" = "字数包购买后90天内有效，逾期未使用将自动失效";
-"word_pack_note_2" = "使用时将优先消耗会员每日赠送字数，其次消耗购买字数包";
-"word_pack_note_3" = "订阅会员每日赠送50万字";
+"word_pack_note_2" = "使用时将优先消耗会员订阅赠送字数，其次消耗购买字数包";
+"word_pack_note_3" = "订阅会员后一次性赠送50万字";
 "word_pack_note_4" = "字数统计规则：输入+输出字数，1个中文字符、英文字母、数字、标点或空格均计为1字";
 "confirm_purchase_word_pack" = "确认购买 %@ 字数包，需支付 ¥%@？";
 "word_pack_purchase_success" = "购买成功！已获得 %@ 字";
