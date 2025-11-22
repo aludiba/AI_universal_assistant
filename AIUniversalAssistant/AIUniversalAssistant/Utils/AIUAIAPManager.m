@@ -6,6 +6,7 @@
 //
 
 #import "AIUAIAPManager.h"
+#import "AIUAWordPackManager.h"
 #import <sys/stat.h>
 #import <mach-o/dyld.h>
 
@@ -96,6 +97,57 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
     [self.productsRequest start];
     
     NSLog(@"[IAP] 开始请求产品信息: %@", productIdentifiers);
+}
+
+- (void)fetchWordPackProductsWithCompletion:(AIUAIAPProductsCompletion)completion {
+    // 检查设备是否支持IAP
+    if (![SKPaymentQueue canMakePayments]) {
+        if (completion) {
+            completion(nil, L(@"iap_not_supported"));
+        }
+        return;
+    }
+    
+    // 获取字数包管理器
+    AIUAWordPackManager *wordPackManager = [AIUAWordPackManager sharedManager];
+    
+    // 构建字数包产品ID集合
+    NSSet *productIdentifiers = [NSSet setWithObjects:
+                                 [wordPackManager productIDForPackType:AIUAWordPackType500K],
+                                 [wordPackManager productIDForPackType:AIUAWordPackType2M],
+                                 [wordPackManager productIDForPackType:AIUAWordPackType6M],
+                                 nil];
+    
+    // 检查缓存中是否已有所有字数包产品
+    NSMutableArray<SKProduct *> *cachedProducts = [NSMutableArray array];
+    BOOL allCached = YES;
+    
+    for (NSString *productID in productIdentifiers) {
+        SKProduct *product = self.productsCache[productID];
+        if (product) {
+            [cachedProducts addObject:product];
+        } else {
+            allCached = NO;
+        }
+    }
+    
+    // 如果所有产品都已缓存，直接返回
+    if (allCached && cachedProducts.count > 0) {
+        NSLog(@"[IAP] 字数包产品已在缓存中，直接返回");
+        if (completion) {
+            completion(cachedProducts, nil);
+        }
+        return;
+    }
+    
+    self.productsCompletion = completion;
+    
+    // 请求产品信息
+    self.productsRequest = [[SKProductsRequest alloc] initWithProductIdentifiers:productIdentifiers];
+    self.productsRequest.delegate = self;
+    [self.productsRequest start];
+    
+    NSLog(@"[IAP] 开始请求字数包产品信息: %@", productIdentifiers);
 }
 
 - (void)purchaseProduct:(AIUASubscriptionProductType)productType completion:(AIUAIAPPurchaseCompletion)completion {
@@ -244,7 +296,7 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
 
 - (NSString *)productIdentifierForType:(AIUASubscriptionProductType)type {
     // 注意：这些Product ID需要在App Store Connect中创建
-    // 格式建议: com.yourcompany.appname.productname
+    // 格式建议: com.writingCat.cn
     NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
     
     switch (type) {

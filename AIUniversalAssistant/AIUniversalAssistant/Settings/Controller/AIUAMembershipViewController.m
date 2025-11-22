@@ -34,6 +34,7 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
 @property (nonatomic, strong) UIButton *agreeCheckbox;
 @property (nonatomic, assign) BOOL agreedToTerms;
 @property (nonatomic, strong) UIView *footerView;
+@property (nonatomic, strong) NSMutableDictionary<NSString *, SKProduct *> *productsDict; // 存储产品信息，key为产品ID
 
 @end
 
@@ -43,6 +44,7 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
     [super viewDidLoad];
     self.selectedPlan = AIUASubscriptionPlanLifetime;
     self.agreedToTerms = NO;
+    self.productsDict = [NSMutableDictionary dictionary];
     
     self.benefits = @[
         @{@"icon": @"square.grid.3x3.fill", @"title": L(@"unlock_templates"), @"desc": L(@"unlock_templates_desc")},
@@ -82,8 +84,40 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
 }
 
 - (void)updateProductPrices:(NSArray<SKProduct *> *)products {
-    // 可以根据真实的产品价格更新UI
-    // 这里留作扩展，当前使用硬编码的价格
+    // 将产品信息存储到字典中，key为产品ID
+    for (SKProduct *product in products) {
+        self.productsDict[product.productIdentifier] = product;
+    }
+    
+    // 获取IAP管理器
+    AIUAIAPManager *iapManager = [AIUAIAPManager sharedManager];
+    
+    // 更新每个卡片的价格
+    for (UIView *card in self.planCards) {
+        AIUASubscriptionPlan planType = (AIUASubscriptionPlan)card.tag;
+        
+        // 转换为IAP产品类型
+        AIUASubscriptionProductType productType = [self convertToIAPProductType:planType];
+        NSString *productID = [iapManager productIdentifierForType:productType];
+        
+        // 查找对应的产品
+        SKProduct *product = self.productsDict[productID];
+        if (product) {
+            // 格式化价格
+            NSNumberFormatter *formatter = [[NSNumberFormatter alloc] init];
+            formatter.numberStyle = NSNumberFormatterCurrencyStyle;
+            formatter.locale = product.priceLocale;
+            NSString *formattedPrice = [formatter stringFromNumber:product.price];
+            
+            // 更新价格标签（tag为888表示价格标签）
+            UILabel *priceLabel = [card viewWithTag:888];
+            if (priceLabel) {
+                priceLabel.text = formattedPrice;
+            }
+        }
+    }
+    
+    NSLog(@"[Membership] 已更新产品价格，共 %lu 个产品", (unsigned long)products.count);
 }
 
 
@@ -476,6 +510,7 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
     priceLabel.text = [NSString stringWithFormat:@"¥%@", plan[@"price"]];
     priceLabel.font = AIUAUIFontBold(32);
     priceLabel.textColor = AIUAUIColorRGB(16, 185, 129);
+    priceLabel.tag = 888; // 设置tag以便后续更新价格
     [card addSubview:priceLabel];
     
     // 描述

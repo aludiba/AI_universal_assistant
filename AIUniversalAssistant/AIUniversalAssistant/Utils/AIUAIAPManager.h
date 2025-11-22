@@ -46,6 +46,9 @@ typedef void(^AIUAIAPRestoreCompletion)(BOOL success, NSInteger restoredCount, N
 /// 获取产品信息
 - (void)fetchProductsWithCompletion:(AIUAIAPProductsCompletion)completion;
 
+/// 获取字数包产品信息
+- (void)fetchWordPackProductsWithCompletion:(AIUAIAPProductsCompletion)completion;
+
 /// 购买订阅产品
 - (void)purchaseProduct:(AIUASubscriptionProductType)productType completion:(AIUAIAPPurchaseCompletion)completion;
 

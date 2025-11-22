@@ -36,6 +36,6 @@
 #define AIUA_BU_APP_KEY          @""  // 穿山甲AppKey（已废弃，使用AIUA_APPID）
 
 // 广告开关（如果不想展示广告，设置为0）
-#define AIUA_AD_ENABLED          0    // 1: 开启广告  0: 关闭广告
+#define AIUA_AD_ENABLED          1    // 1: 开启广告  0: 关闭广告
 
 #endif /* AIUAConfigID_h */

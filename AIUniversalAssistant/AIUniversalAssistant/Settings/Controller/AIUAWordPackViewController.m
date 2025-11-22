@@ -30,6 +30,7 @@
 // 字数包选项
 @property (nonatomic, strong) NSMutableArray<UIView *> *packOptionViews;
 @property (nonatomic, assign) AIUAWordPackType selectedPackType;
+@property (nonatomic, strong) NSMutableDictionary<NSString *, SKProduct *> *productsDict; // 存储产品信息，key为产品ID
 
 // 购买按钮
 @property (nonatomic, strong) UIButton *purchaseButton;
@@ -40,6 +41,8 @@
 
 - (void)dealloc {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
+    // 停止监听支付队列
+    [[AIUAIAPManager sharedManager] stopObservingPaymentQueue];
 }
 
 - (void)setupUI {
@@ -48,6 +51,7 @@
     
     self.selectedPackType = AIUAWordPackType500K;
     self.packOptionViews = [NSMutableArray array];
+    self.productsDict = [NSMutableDictionary dictionary];
     
     // 监听字数包变化
     [[NSNotificationCenter defaultCenter] addObserver:self
@@ -59,6 +63,9 @@
                                              selector:@selector(wordPackChanged:)
                                                  name:AIUAWordConsumedNotification
                                                object:nil];
+    
+    // 开始监听支付队列
+    [[AIUAIAPManager sharedManager] startObservingPaymentQueue];
     
     // 创建滚动视图
     [self setupScrollView];
@@ -77,6 +84,9 @@
     
     // 购买须知
     [self setupPurchaseNotes];
+    
+    // 获取字数包产品信息
+    [self fetchWordPackProducts];
 }
 
 - (void)viewWillAppear:(BOOL)animated {
@@ -84,6 +94,63 @@
     
     // 刷新字数显示
     [self updateWordsDisplay];
+}
+
+#pragma mark - Fetch Products
+
+- (void)fetchWordPackProducts {
+    NSLog(@"[WordPack] 开始获取字数包产品信息");
+    
+    [[AIUAIAPManager sharedManager] fetchWordPackProductsWithCompletion:^(NSArray<SKProduct *> * _Nullable products, NSString * _Nullable errorMessage) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (products && products.count > 0) {
+                NSLog(@"[WordPack] 成功获取 %lu 个字数包产品", (unsigned long)products.count);
+                // 更新UI显示真实价格
+                [self updateWordPackProductPrices:products];
+            } else {
+                NSLog(@"[WordPack] 获取字数包产品失败: %@", errorMessage);
+                // 在测试环境下，可能无法获取产品，这里使用默认价格
+            }
+        });
+    }];
+}
+
+- (void)updateWordPackProductPrices:(NSArray<SKProduct *> *)products {
+    // 将产品信息存储到字典中，key为产品ID
+    for (SKProduct *product in products) {
+        self.productsDict[product.productIdentifier] = product;
+        NSLog(@"[WordPack] 产品: %@ - %@ - %@", product.productIdentifier, product.localizedTitle, product.price);
+    }
+    
+    // 获取字数包管理器
+    AIUAWordPackManager *wordPackManager = [AIUAWordPackManager sharedManager];
+    
+    // 更新每个字数包选项的价格
+    for (UIView *optionView in self.packOptionViews) {
+        AIUAWordPackType packType = (AIUAWordPackType)optionView.tag;
+        
+        // 获取对应的产品ID
+        NSString *productID = [wordPackManager productIDForPackType:packType];
+        
+        // 查找对应的产品
+        SKProduct *product = self.productsDict[productID];
+        if (product) {
+            // 格式化价格
+            NSNumberFormatter *formatter = [[NSNumberFormatter alloc] init];
+            formatter.numberStyle = NSNumberFormatterCurrencyStyle;
+            formatter.locale = product.priceLocale;
+            NSString *formattedPrice = [formatter stringFromNumber:product.price];
+            
+            // 更新价格标签（tag为200表示价格标签）
+            UILabel *priceLabel = [optionView viewWithTag:200];
+            if (priceLabel) {
+                priceLabel.text = formattedPrice;
+                NSLog(@"[WordPack] 更新价格: %@ -> %@", productID, formattedPrice);
+            }
+        }
+    }
+    
+    NSLog(@"[WordPack] 已更新字数包产品价格，共 %lu 个产品", (unsigned long)products.count);
 }
 
 #pragma mark - UI Setup
@@ -303,6 +370,7 @@
     priceLabel.font = AIUAUIFontBold(16);
     priceLabel.textColor = [UIColor systemGreenColor];
     priceLabel.text = [NSString stringWithFormat:@"¥%@", option[@"price"]];
+    priceLabel.tag = 200; // 设置tag以便后续更新价格
     [containerView addSubview:priceLabel];
     
     [priceLabel mas_makeConstraints:^(MASConstraintMaker *make) {

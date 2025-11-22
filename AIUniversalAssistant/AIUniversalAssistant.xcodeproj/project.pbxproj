@@ -250,7 +250,7 @@
 				GCC_PREFIX_HEADER = "$(SRCROOT)/AIUniversalAssistant/PrefixHeader.pch";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = AIUniversalAssistant/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "AI写作喵";
+				INFOPLIST_KEY_CFBundleDisplayName = "AI创作喵";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "用于广告展示和内容加载";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "保存图片到相册";
 				INFOPLIST_KEY_NSUserTrackingUsageDescription = "为了向您提供更好的广告体验，请允许应用跟踪您的活动";
@@ -265,7 +265,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.AIUniversalAssistant.cn.test1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.writingCat.cn;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -290,7 +290,7 @@
 				GCC_PREFIX_HEADER = "$(SRCROOT)/AIUniversalAssistant/PrefixHeader.pch";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = AIUniversalAssistant/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "AI写作喵";
+				INFOPLIST_KEY_CFBundleDisplayName = "AI创作喵";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "用于广告展示和内容加载";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "保存图片到相册";
 				INFOPLIST_KEY_NSUserTrackingUsageDescription = "为了向您提供更好的广告体验，请允许应用跟踪您的活动";
@@ -305,7 +305,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.AIUniversalAssistant.cn.test1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.writingCat.cn;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
