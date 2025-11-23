@@ -192,7 +192,7 @@
     } else if ([action isEqualToString:@"creationRecords"]) {
         [self showCreationRecords];
     } else if ([action isEqualToString:@"wordPacks"]) {
-//        if (![self ensureVIPOrPrompt]) return; // 非VIP禁止进入
+        if (![self ensureVIPOrPrompt]) return; // 非VIP禁止进入
         [self showWordPacks];
     } else if ([action isEqualToString:@"clearCache"]) {
         [self showClearCacheAlert];
