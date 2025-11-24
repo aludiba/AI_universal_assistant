@@ -7,6 +7,7 @@
 
 #import "AIUAAboutViewController.h"
 #import <Masonry/Masonry.h>
+#import "AIUATextViewController.h"
 
 @interface AIUAAboutViewController ()
 
@@ -271,42 +272,16 @@
 #pragma mark - Actions
 
 - (void)showUserAgreement {
-    UIViewController *vc = [[UIViewController alloc] init];
+    AIUATextViewController *vc = [[AIUATextViewController alloc] init];
     vc.title = L(@"user_agreement");
-    vc.view.backgroundColor = [UIColor whiteColor];
-    
-    UITextView *textView = [[UITextView alloc] init];
-    textView.font = AIUAUIFontSystem(14);
-    textView.textColor = AIUAUIColorRGB(75, 85, 99);
-    textView.text = L(@"user_agreement_content");
-    textView.editable = NO;
-    textView.textContainerInset = UIEdgeInsetsMake(16, 16, 16, 16);
-    [vc.view addSubview:textView];
-    
-    [textView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.edges.equalTo(vc.view);
-    }];
-    
+    vc.text = L(@"user_agreement_content");
     [self.navigationController pushViewController:vc animated:YES];
 }
 
 - (void)showPrivacyPolicy {
-    UIViewController *vc = [[UIViewController alloc] init];
+    AIUATextViewController *vc = [[AIUATextViewController alloc] init];
     vc.title = L(@"privacy_policy");
-    vc.view.backgroundColor = [UIColor whiteColor];
-    
-    UITextView *textView = [[UITextView alloc] init];
-    textView.font = AIUAUIFontSystem(14);
-    textView.textColor = AIUAUIColorRGB(75, 85, 99);
-    textView.text = L(@"privacy_policy_content");
-    textView.editable = NO;
-    textView.textContainerInset = UIEdgeInsetsMake(16, 16, 16, 16);
-    [vc.view addSubview:textView];
-    
-    [textView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.edges.equalTo(vc.view);
-    }];
-    
+    vc.text = L(@"privacy_policy_content");
     [self.navigationController pushViewController:vc animated:YES];
 }
 
