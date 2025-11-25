@@ -31,6 +31,8 @@
         textView.font = AIUAUIFontSystem(14);
         textView.textColor = AIUAUIColorRGB(75, 85, 99);
         textView.editable = NO;
+        textView.textContainerInset = UIEdgeInsetsMake(16, 16, 16, 16);
+        textView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentAutomatic;
         [self.view addSubview:textView];
         
         [textView mas_makeConstraints:^(MASConstraintMaker *make) {
