@@ -1,0 +1,39 @@
+[
+  {
+    "id": "hot",
+    "title": "热门",
+    "items": [
+      {
+        "title": "演讲词",
+        "subtitle": "充分准备，把握每一次机会",
+        "icon": "mic",
+        "type": "speech",
+        "categoryId": "hot",
+        "categoryTitle": "热门"
+      },
+      {
+        "title": "校园感悟",
+        "subtitle": "记录校园生活的真实感受与成长",
+        "icon": "heart",
+        "type": "experience",
+        "categoryId": "hot",
+        "categoryTitle": "热门"
+      },
+      {
+        "title": "反思检讨",
+        "subtitle": "承认错误，改正就是最大的进步",
+        "icon": "edit",
+        "type": "self_criticism",
+        "categoryId": "hot",
+        "categoryTitle": "热门"
+      }
+    ]
+  },
+  {
+    "id": "favorites",
+    "title": "收藏",
+    "isFavoriteCategory": true,
+    "items": []
+  }
+]
+
