@@ -36,11 +36,11 @@
 - (void)setText:(NSString *)text {
     _text = text;
     if (!self.htmlFileName || self.htmlFileName.length == 0) {
-        self.textView.text = text;
-        // 确保文本视图滚动到顶部
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [self.textView setContentOffset:CGPointZero animated:NO];
-        });
+    self.textView.text = text;
+    // 确保文本视图滚动到顶部
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self.textView setContentOffset:CGPointZero animated:NO];
+    });
     }
 }
 
