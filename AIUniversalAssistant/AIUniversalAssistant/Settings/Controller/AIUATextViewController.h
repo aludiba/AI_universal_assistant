@@ -12,6 +12,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface AIUATextViewController : AIUASuperViewController
 
 @property (nonatomic, copy) NSString *text;
+@property (nonatomic, copy) NSString *htmlFileName; // HTML文件名（如：用户协议.html）
 
 @end
 

@@ -273,15 +273,13 @@
 
 - (void)showUserAgreement {
     AIUATextViewController *vc = [[AIUATextViewController alloc] init];
-    vc.title = L(@"user_agreement");
-    vc.text = L(@"user_agreement_content");
+    vc.htmlFileName = @"用户协议.html";
     [self.navigationController pushViewController:vc animated:YES];
 }
 
 - (void)showPrivacyPolicy {
     AIUATextViewController *vc = [[AIUATextViewController alloc] init];
-    vc.title = L(@"privacy_policy");
-    vc.text = L(@"privacy_policy_content");
+    vc.htmlFileName = @"隐私政策.html";
     [self.navigationController pushViewController:vc animated:YES];
 }
 

@@ -10,6 +10,7 @@
 #import "AIUAMembershipBenefitCell.h"
 #import "AIUAIAPManager.h"
 #import "AIUAMBProgressManager.h"
+#import "AIUATextViewController.h"
 #import <Masonry/Masonry.h>
 
 typedef NS_ENUM(NSInteger, AIUASubscriptionPlan) {
@@ -778,42 +779,14 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
 }
 
 - (void)showUserAgreement {
-    UIViewController *vc = [[UIViewController alloc] init];
-    vc.title = L(@"user_agreement");
-    vc.view.backgroundColor = [UIColor whiteColor];
-    
-    UITextView *textView = [[UITextView alloc] init];
-    textView.font = AIUAUIFontSystem(14);
-    textView.textColor = AIUAUIColorRGB(75, 85, 99);
-    textView.text = L(@"user_agreement_content");
-    textView.editable = NO;
-    textView.textContainerInset = UIEdgeInsetsMake(16, 16, 16, 16);
-    [vc.view addSubview:textView];
-    
-    [textView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.edges.equalTo(vc.view);
-    }];
-    
+    AIUATextViewController *vc = [[AIUATextViewController alloc] init];
+    vc.htmlFileName = @"用户协议.html";
     [self.navigationController pushViewController:vc animated:YES];
 }
 
 - (void)showAutoRenewAgreement {
-    UIViewController *vc = [[UIViewController alloc] init];
-    vc.title = L(@"auto_renew_agreement");
-    vc.view.backgroundColor = [UIColor whiteColor];
-    
-    UITextView *textView = [[UITextView alloc] init];
-    textView.font = AIUAUIFontSystem(14);
-    textView.textColor = AIUAUIColorRGB(75, 85, 99);
-    textView.text = L(@"auto_renew_agreement_content");
-    textView.editable = NO;
-    textView.textContainerInset = UIEdgeInsetsMake(16, 16, 16, 16);
-    [vc.view addSubview:textView];
-    
-    [textView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.edges.equalTo(vc.view);
-    }];
-    
+    AIUATextViewController *vc = [[AIUATextViewController alloc] init];
+    vc.htmlFileName = @"自动续费服务协议.html";
     [self.navigationController pushViewController:vc animated:YES];
 }
 
