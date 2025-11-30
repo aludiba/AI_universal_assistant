@@ -46,37 +46,35 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
-        <!-- Document Detail Activity -->
+        <!-- TODO: 以下 Activity 待实现，暂时注释 -->
+        <!--
+
         <activity
             android:name=".ui.document.DocumentDetailActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
-        <!-- Search Activity -->
         <activity
             android:name=".ui.search.SearchActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
-        <!-- Membership Activity -->
         <activity
             android:name=".ui.membership.MembershipActivity"
             android:exported="false" />
 
-        <!-- Word Pack Activity -->
         <activity
             android:name=".ui.wordpack.WordPackActivity"
             android:exported="false" />
 
-        <!-- About Activity -->
         <activity
             android:name=".ui.about.AboutActivity"
             android:exported="false" />
 
-        <!-- Writing Records Activity -->
         <activity
             android:name=".ui.records.WritingRecordsActivity"
             android:exported="false" />
+        -->
 
     </application>
 

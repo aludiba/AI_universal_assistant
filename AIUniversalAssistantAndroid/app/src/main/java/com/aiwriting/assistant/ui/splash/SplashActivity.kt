@@ -10,9 +10,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class SplashActivity : AppCompatActivity() {
-    private lateinit
-
- binding: ActivitySplashBinding
+    private lateinit var binding: ActivitySplashBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

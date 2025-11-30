@@ -40,5 +40,8 @@
     <!-- Transparent -->
     <color name="transparent">#00000000</color>
     <color name="overlay">#80000000</color>
+    
+    <!-- Launcher Icon Colors -->
+    <color name="ic_launcher_background">#FF2196F3</color>
 </resources>
 
