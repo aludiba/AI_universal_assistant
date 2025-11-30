@@ -1,0 +1,126 @@
+[
+    {
+        "merged": "com.aiwriting.assistant.app-debug-63:/xml_backup_rules.xml.flat",
+        "source": "com.aiwriting.assistant.app-main-65:/xml/backup_rules.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-debug-63:/mipmap-mdpi_ic_launcher_foreground.xml.flat",
+        "source": "com.aiwriting.assistant.app-main-65:/mipmap-mdpi/ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-debug-63:/layout_activity_splash.xml.flat",
+        "source": "com.aiwriting.assistant.app-main-65:/layout/activity_splash.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-debug-63:/mipmap-hdpi_ic_launcher_foreground.xml.flat",
+        "source": "com.aiwriting.assistant.app-main-65:/mipmap-hdpi/ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-debug-63:/layout_fragment_writer.xml.flat",
+        "source": "com.aiwriting.assistant.app-main-65:/layout/fragment_writer.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-debug-63:/layout_fragment_hot.xml.flat",
+        "source": "com.aiwriting.assistant.app-main-65:/layout/fragment_hot.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-debug-63:/layout_activity_writing_detail.xml.flat",
+        "source": "com.aiwriting.assistant.app-main-65:/layout/activity_writing_detail.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-debug-63:/layout_activity_main.xml.flat",
+        "source": "com.aiwriting.assistant.app-main-65:/layout/activity_main.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-debug-63:/mipmap-xxhdpi_ic_launcher_foreground.xml.flat",
+        "source": "com.aiwriting.assistant.app-main-65:/mipmap-xxhdpi/ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-debug-63:/layout_item_category_tab.xml.flat",
+        "source": "com.aiwriting.assistant.app-main-65:/layout/item_category_tab.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-debug-63:/mipmap-hdpi_ic_launcher.xml.flat",
+        "source": "com.aiwriting.assistant.app-main-65:/mipmap-hdpi/ic_launcher.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-debug-63:/drawable_bg_icon_circle.xml.flat",
+        "source": "com.aiwriting.assistant.app-main-65:/drawable/bg_icon_circle.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-debug-63:/mipmap-hdpi_ic_launcher_round.xml.flat",
+        "source": "com.aiwriting.assistant.app-main-65:/mipmap-hdpi/ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-debug-63:/layout_item_hot_category_section.xml.flat",
+        "source": "com.aiwriting.assistant.app-main-65:/layout/item_hot_category_section.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-debug-63:/mipmap-mdpi_ic_launcher_round.xml.flat",
+        "source": "com.aiwriting.assistant.app-main-65:/mipmap-mdpi/ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-debug-63:/mipmap-xxxhdpi_ic_launcher.xml.flat",
+        "source": "com.aiwriting.assistant.app-main-65:/mipmap-xxxhdpi/ic_launcher.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-debug-63:/mipmap-xhdpi_ic_launcher.xml.flat",
+        "source": "com.aiwriting.assistant.app-main-65:/mipmap-xhdpi/ic_launcher.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-debug-63:/layout_item_hot_item.xml.flat",
+        "source": "com.aiwriting.assistant.app-main-65:/layout/item_hot_item.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-debug-63:/mipmap-xxxhdpi_ic_launcher_round.xml.flat",
+        "source": "com.aiwriting.assistant.app-main-65:/mipmap-xxxhdpi/ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-debug-63:/mipmap-xhdpi_ic_launcher_foreground.xml.flat",
+        "source": "com.aiwriting.assistant.app-main-65:/mipmap-xhdpi/ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-debug-63:/mipmap-xxhdpi_ic_launcher_round.xml.flat",
+        "source": "com.aiwriting.assistant.app-main-65:/mipmap-xxhdpi/ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-debug-63:/mipmap-mdpi_ic_launcher.xml.flat",
+        "source": "com.aiwriting.assistant.app-main-65:/mipmap-mdpi/ic_launcher.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-debug-63:/layout_fragment_settings.xml.flat",
+        "source": "com.aiwriting.assistant.app-main-65:/layout/fragment_settings.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-debug-63:/layout_fragment_docs.xml.flat",
+        "source": "com.aiwriting.assistant.app-main-65:/layout/fragment_docs.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-debug-63:/xml_data_extraction_rules.xml.flat",
+        "source": "com.aiwriting.assistant.app-main-65:/xml/data_extraction_rules.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-debug-63:/menu_bottom_navigation_menu.xml.flat",
+        "source": "com.aiwriting.assistant.app-main-65:/menu/bottom_navigation_menu.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-debug-63:/mipmap-xhdpi_ic_launcher_round.xml.flat",
+        "source": "com.aiwriting.assistant.app-main-65:/mipmap-xhdpi/ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-debug-63:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "com.aiwriting.assistant.app-main-65:/mipmap-anydpi-v26/ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-debug-63:/mipmap-xxhdpi_ic_launcher.xml.flat",
+        "source": "com.aiwriting.assistant.app-main-65:/mipmap-xxhdpi/ic_launcher.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-debug-63:/mipmap-xxxhdpi_ic_launcher_foreground.xml.flat",
+        "source": "com.aiwriting.assistant.app-main-65:/mipmap-xxxhdpi/ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-debug-63:/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "com.aiwriting.assistant.app-main-65:/mipmap-anydpi-v26/ic_launcher.xml"
+    }
+]

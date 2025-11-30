@@ -1,0 +1,292 @@
+[
+  {
+    "id": "hot",
+    "title": "热门",
+    "items": [
+      {
+        "title": "演讲词",
+        "subtitle": "充分准备，把握每一次机会",
+        "icon": "mic",
+        "type": "speech",
+        "categoryId": "hot",
+        "categoryTitle": "热门"
+      },
+      {
+        "title": "校园感悟",
+        "subtitle": "记录校园生活的真实感受与成长",
+        "icon": "heart",
+        "type": "experience",
+        "categoryId": "hot",
+        "categoryTitle": "热门"
+      },
+      {
+        "title": "反思检讨",
+        "subtitle": "承认错误，改正就是最大的进步",
+        "icon": "edit",
+        "type": "self_criticism",
+        "categoryId": "hot",
+        "categoryTitle": "热门"
+      },
+      {
+        "title": "实习总结",
+        "subtitle": "临时抱佛脚？不存在的，现在开始准备",
+        "icon": "graduationcap",
+        "type": "internship",
+        "categoryId": "hot",
+        "categoryTitle": "热门"
+      },
+      {
+        "title": "小红书种草",
+        "subtitle": "标题、正文、话题标签，一站式搞定",
+        "icon": "square.and.pencil",
+        "type": "xiaohongshu",
+        "categoryId": "hot",
+        "categoryTitle": "热门"
+      },
+      {
+        "title": "古诗词创作",
+        "subtitle": "输入主题，我来为你赋诗一首",
+        "icon": "book",
+        "type": "poetry",
+        "categoryId": "hot",
+        "categoryTitle": "热门"
+      }
+    ]
+  },
+  {
+    "id": "favorites",
+    "title": "收藏",
+    "isFavoriteCategory": true,
+    "items": []
+  },
+  {
+    "id": "social",
+    "title": "社媒",
+    "items": [
+      {
+        "title": "头条文章",
+        "subtitle": "头条又出新功能了，快来试试",
+        "icon": "newspaper",
+        "type": "toutiao",
+        "categoryId": "social",
+        "categoryTitle": "社媒"
+      },
+      {
+        "title": "微信推文",
+        "subtitle": "打造朋友圈爆款文章",
+        "icon": "doc.richtext",
+        "type": "wechat",
+        "categoryId": "social",
+        "categoryTitle": "社媒"
+      },
+      {
+        "title": "知乎回答",
+        "subtitle": "谢邀，人在现场，刚下飞机（开玩笑的）",
+        "icon": "questionmark",
+        "type": "zhihu",
+        "categoryId": "social",
+        "categoryTitle": "社媒"
+      },
+      {
+        "title": "朋友圈动态",
+        "subtitle": "你的多样风格，总有人会欣赏",
+        "icon": "person.2",
+        "type": "moments",
+        "categoryId": "social",
+        "categoryTitle": "社媒"
+      },
+      {
+        "title": "视频脚本",
+        "subtitle": "规划每一秒，让视频更专业更精彩",
+        "icon": "play.rectangle",
+        "type": "video_script",
+        "categoryId": "social",
+        "categoryTitle": "社媒"
+      }
+    ]
+  },
+  {
+    "id": "campus",
+    "title": "校园",
+    "items": [
+      {
+        "title": "命题作文",
+        "subtitle": "散文、记叙文等多种文体的命题作文",
+        "icon": "pencil",
+        "type": "composition",
+        "categoryId": "campus",
+        "categoryTitle": "校园"
+      },
+      {
+        "title": "读书笔记",
+        "subtitle": "高效完成读后感写作",
+        "icon": "book.closed",
+        "type": "book_review",
+        "categoryId": "campus",
+        "categoryTitle": "校园"
+      },
+      {
+        "title": "学术论文",
+        "subtitle": "生成参考范文，主题越具体内容越详细",
+        "icon": "doc.text",
+        "type": "research",
+        "categoryId": "campus",
+        "categoryTitle": "校园"
+      },
+      {
+        "title": "英文写作",
+        "subtitle": "告别语法错误和拼写问题",
+        "icon": "a.square",
+        "type": "english",
+        "categoryId": "campus",
+        "categoryTitle": "校园"
+      },
+      {
+        "title": "高考作文",
+        "subtitle": "激发灵感，让你的作文在考场上脱颖而出",
+        "icon": "lightbulb",
+        "type": "gaokao",
+        "categoryId": "campus",
+        "categoryTitle": "校园"
+      }
+    ]
+  },
+  {
+    "id": "workplace",
+    "title": "职场",
+    "items": [
+      {
+        "title": "工作汇报",
+        "subtitle": "优秀员工不会被报告占用太多时间（开玩笑）",
+        "icon": "calendar",
+        "type": "report",
+        "categoryId": "workplace",
+        "categoryTitle": "职场"
+      },
+      {
+        "title": "年度总结",
+        "subtitle": "让AI帮你回顾这一年的工作历程",
+        "icon": "chart.bar",
+        "type": "year_summary",
+        "categoryId": "workplace",
+        "categoryTitle": "职场"
+      },
+      {
+        "title": "PPT框架",
+        "subtitle": "生成PPT大纲，提升工作和学习效率",
+        "icon": "square.stack",
+        "type": "ppt",
+        "categoryId": "workplace",
+        "categoryTitle": "职场"
+      },
+      {
+        "title": "目标管理",
+        "subtitle": "Markdown格式的OKR，助力目标达成",
+        "icon": "target",
+        "type": "okr",
+        "categoryId": "workplace",
+        "categoryTitle": "职场"
+      },
+      {
+        "title": "商务邮件",
+        "subtitle": "提供邮件主题，帮你撰写专业工作邮件",
+        "icon": "envelope",
+        "type": "email",
+        "categoryId": "workplace",
+        "categoryTitle": "职场"
+      }
+    ]
+  },
+  {
+    "id": "marketing",
+    "title": "营销",
+    "items": [
+      {
+        "title": "朋友圈营销",
+        "subtitle": "探索：如何在朋友圈发广告更吸引眼球",
+        "icon": "quote.bubble",
+        "type": "moments_ads",
+        "categoryId": "marketing",
+        "categoryTitle": "营销"
+      },
+      {
+        "title": "热门标题",
+        "subtitle": "快速生成多个爆款标题供选择",
+        "icon": "flame",
+        "type": "hot_title",
+        "categoryId": "marketing",
+        "categoryTitle": "营销"
+      },
+      {
+        "title": "直播带货稿",
+        "subtitle": "创作优质产品推荐软文",
+        "icon": "megaphone",
+        "type": "live_commerce",
+        "categoryId": "marketing",
+        "categoryTitle": "营销"
+      },
+      {
+        "title": "品牌口号",
+        "subtitle": "简洁有力，让人过目不忘",
+        "icon": "tag",
+        "type": "slogan",
+        "categoryId": "marketing",
+        "categoryTitle": "营销"
+      },
+      {
+        "title": "活动方案",
+        "subtitle": "线上线下营销活动策划方案",
+        "icon": "party.popper",
+        "type": "campaign",
+        "categoryId": "marketing",
+        "categoryTitle": "营销"
+      }
+    ]
+  },
+  {
+    "id": "life",
+    "title": "生活",
+    "items": [
+      {
+        "title": "美食菜谱",
+        "subtitle": "叫得上名字的菜，我都能教你做",
+        "icon": "frying.pan",
+        "type": "recipe",
+        "categoryId": "life",
+        "categoryTitle": "生活"
+      },
+      {
+        "title": "旅行攻略",
+        "subtitle": "去旅行！合理规划！拒绝做旅行特种兵",
+        "icon": "airplane",
+        "type": "travel",
+        "categoryId": "life",
+        "categoryTitle": "生活"
+      },
+      {
+        "title": "女友回复",
+        "subtitle": "把送命题变成加分题",
+        "icon": "heart.text",
+        "type": "girlfriend_reply",
+        "categoryId": "life",
+        "categoryTitle": "生活"
+      },
+      {
+        "title": "道歉神器",
+        "subtitle": "认错必备，一键生成千字道歉信",
+        "icon": "hand.raised",
+        "type": "apology",
+        "categoryId": "life",
+        "categoryTitle": "生活"
+      },
+      {
+        "title": "星座运势",
+        "subtitle": "AI版Alex为你解读运势",
+        "icon": "sparkles",
+        "type": "horoscope",
+        "categoryId": "life",
+        "categoryTitle": "生活"
+      }
+    ]
+  }
+]

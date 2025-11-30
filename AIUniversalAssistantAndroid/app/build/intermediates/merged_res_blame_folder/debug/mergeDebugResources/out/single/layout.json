@@ -1,0 +1,42 @@
+[
+    {
+        "merged": "com.aiwriting.assistant.app-mergeDebugResources-62:/layout/activity_splash.xml",
+        "source": "com.aiwriting.assistant.app-main-65:/layout/activity_splash.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-mergeDebugResources-62:/layout/item_hot_category_section.xml",
+        "source": "com.aiwriting.assistant.app-main-65:/layout/item_hot_category_section.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-mergeDebugResources-62:/layout/fragment_hot.xml",
+        "source": "com.aiwriting.assistant.app-main-65:/layout/fragment_hot.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-mergeDebugResources-62:/layout/activity_writing_detail.xml",
+        "source": "com.aiwriting.assistant.app-main-65:/layout/activity_writing_detail.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-mergeDebugResources-62:/layout/activity_main.xml",
+        "source": "com.aiwriting.assistant.app-main-65:/layout/activity_main.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-mergeDebugResources-62:/layout/fragment_writer.xml",
+        "source": "com.aiwriting.assistant.app-main-65:/layout/fragment_writer.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-mergeDebugResources-62:/layout/fragment_settings.xml",
+        "source": "com.aiwriting.assistant.app-main-65:/layout/fragment_settings.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-mergeDebugResources-62:/layout/fragment_docs.xml",
+        "source": "com.aiwriting.assistant.app-main-65:/layout/fragment_docs.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-mergeDebugResources-62:/layout/item_hot_item.xml",
+        "source": "com.aiwriting.assistant.app-main-65:/layout/item_hot_item.xml"
+    },
+    {
+        "merged": "com.aiwriting.assistant.app-mergeDebugResources-62:/layout/item_category_tab.xml",
+        "source": "com.aiwriting.assistant.app-main-65:/layout/item_category_tab.xml"
+    }
+]
