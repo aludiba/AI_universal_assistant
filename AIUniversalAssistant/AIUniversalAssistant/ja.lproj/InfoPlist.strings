@@ -1,0 +1,10 @@
+/* 
+  InfoPlist.strings
+  AIUniversalAssistant
+  
+  App名称のローカライズ - 日本語
+*/
+
+"CFBundleDisplayName" = "AI創作ニャン";
+"CFBundleName" = "AI創作ニャン";
+

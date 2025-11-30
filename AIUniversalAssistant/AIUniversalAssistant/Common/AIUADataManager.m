@@ -25,13 +25,17 @@ NSString * const AIUACacheClearedNotification = @"AIUACacheClearedNotification";
 
 #pragma mark - 热门
 
-// “热门”模块数据
+// "热门"模块数据
 - (NSArray *)loadHotCategories {
+    // pathForResource:ofType:会自动根据系统语言选择对应的.lproj目录中的文件
     NSString *path = [[NSBundle mainBundle] pathForResource:@"AIUAHotCategories" ofType:@"plist"];
     if (!path) {
         NSLog(@"AIUAHotCategories.plist 文件未找到");
         return @[];
     }
+    
+    // 记录加载的文件路径（用于调试，可以看到加载的是哪个语言版本）
+    NSLog(@"加载热门分类文件: %@", path);
     
     NSArray *categories = [NSArray arrayWithContentsOfFile:path];
     if (!categories) {
@@ -152,6 +156,7 @@ NSString * const AIUACacheClearedNotification = @"AIUACacheClearedNotification";
 
 #pragma mark - 搜索
 - (NSArray *)loadSearchCategoriesData {
+    // pathForResource:ofType:会自动根据系统语言选择对应的.lproj目录中的文件
     NSString *path = [[NSBundle mainBundle] pathForResource:@"AIUAHotCategories" ofType:@"plist"];
     NSArray *categoriesArray = [NSArray arrayWithContentsOfFile:path];
     
@@ -194,11 +199,15 @@ NSString * const AIUACacheClearedNotification = @"AIUACacheClearedNotification";
 #pragma mark - 写作
 
 - (NSArray *)loadWritingCategories {
+    // pathForResource:ofType:会自动根据系统语言选择对应的.lproj目录中的文件
     NSString *path = [[NSBundle mainBundle] pathForResource:@"AIUAWritingCategories" ofType:@"plist"];
     if (!path) {
         NSLog(@"AIUAWritingCategories.plist 文件未找到");
         return @[];
     }
+    
+    // 记录加载的文件路径（用于调试，可以看到加载的是哪个语言版本）
+    NSLog(@"加载写作分类文件: %@", path);
     
     NSArray *categories = [NSArray arrayWithContentsOfFile:path];
     if (!categories) {

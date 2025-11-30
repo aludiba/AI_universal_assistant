@@ -60,17 +60,117 @@
     self.textView.hidden = YES;
     self.webView.hidden = NO;
     
-    // 获取HTML文件路径
-    NSString *htmlPath = [[NSBundle mainBundle] pathForResource:[self.htmlFileName stringByDeletingPathExtension] ofType:@"html"];
+    // 获取HTML文件路径，根据系统语言手动查找对应的本地化文件
+    NSString *htmlPath = [self localizedHTMLPathForFileName:self.htmlFileName];
     
-    if (htmlPath) {
+    if (htmlPath && [[NSFileManager defaultManager] fileExistsAtPath:htmlPath]) {
+        // 记录加载的文件路径（用于调试，可以看到加载的是哪个语言版本）
+        NSLog(@"加载HTML文件: %@", htmlPath);
         NSURL *htmlURL = [NSURL fileURLWithPath:htmlPath];
         [self.webView loadFileURL:htmlURL allowingReadAccessToURL:[htmlURL URLByDeletingLastPathComponent]];
     } else {
         // 如果找不到文件，显示错误信息
-        NSString *errorHTML = [NSString stringWithFormat:@"<html><body style='font-family: -apple-system; padding: 20px;'><h2>文件未找到</h2><p>无法加载文件：%@</p></body></html>", self.htmlFileName];
+        NSArray *preferredLanguages = [NSLocale preferredLanguages];
+        NSString *currentLanguage = [preferredLanguages firstObject];
+        NSLog(@"未找到本地化HTML文件: %@，当前系统语言: %@", self.htmlFileName, currentLanguage);
+        
+        NSString *errorMessage = [NSString stringWithFormat:@"无法加载文件：%@", self.htmlFileName];
+        NSString *errorHTML = [NSString stringWithFormat:@"<html><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'></head><body style='font-family: -apple-system; padding: 20px;'><h2>文件未找到</h2><p>%@</p></body></html>", errorMessage];
         [self.webView loadHTMLString:errorHTML baseURL:nil];
     }
+}
+
+// 根据系统语言获取本地化的HTML文件路径
+- (NSString *)localizedHTMLPathForFileName:(NSString *)fileName {
+    if (!fileName || fileName.length == 0) {
+        return nil;
+    }
+    
+    NSBundle *mainBundle = [NSBundle mainBundle];
+    NSArray *preferredLanguages = [NSLocale preferredLanguages];
+    
+    // 遍历系统首选语言列表，查找对应的本地化文件
+    for (NSString *languageCode in preferredLanguages) {
+        // 标准化语言代码（例如：zh-Hans, en, ja）
+        NSString *normalizedLanguage = [self normalizeLanguageCode:languageCode];
+        
+        // 方法1：使用pathForResource:ofType:inDirectory:（指定.lproj目录）
+        // 这是最可靠的方法，因为Bundle会自动处理资源路径
+        NSString *fileNameWithoutExt = [fileName stringByDeletingPathExtension];
+        NSString *fileExt = [fileName pathExtension];
+        NSString *lprojDir = [NSString stringWithFormat:@"%@.lproj", normalizedLanguage];
+        NSString *path = [mainBundle pathForResource:fileNameWithoutExt
+                                               ofType:fileExt
+                                          inDirectory:lprojDir];
+        if (path && [[NSFileManager defaultManager] fileExistsAtPath:path]) {
+            NSLog(@"找到本地化HTML文件 [%@]: %@", normalizedLanguage, path);
+            return path;
+        }
+        
+        // 方法2：直接构建.lproj目录路径（备用方法）
+        NSString *resourcePath = [mainBundle resourcePath];
+        if (resourcePath) {
+            NSString *lprojPath = [resourcePath stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.lproj", normalizedLanguage]];
+            NSString *filePath = [lprojPath stringByAppendingPathComponent:fileName];
+            
+            if ([[NSFileManager defaultManager] fileExistsAtPath:filePath]) {
+                NSLog(@"找到本地化HTML文件 [%@]: %@", normalizedLanguage, filePath);
+                return filePath;
+            }
+        }
+    }
+    
+    // 如果都找不到，尝试使用pathForResource:ofType:（可能会找到根目录下的文件或自动本地化）
+    NSString *fileNameWithoutExt = [fileName stringByDeletingPathExtension];
+    NSString *fileExt = [fileName pathExtension];
+    NSString *path = [mainBundle pathForResource:fileNameWithoutExt ofType:fileExt];
+    
+    if (path) {
+        NSLog(@"使用回退路径加载HTML文件: %@", path);
+    }
+    
+    return path;
+}
+
+// 标准化语言代码
+- (NSString *)normalizeLanguageCode:(NSString *)languageCode {
+    if (!languageCode || languageCode.length == 0) {
+        return @"zh-Hans"; // 默认返回中文
+    }
+    
+    // 处理语言代码，例如：zh-Hans-CN -> zh-Hans, en-US -> en
+    NSArray *components = [languageCode componentsSeparatedByString:@"-"];
+    if (components.count >= 2) {
+        NSString *language = components[0];
+        NSString *script = components[1];
+        
+        // 中文简体
+        if ([language isEqualToString:@"zh"] && ([script isEqualToString:@"Hans"] || [script isEqualToString:@"CN"])) {
+            return @"zh-Hans";
+        }
+        // 中文繁体
+        if ([language isEqualToString:@"zh"] && ([script isEqualToString:@"Hant"] || [script isEqualToString:@"TW"] || [script isEqualToString:@"HK"])) {
+            return @"zh-Hant";
+        }
+        // 英文
+        if ([language isEqualToString:@"en"]) {
+            return @"en";
+        }
+        // 日文
+        if ([language isEqualToString:@"ja"]) {
+            return @"ja";
+        }
+        
+        // 其他情况，返回 language-script
+        return [NSString stringWithFormat:@"%@-%@", language, script];
+    }
+    
+    // 单个语言代码
+    if ([languageCode isEqualToString:@"zh"]) {
+        return @"zh-Hans"; // 默认简体中文
+    }
+    
+    return languageCode;
 }
 
 - (UITextView *)textView {

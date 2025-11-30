@@ -1,0 +1,10 @@
+/* 
+  InfoPlist.strings
+  AIUniversalAssistant
+  
+  App名称本地化 - 简体中文
+*/
+
+"CFBundleDisplayName" = "AI创作喵";
+"CFBundleName" = "AI创作喵";
+

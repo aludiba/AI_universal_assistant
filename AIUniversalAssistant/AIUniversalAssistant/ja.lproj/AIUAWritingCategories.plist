@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+   AIUAWritingCategories.plist
+   AIUniversalAssistant
+
+   Created by 褚红彪 on 10/6/25.
+   Copyright (c) 2025 ___ORGANIZATIONNAME___. All rights reserved.
+-->
+<plist version="1.0">
+    <array>
+        <dict>
+            <key>title</key>
+            <string>創造の火花</string>
+            <key>items</key>
+            <array>
+                <dict>
+                    <key>title</key>
+                    <string>名作精読</string>
+                    <key>content</key>
+                    <string>わかりやすい言葉で、「モンテ・クリスト伯爵」の核心思想と精彩な筋書きを解釈してください</string>
+                </dict>
+                <dict>
+                    <key>title</key>
+                    <string>ショート動画スクリプト</string>
+                    <key>content</key>
+                    <string>百万フォロワーのショート動画ブロガーとして、両親の愛情についてのショート動画スクリプトを作成してください</string>
+                </dict>
+                <dict>
+                    <key>title</key>
+                    <string>ペットへの謝罪</string>
+                    <key>content</key>
+                    <string>猫のトイレを掃除するのを忘れたので、猫への謝罪文を書いてください</string>
+                </dict>
+                <dict>
+                    <key>title</key>
+                    <string>活動感想</string>
+                    <key>content</key>
+                    <string>コミュニティが開催した「留守児童教育を大切にする」活動について、真情実感のある感想を書いてください</string>
+                </dict>
+                <dict>
+                    <key>title</key>
+                    <string>感謝のスピーチ</string>
+                    <key>content</key>
+                    <string>300字の感謝の言葉を書いてください。メンターへの感謝の気持ちを重点的に表現してください</string>
+                </dict>
+            </array>
+        </dict>
+        <dict>
+            <key>title</key>
+            <string>バズるテンプレート</string>
+            <key>items</key>
+            <array>
+                <dict>
+                    <key>title</key>
+                    <string>製品プロモーション</string>
+                    <key>content</key>
+                    <string>「ベビー楽おしゃぶり」の広告コピーを3本作成してください。それぞれ50字以内で</string>
+                </dict>
+                <dict>
+                    <key>title</key>
+                    <string>技術ニュース</string>
+                    <key>content</key>
+                    <string>「ARメガネが仮想と現実の融合を実現」に関する技術ニュース記事を書いてください</string>
+                </dict>
+                <dict>
+                    <key>title</key>
+                    <string>映画レビュー</string>
+                    <key>content</key>
+                    <string>「ショーシャンクの空に」の映画レビューを書いてください。この映画がもたらした深い感銘を重点的に共有してください</string>
+                </dict>
+                <dict>
+                    <key>title</key>
+                    <string>誕生日の祝辞</string>
+                    <key>content</key>
+                    <string>友人の小李さんに真情あふれる誕生日の祝辞を書いてください</string>
+                </dict>
+                <dict>
+                    <key>title</key>
+                    <string>推薦状</string>
+                    <key>content</key>
+                    <string>推薦者として、優秀な求職者のための強力な推薦状を書いてください</string>
+                </dict>
+            </array>
+        </dict>
+    </array>
+</plist>
+

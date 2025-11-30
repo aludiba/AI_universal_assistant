@@ -1,0 +1,505 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<array>
+	<dict>
+		<key>id</key>
+		<string>hot</string>
+		<key>title</key>
+		<string>Hot</string>
+		<key>items</key>
+		<array>
+			<dict>
+				<key>title</key>
+				<string>Speech</string>
+				<key>subtitle</key>
+				<string>Be fully prepared and seize every opportunity</string>
+				<key>icon</key>
+				<string>mic</string>
+				<key>type</key>
+				<string>speech</string>
+				<key>categoryId</key>
+				<string>hot</string>
+				<key>categoryTitle</key>
+				<string>Hot</string>
+			</dict>
+			<dict>
+				<key>title</key>
+				<string>Campus Reflection</string>
+				<key>subtitle</key>
+				<string>Record the real feelings and growth of campus life</string>
+				<key>icon</key>
+				<string>heart</string>
+				<key>type</key>
+				<string>experience</string>
+				<key>categoryId</key>
+				<string>hot</string>
+				<key>categoryTitle</key>
+				<string>Hot</string>
+			</dict>
+			<dict>
+				<key>title</key>
+				<string>Self-Reflection</string>
+				<key>subtitle</key>
+				<string>Admitting mistakes is the biggest progress</string>
+				<key>icon</key>
+				<string>edit</string>
+				<key>type</key>
+				<string>self_criticism</string>
+				<key>categoryId</key>
+				<string>hot</string>
+				<key>categoryTitle</key>
+				<string>Hot</string>
+			</dict>
+			<dict>
+				<key>title</key>
+				<string>Internship Summary</string>
+				<key>subtitle</key>
+				<string>No last-minute cramming, start preparing now</string>
+				<key>icon</key>
+				<string>graduationcap</string>
+				<key>type</key>
+				<string>internship</string>
+				<key>categoryId</key>
+				<string>hot</string>
+				<key>categoryTitle</key>
+				<string>Hot</string>
+			</dict>
+			<dict>
+				<key>title</key>
+				<string>Xiaohongshu Post</string>
+				<key>subtitle</key>
+				<string>Title, content, and hashtags all in one</string>
+				<key>icon</key>
+				<string>square.and.pencil</string>
+				<key>type</key>
+				<string>xiaohongshu</string>
+				<key>categoryId</key>
+				<string>hot</string>
+				<key>categoryTitle</key>
+				<string>Hot</string>
+			</dict>
+			<dict>
+				<key>title</key>
+				<string>Poetry Creation</string>
+				<key>subtitle</key>
+				<string>Enter a theme and I'll write a poem for you</string>
+				<key>icon</key>
+				<string>book</string>
+				<key>type</key>
+				<string>poetry</string>
+				<key>categoryId</key>
+				<string>hot</string>
+				<key>categoryTitle</key>
+				<string>Hot</string>
+			</dict>
+		</array>
+	</dict>
+	<dict>
+		<key>id</key>
+		<string>favorites</string>
+		<key>title</key>
+		<string>Favorites</string>
+		<key>isFavoriteCategory</key>
+		<true/>
+		<key>items</key>
+		<array/>
+	</dict>
+	<dict>
+		<key>id</key>
+		<string>social</string>
+		<key>title</key>
+		<string>Social Media</string>
+		<key>items</key>
+		<array>
+			<dict>
+				<key>title</key>
+				<string>Toutiao Article</string>
+				<key>subtitle</key>
+				<string>Toutiao has new features, come try them</string>
+				<key>icon</key>
+				<string>newspaper</string>
+				<key>type</key>
+				<string>toutiao</string>
+				<key>categoryId</key>
+				<string>social</string>
+				<key>categoryTitle</key>
+				<string>Social Media</string>
+			</dict>
+			<dict>
+				<key>title</key>
+				<string>WeChat Article</string>
+				<key>subtitle</key>
+				<string>Create viral articles for Moments</string>
+				<key>icon</key>
+				<string>doc.richtext</string>
+				<key>type</key>
+				<string>wechat</string>
+				<key>categoryId</key>
+				<string>social</string>
+				<key>categoryTitle</key>
+				<string>Social Media</string>
+			</dict>
+			<dict>
+				<key>title</key>
+				<string>Zhihu Answer</string>
+				<key>subtitle</key>
+				<string>Thanks for the invite, just got off the plane (just kidding)</string>
+				<key>icon</key>
+				<string>questionmark</string>
+				<key>type</key>
+				<string>zhihu</string>
+				<key>categoryId</key>
+				<string>social</string>
+				<key>categoryTitle</key>
+				<string>Social Media</string>
+			</dict>
+			<dict>
+				<key>title</key>
+				<string>Moments Post</string>
+				<key>subtitle</key>
+				<string>Your diverse style will always be appreciated</string>
+				<key>icon</key>
+				<string>person.2</string>
+				<key>type</key>
+				<string>moments</string>
+				<key>categoryId</key>
+				<string>social</string>
+				<key>categoryTitle</key>
+				<string>Social Media</string>
+			</dict>
+			<dict>
+				<key>title</key>
+				<string>Video Script</string>
+				<key>subtitle</key>
+				<string>Plan every second to make videos more professional and exciting</string>
+				<key>icon</key>
+				<string>play.rectangle</string>
+				<key>type</key>
+				<string>video_script</string>
+				<key>categoryId</key>
+				<string>social</string>
+				<key>categoryTitle</key>
+				<string>Social Media</string>
+			</dict>
+		</array>
+	</dict>
+	<dict>
+		<key>id</key>
+		<string>campus</string>
+		<key>title</key>
+		<string>Campus</string>
+		<key>items</key>
+		<array>
+			<dict>
+				<key>title</key>
+				<string>Essay Writing</string>
+				<key>subtitle</key>
+				<string>Essay writing in various styles like prose and narrative</string>
+				<key>icon</key>
+				<string>pencil</string>
+				<key>type</key>
+				<string>composition</string>
+				<key>categoryId</key>
+				<string>campus</string>
+				<key>categoryTitle</key>
+				<string>Campus</string>
+			</dict>
+			<dict>
+				<key>title</key>
+				<string>Book Review</string>
+				<key>subtitle</key>
+				<string>Efficiently complete reading reflection writing</string>
+				<key>icon</key>
+				<string>book.closed</string>
+				<key>type</key>
+				<string>book_review</string>
+				<key>categoryId</key>
+				<string>campus</string>
+				<key>categoryTitle</key>
+				<string>Campus</string>
+			</dict>
+			<dict>
+				<key>title</key>
+				<string>Academic Paper</string>
+				<key>subtitle</key>
+				<string>Generate reference samples, more specific themes yield more detailed content</string>
+				<key>icon</key>
+				<string>doc.text</string>
+				<key>type</key>
+				<string>research</string>
+				<key>categoryId</key>
+				<string>campus</string>
+				<key>categoryTitle</key>
+				<string>Campus</string>
+			</dict>
+			<dict>
+				<key>title</key>
+				<string>English Writing</string>
+				<key>subtitle</key>
+				<string>Say goodbye to grammar errors and spelling issues</string>
+				<key>icon</key>
+				<string>a.square</string>
+				<key>type</key>
+				<string>english</string>
+				<key>categoryId</key>
+				<string>campus</string>
+				<key>categoryTitle</key>
+				<string>Campus</string>
+			</dict>
+			<dict>
+				<key>title</key>
+				<string>College Entrance Essay</string>
+				<key>subtitle</key>
+				<string>Inspire creativity and make your essay stand out in the exam</string>
+				<key>icon</key>
+				<string>lightbulb</string>
+				<key>type</key>
+				<string>gaokao</string>
+				<key>categoryId</key>
+				<string>campus</string>
+				<key>categoryTitle</key>
+				<string>Campus</string>
+			</dict>
+		</array>
+	</dict>
+	<dict>
+		<key>id</key>
+		<string>workplace</string>
+		<key>title</key>
+		<string>Workplace</string>
+		<key>items</key>
+		<array>
+			<dict>
+				<key>title</key>
+				<string>Work Report</string>
+				<key>subtitle</key>
+				<string>Excellent employees don't spend too much time on reports (just kidding)</string>
+				<key>icon</key>
+				<string>calendar</string>
+				<key>type</key>
+				<string>report</string>
+				<key>categoryId</key>
+				<string>workplace</string>
+				<key>categoryTitle</key>
+				<string>Workplace</string>
+			</dict>
+			<dict>
+				<key>title</key>
+				<string>Annual Summary</string>
+				<key>subtitle</key>
+				<string>Let AI help you review this year's work journey</string>
+				<key>icon</key>
+				<string>chart.bar</string>
+				<key>type</key>
+				<string>year_summary</string>
+				<key>categoryId</key>
+				<string>workplace</string>
+				<key>categoryTitle</key>
+				<string>Workplace</string>
+			</dict>
+			<dict>
+				<key>title</key>
+				<string>PPT Outline</string>
+				<key>subtitle</key>
+				<string>Generate PPT outlines to improve work and study efficiency</string>
+				<key>icon</key>
+				<string>square.stack</string>
+				<key>type</key>
+				<string>ppt</string>
+				<key>categoryId</key>
+				<string>workplace</string>
+				<key>categoryTitle</key>
+				<string>Workplace</string>
+			</dict>
+			<dict>
+				<key>title</key>
+				<string>Goal Management</string>
+				<key>subtitle</key>
+				<string>OKR in Markdown format to help achieve goals</string>
+				<key>icon</key>
+				<string>target</string>
+				<key>type</key>
+				<string>okr</string>
+				<key>categoryId</key>
+				<string>workplace</string>
+				<key>categoryTitle</key>
+				<string>Workplace</string>
+			</dict>
+			<dict>
+				<key>title</key>
+				<string>Business Email</string>
+				<key>subtitle</key>
+				<string>Provide email subject and help you write professional work emails</string>
+				<key>icon</key>
+				<string>envelope</string>
+				<key>type</key>
+				<string>email</string>
+				<key>categoryId</key>
+				<string>workplace</string>
+				<key>categoryTitle</key>
+				<string>Workplace</string>
+			</dict>
+		</array>
+	</dict>
+	<dict>
+		<key>id</key>
+		<string>marketing</string>
+		<key>title</key>
+		<string>Marketing</string>
+		<key>items</key>
+		<array>
+			<dict>
+				<key>title</key>
+				<string>Moments Marketing</string>
+				<key>subtitle</key>
+				<string>Explore: How to make ads in Moments more eye-catching</string>
+				<key>icon</key>
+				<string>quote.bubble</string>
+				<key>type</key>
+				<string>moments_ads</string>
+				<key>categoryId</key>
+				<string>marketing</string>
+				<key>categoryTitle</key>
+				<string>Marketing</string>
+			</dict>
+			<dict>
+				<key>title</key>
+				<string>Hot Titles</string>
+				<key>subtitle</key>
+				<string>Quickly generate multiple viral titles to choose from</string>
+				<key>icon</key>
+				<string>flame</string>
+				<key>type</key>
+				<string>hot_title</string>
+				<key>categoryId</key>
+				<string>marketing</string>
+				<key>categoryTitle</key>
+				<string>Marketing</string>
+			</dict>
+			<dict>
+				<key>title</key>
+				<string>Live Commerce Script</string>
+				<key>subtitle</key>
+				<string>Create quality product recommendation copy</string>
+				<key>icon</key>
+				<string>megaphone</string>
+				<key>type</key>
+				<string>live_commerce</string>
+				<key>categoryId</key>
+				<string>marketing</string>
+				<key>categoryTitle</key>
+				<string>Marketing</string>
+			</dict>
+			<dict>
+				<key>title</key>
+				<string>Brand Slogan</string>
+				<key>subtitle</key>
+				<string>Concise and powerful, unforgettable</string>
+				<key>icon</key>
+				<string>tag</string>
+				<key>type</key>
+				<string>slogan</string>
+				<key>categoryId</key>
+				<string>marketing</string>
+				<key>categoryTitle</key>
+				<string>Marketing</string>
+			</dict>
+			<dict>
+				<key>title</key>
+				<string>Campaign Plan</string>
+				<key>subtitle</key>
+				<string>Online and offline marketing campaign planning</string>
+				<key>icon</key>
+				<string>party.popper</string>
+				<key>type</key>
+				<string>campaign</string>
+				<key>categoryId</key>
+				<string>marketing</string>
+				<key>categoryTitle</key>
+				<string>Marketing</string>
+			</dict>
+		</array>
+	</dict>
+	<dict>
+		<key>id</key>
+		<string>life</string>
+		<key>title</key>
+		<string>Life</string>
+		<key>items</key>
+		<array>
+			<dict>
+				<key>title</key>
+				<string>Recipe</string>
+				<key>subtitle</key>
+				<string>I can teach you to cook any dish you can name</string>
+				<key>icon</key>
+				<string>frying.pan</string>
+				<key>type</key>
+				<string>recipe</string>
+				<key>categoryId</key>
+				<string>life</string>
+				<key>categoryTitle</key>
+				<string>Life</string>
+			</dict>
+			<dict>
+				<key>title</key>
+				<string>Travel Guide</string>
+				<key>subtitle</key>
+				<string>Go travel! Plan wisely! No travel special forces</string>
+				<key>icon</key>
+				<string>airplane</string>
+				<key>type</key>
+				<string>travel</string>
+				<key>categoryId</key>
+				<string>life</string>
+				<key>categoryTitle</key>
+				<string>Life</string>
+			</dict>
+			<dict>
+				<key>title</key>
+				<string>Girlfriend Reply</string>
+				<key>subtitle</key>
+				<string>Turn a trap question into a bonus point</string>
+				<key>icon</key>
+				<string>heart.text</string>
+				<key>type</key>
+				<string>girlfriend_reply</string>
+				<key>categoryId</key>
+				<string>life</string>
+				<key>categoryTitle</key>
+				<string>Life</string>
+			</dict>
+			<dict>
+				<key>title</key>
+				<string>Apology Generator</string>
+				<key>subtitle</key>
+				<string>Essential for admitting mistakes, generate a thousand-word apology letter with one click</string>
+				<key>icon</key>
+				<string>hand.raised</string>
+				<key>type</key>
+				<string>apology</string>
+				<key>categoryId</key>
+				<string>life</string>
+				<key>categoryTitle</key>
+				<string>Life</string>
+			</dict>
+			<dict>
+				<key>title</key>
+				<string>Horoscope</string>
+				<key>subtitle</key>
+				<string>AI version of Alex interprets your fortune</string>
+				<key>icon</key>
+				<string>sparkles</string>
+				<key>type</key>
+				<string>horoscope</string>
+				<key>categoryId</key>
+				<string>life</string>
+				<key>categoryTitle</key>
+				<string>Life</string>
+			</dict>
+		</array>
+	</dict>
+</array>
+</plist>
+

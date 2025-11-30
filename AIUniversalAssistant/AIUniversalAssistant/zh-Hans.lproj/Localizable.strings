@@ -73,6 +73,7 @@
 "no_documents" = "暂无文档";
 "export_document" = "导出文档";
 "copy_full_text" = "全文复制";
+"delete_document" = "删除文档";
 "empty_document" = "文档内容为空";
 "confirm_delete_document" = "确定要删除这篇文档吗？";
 "untitled_document" = "未命名文档";

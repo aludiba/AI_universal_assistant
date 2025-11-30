@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+   AIUAWritingCategories.plist
+   AIUniversalAssistant
+
+   Created by 褚红彪 on 10/6/25.
+   Copyright (c) 2025 ___ORGANIZATIONNAME___. All rights reserved.
+-->
+<plist version="1.0">
+    <array>
+        <dict>
+            <key>title</key>
+            <string>Creative Spark</string>
+            <key>items</key>
+            <array>
+                <dict>
+                    <key>title</key>
+                    <string>Classic Reading</string>
+                    <key>content</key>
+                    <string>In simple and understandable language, interpret the core ideas and exciting plot of "The Count of Monte Cristo" for me</string>
+                </dict>
+                <dict>
+                    <key>title</key>
+                    <string>Short Video Script</string>
+                    <key>content</key>
+                    <string>As a million-follower short video blogger, please create a short video script about parental love for me</string>
+                </dict>
+                <dict>
+                    <key>title</key>
+                    <string>Pet Apology</string>
+                    <key>content</key>
+                    <string>Help me write an apology letter to my cat because I forgot to clean its litter box</string>
+                </dict>
+                <dict>
+                    <key>title</key>
+                    <string>Activity Reflection</string>
+                    <key>content</key>
+                    <string>Write a heartfelt reflection on the community's "Caring for Left-behind Children Education" activity</string>
+                </dict>
+                <dict>
+                    <key>title</key>
+                    <string>Gratitude Speech</string>
+                    <key>content</key>
+                    <string>Please help me write a 300-word thank you speech, focusing on expressing gratitude to my mentor</string>
+                </dict>
+            </array>
+        </dict>
+        <dict>
+            <key>title</key>
+            <string>Viral Templates</string>
+            <key>items</key>
+            <array>
+                <dict>
+                    <key>title</key>
+                    <string>Product Promotion</string>
+                    <key>content</key>
+                    <string>Create 3 advertising copy for "Baby Happy Pacifier", each within 50 words</string>
+                </dict>
+                <dict>
+                    <key>title</key>
+                    <string>Tech News</string>
+                    <key>content</key>
+                    <string>Write a tech news article about "AR Glasses Achieving Virtual and Reality Integration"</string>
+                </dict>
+                <dict>
+                    <key>title</key>
+                    <string>Movie Review</string>
+                    <key>content</key>
+                    <string>Write a movie review for "The Shawshank Redemption", focusing on the profound feelings this movie brought me</string>
+                </dict>
+                <dict>
+                    <key>title</key>
+                    <string>Birthday Greeting</string>
+                    <key>content</key>
+                    <string>Write a heartfelt birthday greeting for my friend Xiao Li</string>
+                </dict>
+                <dict>
+                    <key>title</key>
+                    <string>Recommendation Letter</string>
+                    <key>content</key>
+                    <string>As a recommender, write a strong recommendation letter for an excellent job candidate</string>
+                </dict>
+            </array>
+        </dict>
+    </array>
+</plist>
+

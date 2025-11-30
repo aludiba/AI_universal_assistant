@@ -1,0 +1,10 @@
+/* 
+  InfoPlist.strings
+  AIUniversalAssistant
+  
+  App Name Localization - English
+*/
+
+"CFBundleDisplayName" = "AI Creative Cat";
+"CFBundleName" = "AI Creative Cat";
+

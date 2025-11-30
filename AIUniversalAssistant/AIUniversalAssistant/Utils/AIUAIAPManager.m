@@ -7,6 +7,7 @@
 
 #import "AIUAIAPManager.h"
 #import "AIUAWordPackManager.h"
+#import "AIUAConfigID.h"
 #import <sys/stat.h>
 #import <mach-o/dyld.h>
 
@@ -256,7 +257,7 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
     
     if (!isValid) {
         NSLog(@"[IAP] 收据验证失败，清除订阅状态");
-        self.isVIPMember = NO;
+        _isVIPMember = NO;
         self.subscriptionExpiryDate = nil;
         [self saveLocalSubscriptionInfo];
         return;
@@ -268,7 +269,7 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
         if ([now compare:self.subscriptionExpiryDate] == NSOrderedDescending) {
             // 订阅已过期
             NSLog(@"[IAP] 订阅已过期");
-            self.isVIPMember = NO;
+            _isVIPMember = NO;
             [self saveLocalSubscriptionInfo];
         } else {
             NSLog(@"[IAP] 订阅有效，到期时间: %@", self.subscriptionExpiryDate);
@@ -280,7 +281,7 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
 }
 
 - (void)clearSubscriptionInfo {
-    self.isVIPMember = NO;
+    _isVIPMember = NO;
     self.currentSubscriptionType = AIUASubscriptionProductTypeWeekly;
     self.subscriptionExpiryDate = nil;
     [self saveLocalSubscriptionInfo];
@@ -469,7 +470,7 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
     AIUASubscriptionProductType type = [self productTypeForIdentifier:productIdentifier];
     
     // 设置会员状态
-    self.isVIPMember = YES;
+    _isVIPMember = YES;
     self.currentSubscriptionType = type;
     
     // 设置过期时间
@@ -643,16 +644,16 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
                     NSDate *now = [NSDate date];
                     if ([now compare:expiresDate] == NSOrderedAscending) {
                         // 未过期
-                        self.isVIPMember = YES;
+                        _isVIPMember = YES;
                         NSLog(@"[IAP] 订阅有效，类型: %ld, 到期: %@", (long)productType, expiresDate);
                     } else {
                         // 已过期
-                        self.isVIPMember = NO;
+                        _isVIPMember = NO;
                         NSLog(@"[IAP] 订阅已过期");
                     }
                 } else {
                     // 永久会员或非续期订阅
-                    self.isVIPMember = YES;
+                    _isVIPMember = YES;
                     self.subscriptionExpiryDate = [self calculateExpiryDateForProductType:productType];
                     NSLog(@"[IAP] 永久订阅");
                 }
@@ -1068,27 +1069,51 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
     return AIUASubscriptionProductTypeLifetime;
 }
 
+#pragma mark - VIP Member Status
+
+// 重写 isVIPMember 的 getter，根据配置开关决定是否进行检测
+- (BOOL)isVIPMember {
+#if AIUA_VIP_CHECK_ENABLED
+    // 开启会员检测，返回实际的VIP状态
+    // 使用实例变量 _isVIPMember 来避免递归调用
+    return _isVIPMember;
+#else
+    // 关闭会员检测，所有用户视为VIP
+    return YES;
+#endif
+}
+
 #pragma mark - Local Storage
 
 - (void)loadLocalSubscriptionInfo {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     
-    self.isVIPMember = [defaults boolForKey:kAIUAIsVIPMember];
+    _isVIPMember = [defaults boolForKey:kAIUAIsVIPMember];
     self.currentSubscriptionType = [defaults integerForKey:kAIUASubscriptionType];
     self.subscriptionExpiryDate = [defaults objectForKey:kAIUASubscriptionExpiryDate];
     
-    NSLog(@"[IAP] 加载本地订阅信息 - VIP: %d, Type: %ld", self.isVIPMember, (long)self.currentSubscriptionType);
+#if AIUA_VIP_CHECK_ENABLED
+    NSLog(@"[IAP] 加载本地订阅信息 - VIP: %d, Type: %ld", _isVIPMember, (long)self.currentSubscriptionType);
+#else
+    NSLog(@"[IAP] 会员检测已关闭，所有用户视为VIP");
+#endif
 }
 
 - (void)saveLocalSubscriptionInfo {
+#if AIUA_VIP_CHECK_ENABLED
+    // 只有在开启会员检测时才保存VIP状态
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     
-    [defaults setBool:self.isVIPMember forKey:kAIUAIsVIPMember];
+    [defaults setBool:_isVIPMember forKey:kAIUAIsVIPMember];
     [defaults setInteger:self.currentSubscriptionType forKey:kAIUASubscriptionType];
     [defaults setObject:self.subscriptionExpiryDate forKey:kAIUASubscriptionExpiryDate];
     [defaults synchronize];
     
-    NSLog(@"[IAP] 保存本地订阅信息 - VIP: %d, Type: %ld", self.isVIPMember, (long)self.currentSubscriptionType);
+    NSLog(@"[IAP] 保存本地订阅信息 - VIP: %d, Type: %ld", _isVIPMember, (long)self.currentSubscriptionType);
+#else
+    // 关闭会员检测时，不保存VIP状态
+    NSLog(@"[IAP] 会员检测已关闭，跳过保存VIP状态");
+#endif
 }
 
 #pragma mark - Jailbreak Detection

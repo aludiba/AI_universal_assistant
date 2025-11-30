@@ -9,6 +9,7 @@
 #import "AIUAIAPManager.h"
 #import "AIUAMembershipViewController.h"
 #import "AIUAMacros.h"
+#import "AIUAConfigID.h"
 
 @implementation AIUAVIPManager
 
@@ -26,10 +27,18 @@
 #pragma mark - Public Methods
 
 - (BOOL)isVIPUser {
+#if AIUA_VIP_CHECK_ENABLED
+    // 开启会员检测，正常检查VIP状态
     return [[AIUAIAPManager sharedManager] isVIPMember];
+#else
+    // 关闭会员检测，所有用户视为VIP
+    return YES;
+#endif
 }
 
 - (void)checkVIPPermissionWithViewController:(UIViewController *)viewController featureName:(NSString * _Nullable)featureName completion:(void(^)(BOOL hasPermission))completion {
+#if AIUA_VIP_CHECK_ENABLED
+    // 开启会员检测，正常检查VIP状态
     BOOL isVIP = [self isVIPUser];
     
     if (isVIP) {
@@ -45,6 +54,12 @@
             }
         }];
     }
+#else
+    // 关闭会员检测，所有用户视为VIP，直接执行
+    if (completion) {
+        completion(YES);
+    }
+#endif
 }
 
 - (void)showVIPAlertWithViewController:(UIViewController *)viewController
