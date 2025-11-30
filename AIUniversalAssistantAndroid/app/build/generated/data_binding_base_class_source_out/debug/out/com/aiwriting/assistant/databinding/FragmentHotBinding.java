@@ -4,23 +4,22 @@ package com.aiwriting.assistant.databinding;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.constraintlayout.widget.ConstraintLayout;
-import androidx.core.widget.NestedScrollView;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewbinding.ViewBinding;
 import androidx.viewbinding.ViewBindings;
 import com.aiwriting.assistant.R;
 import com.google.android.material.textfield.TextInputEditText;
-import com.google.android.material.textfield.TextInputLayout;
 import java.lang.NullPointerException;
 import java.lang.Override;
 import java.lang.String;
 
 public final class FragmentHotBinding implements ViewBinding {
   @NonNull
-  private final ConstraintLayout rootView;
+  private final CoordinatorLayout rootView;
 
   @NonNull
   public final RecyclerView categoryRecyclerView;
@@ -29,29 +28,24 @@ public final class FragmentHotBinding implements ViewBinding {
   public final RecyclerView contentRecyclerView;
 
   @NonNull
-  public final NestedScrollView scrollView;
-
-  @NonNull
   public final TextInputEditText searchEditText;
 
   @NonNull
-  public final TextInputLayout searchLayout;
+  public final LinearLayout searchLayout;
 
-  private FragmentHotBinding(@NonNull ConstraintLayout rootView,
+  private FragmentHotBinding(@NonNull CoordinatorLayout rootView,
       @NonNull RecyclerView categoryRecyclerView, @NonNull RecyclerView contentRecyclerView,
-      @NonNull NestedScrollView scrollView, @NonNull TextInputEditText searchEditText,
-      @NonNull TextInputLayout searchLayout) {
+      @NonNull TextInputEditText searchEditText, @NonNull LinearLayout searchLayout) {
     this.rootView = rootView;
     this.categoryRecyclerView = categoryRecyclerView;
     this.contentRecyclerView = contentRecyclerView;
-    this.scrollView = scrollView;
     this.searchEditText = searchEditText;
     this.searchLayout = searchLayout;
   }
 
   @Override
   @NonNull
-  public ConstraintLayout getRoot() {
+  public CoordinatorLayout getRoot() {
     return rootView;
   }
 
@@ -88,12 +82,6 @@ public final class FragmentHotBinding implements ViewBinding {
         break missingId;
       }
 
-      id = R.id.scrollView;
-      NestedScrollView scrollView = ViewBindings.findChildViewById(rootView, id);
-      if (scrollView == null) {
-        break missingId;
-      }
-
       id = R.id.searchEditText;
       TextInputEditText searchEditText = ViewBindings.findChildViewById(rootView, id);
       if (searchEditText == null) {
@@ -101,13 +89,13 @@ public final class FragmentHotBinding implements ViewBinding {
       }
 
       id = R.id.searchLayout;
-      TextInputLayout searchLayout = ViewBindings.findChildViewById(rootView, id);
+      LinearLayout searchLayout = ViewBindings.findChildViewById(rootView, id);
       if (searchLayout == null) {
         break missingId;
       }
 
-      return new FragmentHotBinding((ConstraintLayout) rootView, categoryRecyclerView,
-          contentRecyclerView, scrollView, searchEditText, searchLayout);
+      return new FragmentHotBinding((CoordinatorLayout) rootView, categoryRecyclerView,
+          contentRecyclerView, searchEditText, searchLayout);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

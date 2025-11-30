@@ -60,6 +60,10 @@ class CategoryTabAdapter(
             )
             tabText.setTypeface(null, if (isSelected) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
             
+            // 显示/隐藏下划线指示器
+            val indicator = itemView.findViewById<android.view.View>(R.id.indicator)
+            indicator.visibility = if (isSelected) android.view.View.VISIBLE else android.view.View.GONE
+            
             itemView.setOnClickListener { onClick() }
         }
     }

@@ -9,9 +9,9 @@
     <color name="white">#FFFFFFFF</color>
     
     <!-- Primary Colors -->
-    <color name="colorPrimary">#FF2196F3</color>
-    <color name="colorPrimaryDark">#FF1976D2</color>
-    <color name="colorAccent">#FF03A9F4</color>
+    <color name="colorPrimary">#FF4CAF50</color>
+    <color name="colorPrimaryDark">#FF388E3C</color>
+    <color name="colorAccent">#FF4CAF50</color>
     
     <!-- Background Colors -->
     <color name="backgroundColor">#FFF5F5F5</color>
@@ -43,5 +43,11 @@
     
     <!-- Launcher Icon Colors -->
     <color name="ic_launcher_background">#FF2196F3</color>
+    
+    <!-- Search Background -->
+    <color name="searchBackground">#FFF5F5F5</color>
+    
+    <!-- Icon Background -->
+    <color name="iconBackground">#FFE3F2FD</color>
 </resources>
 

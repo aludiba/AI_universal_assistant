@@ -1521,6 +1521,7 @@ color foreground_material_light
 color highlighted_text_material_dark
 color highlighted_text_material_light
 color ic_launcher_background
+color iconBackground
 color m3_appbar_overlay_color
 color m3_assist_chip_icon_tint_color
 color m3_assist_chip_stroke_color
@@ -2191,6 +2192,7 @@ color purple_500
 color purple_700
 color ripple_material_dark
 color ripple_material_light
+color searchBackground
 color secondary_text_default_material_dark
 color secondary_text_default_material_light
 color secondary_text_disabled_material_dark
@@ -3097,7 +3099,18 @@ drawable abc_textfield_search_material
 drawable abc_vector_test
 drawable avd_hide_password
 drawable avd_show_password
+drawable bg_card_rounded
+drawable bg_icon_blue
+drawable bg_icon_brown
 drawable bg_icon_circle
+drawable bg_icon_orange
+drawable bg_icon_purple
+drawable bg_icon_red
+drawable bg_icon_rounded
+drawable bg_icon_square
+drawable bg_icon_teal
+drawable bg_search_bar
+drawable bg_search_rounded
 drawable btn_checkbox_checked_mtrl
 drawable btn_checkbox_checked_to_unchecked_mtrl_animation
 drawable btn_checkbox_unchecked_mtrl
@@ -3445,6 +3458,7 @@ id honorRequest
 id horizontal
 id horizontal_only
 id icon
+id iconBackground
 id iconView
 id icon_group
 id ifRoom
@@ -3454,6 +3468,7 @@ id image
 id immediateStop
 id included
 id indeterminate
+id indicator
 id info
 id invisible
 id inward

@@ -8,20 +8,23 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.viewbinding.ViewBinding;
 import androidx.viewbinding.ViewBindings;
 import com.aiwriting.assistant.R;
-import com.google.android.material.card.MaterialCardView;
 import java.lang.NullPointerException;
 import java.lang.Override;
 import java.lang.String;
 
 public final class ItemHotItemBinding implements ViewBinding {
   @NonNull
-  private final MaterialCardView rootView;
+  private final ConstraintLayout rootView;
 
   @NonNull
   public final ImageButton favoriteButton;
+
+  @NonNull
+  public final View iconBackground;
 
   @NonNull
   public final TextView iconView;
@@ -32,11 +35,12 @@ public final class ItemHotItemBinding implements ViewBinding {
   @NonNull
   public final TextView titleText;
 
-  private ItemHotItemBinding(@NonNull MaterialCardView rootView,
-      @NonNull ImageButton favoriteButton, @NonNull TextView iconView,
+  private ItemHotItemBinding(@NonNull ConstraintLayout rootView,
+      @NonNull ImageButton favoriteButton, @NonNull View iconBackground, @NonNull TextView iconView,
       @NonNull TextView subtitleText, @NonNull TextView titleText) {
     this.rootView = rootView;
     this.favoriteButton = favoriteButton;
+    this.iconBackground = iconBackground;
     this.iconView = iconView;
     this.subtitleText = subtitleText;
     this.titleText = titleText;
@@ -44,7 +48,7 @@ public final class ItemHotItemBinding implements ViewBinding {
 
   @Override
   @NonNull
-  public MaterialCardView getRoot() {
+  public ConstraintLayout getRoot() {
     return rootView;
   }
 
@@ -75,6 +79,12 @@ public final class ItemHotItemBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.iconBackground;
+      View iconBackground = ViewBindings.findChildViewById(rootView, id);
+      if (iconBackground == null) {
+        break missingId;
+      }
+
       id = R.id.iconView;
       TextView iconView = ViewBindings.findChildViewById(rootView, id);
       if (iconView == null) {
@@ -93,8 +103,8 @@ public final class ItemHotItemBinding implements ViewBinding {
         break missingId;
       }
 
-      return new ItemHotItemBinding((MaterialCardView) rootView, favoriteButton, iconView,
-          subtitleText, titleText);
+      return new ItemHotItemBinding((ConstraintLayout) rootView, favoriteButton, iconBackground,
+          iconView, subtitleText, titleText);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));
