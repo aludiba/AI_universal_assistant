@@ -264,8 +264,8 @@
 }
 
 - (void)showContactUs {
-    // TODO: 实现联系我们页面
-    NSLog(@"显示联系我们");
+    // TODO: 实现联系客服页面
+    NSLog(@"显示联系客服");
 }
 
 - (void)showAboutUs {
