@@ -1257,6 +1257,9 @@
                         }
                     }];
                 }
+                
+                // 随机触发评分提示（文档编辑完成是一个好时机）
+                [AIUAToolsManager tryShowRandomRatingPrompt];
             }
         });
     }];

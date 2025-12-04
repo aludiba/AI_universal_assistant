@@ -466,6 +466,9 @@
     
     // 最终滚动到底部
     [self scrollToBottomIfNeeded];
+    
+    // 随机触发评分提示（写作完成是一个好时机）
+    [AIUAToolsManager tryShowRandomRatingPrompt];
 }
 
 - (void)writingCompletedWithError:(NSError *)error {

@@ -433,47 +433,8 @@
 - (void)rateApp {
     NSLog(@"[设置] 用户点击前往评分");
     
-    // 方法1: iOS 10.3+ 使用SKStoreReviewController（推荐）
-    if (@available(iOS 10.3, *)) {
-        // 使用系统原生评分弹窗（每年限制3次）
-        [SKStoreReviewController requestReview];
-        NSLog(@"[设置] 调用系统评分弹窗");
-    } else {
-        // 方法2: 跳转到App Store评分页面
-        [self openAppStoreRatingPage];
-    }
-    
-    // 可选：延迟1秒后打开App Store评分页面（作为补充）
-    // 如果用户没有在系统弹窗中评分，可以引导去App Store
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        // 可以在这里添加一个确认对话框，询问用户是否要去App Store评分
-    });
-}
-
-/**
- * 打开App Store评分页面
- */
-- (void)openAppStoreRatingPage {
-    // 获取App Store ID（需要在上架后获得）
-    NSString *appID = @"YOUR_APP_STORE_ID"; // TODO: 替换为实际的App Store ID
-    
-    // 方法1: iOS 11+ 使用新的URL格式
-    NSString *urlString = [NSString stringWithFormat:@"https://apps.apple.com/app/id%@?action=write-review", appID];
-    NSURL *url = [NSURL URLWithString:urlString];
-    
-    if ([[UIApplication sharedApplication] canOpenURL:url]) {
-        [[UIApplication sharedApplication] openURL:url options:@{} completionHandler:^(BOOL success) {
-            if (success) {
-                NSLog(@"[设置] 成功打开App Store评分页面");
-            } else {
-                NSLog(@"[设置] 打开App Store评分页面失败");
-            }
-        }];
-    } else {
-        NSLog(@"[设置] 无法打开App Store URL");
-        // 显示提示
-        [self showAlertWithTitle:L(@"prompt") message:L(@"cannot_open_app_store")];
-    }
+    // 使用AIUAToolsManager的统一评分方法
+    [AIUAToolsManager rateApp];
 }
 
 /**

@@ -90,6 +90,9 @@
         [self.window makeKeyAndVisible];
     }
     
+    // 记录应用启动次数
+    [AIUAToolsManager incrementLaunchCount];
+    
     NSLog(@"========== 应用启动完成 ==========");
     return YES;
 }
@@ -179,6 +182,11 @@
     
     // 刷新VIP赠送字数
     [[AIUAWordPackManager sharedManager] refreshVIPGiftedWords];
+    
+    // 随机触发评分提示（在合适的时机）
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [AIUAToolsManager tryShowRandomRatingPrompt];
+    });
 }
 
 - (UIInterfaceOrientationMask)application:(UIApplication *)application supportedInterfaceOrientationsForWindow:(UIWindow *)window {
