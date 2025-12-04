@@ -14,7 +14,7 @@
 #import <Masonry/Masonry.h>
 
 typedef NS_ENUM(NSInteger, AIUASubscriptionPlan) {
-    AIUASubscriptionPlanLifetime = 0,
+    AIUASubscriptionPlanLifetimeBenefits = 0,
     AIUASubscriptionPlanYearly,
     AIUASubscriptionPlanMonthly,
     AIUASubscriptionPlanWeekly
@@ -43,7 +43,7 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.selectedPlan = AIUASubscriptionPlanLifetime;
+    self.selectedPlan = AIUASubscriptionPlanLifetimeBenefits;
     self.agreedToTerms = NO;
     self.productsDict = [NSMutableDictionary dictionary];
     
@@ -345,10 +345,10 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
     
     // 订阅方案数据
     NSArray *plans = @[
-        @{@"type": @(AIUASubscriptionPlanLifetime), @"name": L(@"lifetime_member"), @"price": @"198", @"desc": L(@"lifetime_desc"), @"badge": L(@"recommended")},
+        @{@"type": @(AIUASubscriptionPlanLifetimeBenefits), @"name": L(@"lifetime_member"), @"price": @"198", @"desc": L(@"lifetime_desc"), @"badge": L(@"recommended")},
         @{@"type": @(AIUASubscriptionPlanYearly), @"name": L(@"yearly_plan"), @"price": @"168", @"desc": L(@"yearly_desc"), @"badge": @""},
-        @{@"type": @(AIUASubscriptionPlanMonthly), @"name": L(@"monthly_plan"), @"price": @"68", @"desc": L(@"monthly_desc"), @"badge": @""},
-        @{@"type": @(AIUASubscriptionPlanWeekly), @"name": L(@"weekly_plan"), @"price": @"38", @"desc": L(@"weekly_desc"), @"badge": @""}
+        @{@"type": @(AIUASubscriptionPlanMonthly), @"name": L(@"monthly_plan"), @"price": @"28", @"desc": L(@"monthly_desc"), @"badge": @""},
+        @{@"type": @(AIUASubscriptionPlanWeekly), @"name": L(@"weekly_plan"), @"price": @"6.88", @"desc": L(@"weekly_desc"), @"badge": @""}
     ];
     
     self.planCards = [NSMutableArray array];
@@ -739,8 +739,8 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
 
 - (AIUASubscriptionProductType)convertToIAPProductType:(AIUASubscriptionPlan)plan {
     switch (plan) {
-        case AIUASubscriptionPlanLifetime:
-            return AIUASubscriptionProductTypeLifetime;
+        case AIUASubscriptionPlanLifetimeBenefits:
+            return AIUASubscriptionProductTypeLifetimeBenefits;
         case AIUASubscriptionPlanYearly:
             return AIUASubscriptionProductTypeYearly;
         case AIUASubscriptionPlanMonthly:
@@ -748,13 +748,13 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
         case AIUASubscriptionPlanWeekly:
             return AIUASubscriptionProductTypeWeekly;
         default:
-            return AIUASubscriptionProductTypeLifetime;
+            return AIUASubscriptionProductTypeLifetimeBenefits;
     }
 }
 
 - (NSString *)getPlanName:(AIUASubscriptionPlan)plan {
     switch (plan) {
-        case AIUASubscriptionPlanLifetime:
+        case AIUASubscriptionPlanLifetimeBenefits:
             return L(@"lifetime_member");
         case AIUASubscriptionPlanYearly:
             return L(@"yearly_plan");
@@ -767,14 +767,14 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
 
 - (NSString *)getPlanPrice:(AIUASubscriptionPlan)plan {
     switch (plan) {
-        case AIUASubscriptionPlanLifetime:
+        case AIUASubscriptionPlanLifetimeBenefits:
             return @"198";
         case AIUASubscriptionPlanYearly:
             return @"168";
         case AIUASubscriptionPlanMonthly:
-            return @"68";
+            return @"28";
         case AIUASubscriptionPlanWeekly:
-            return @"38";
+            return @"6.88";
     }
 }
 

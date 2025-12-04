@@ -86,7 +86,7 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
     
     // 构建产品ID集合
     NSSet *productIdentifiers = [NSSet setWithObjects:
-                                 [self productIdentifierForType:AIUASubscriptionProductTypeLifetime],
+                                 [self productIdentifierForType:AIUASubscriptionProductTypeLifetimeBenefits],
                                  [self productIdentifierForType:AIUASubscriptionProductTypeYearly],
                                  [self productIdentifierForType:AIUASubscriptionProductTypeMonthly],
                                  [self productIdentifierForType:AIUASubscriptionProductTypeWeekly],
@@ -301,8 +301,8 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
     NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
     
     switch (type) {
-        case AIUASubscriptionProductTypeLifetime:
-            return [NSString stringWithFormat:@"%@.lifetime", bundleID];
+        case AIUASubscriptionProductTypeLifetimeBenefits:
+            return [NSString stringWithFormat:@"%@.lifetimeBenefits", bundleID];
         case AIUASubscriptionProductTypeYearly:
             return [NSString stringWithFormat:@"%@.yearly", bundleID];
         case AIUASubscriptionProductTypeMonthly:
@@ -316,7 +316,7 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
 
 - (NSString *)productNameForType:(AIUASubscriptionProductType)type {
     switch (type) {
-        case AIUASubscriptionProductTypeLifetime:
+        case AIUASubscriptionProductTypeLifetimeBenefits:
             return L(@"lifetime_member");
         case AIUASubscriptionProductTypeYearly:
             return L(@"yearly_plan");
@@ -490,8 +490,8 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
 }
 
 - (AIUASubscriptionProductType)productTypeForIdentifier:(NSString *)identifier {
-    if ([identifier containsString:@"lifetime"]) {
-        return AIUASubscriptionProductTypeLifetime;
+    if ([identifier containsString:@"lifetimeBenefits"]) {
+        return AIUASubscriptionProductTypeLifetimeBenefits;
     } else if ([identifier containsString:@"yearly"]) {
         return AIUASubscriptionProductTypeYearly;
     } else if ([identifier containsString:@"monthly"]) {
@@ -508,7 +508,7 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
     NSDateComponents *components = [[NSDateComponents alloc] init];
     
     switch (type) {
-        case AIUASubscriptionProductTypeLifetime:
+        case AIUASubscriptionProductTypeLifetimeBenefits:
             // 永久会员，设置为100年后
             components.year = 100;
             break;
@@ -767,8 +767,8 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
     
     if (offset + 50 > length) return nil;
     
-    // 查找可能的产品ID (包含 lifetime, yearly, monthly, weekly)
-    NSArray *productTypes = @[@"lifetime", @"yearly", @"monthly", @"weekly"];
+    // 查找可能的产品ID (包含 lifetimeBenefits, yearly, monthly, weekly)
+    NSArray *productTypes = @[@"lifetimeBenefits", @"yearly", @"monthly", @"weekly"];
     
     for (NSString *type in productTypes) {
         const char *typeStr = [type UTF8String];
@@ -1039,8 +1039,8 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
         return nil;
     }
     
-    // 优先级：lifetime > yearly > monthly > weekly
-    NSArray *priorityOrder = @[@"lifetime", @"yearly", @"monthly", @"weekly"];
+    // 优先级：lifetimeBenefits > yearly > monthly > weekly
+    NSArray *priorityOrder = @[@"lifetimeBenefits", @"yearly", @"monthly", @"weekly"];
     
     for (NSString *type in priorityOrder) {
         for (NSDictionary *purchase in inAppPurchases) {
@@ -1057,8 +1057,8 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
 
 // 根据产品ID获取订阅类型
 - (AIUASubscriptionProductType)productTypeFromProductId:(NSString *)productId {
-    if ([productId containsString:@"lifetime"]) {
-        return AIUASubscriptionProductTypeLifetime;
+    if ([productId containsString:@"lifetimeBenefits"]) {
+        return AIUASubscriptionProductTypeLifetimeBenefits;
     } else if ([productId containsString:@"yearly"]) {
         return AIUASubscriptionProductTypeYearly;
     } else if ([productId containsString:@"monthly"]) {
@@ -1066,7 +1066,7 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
     } else if ([productId containsString:@"weekly"]) {
         return AIUASubscriptionProductTypeWeekly;
     }
-    return AIUASubscriptionProductTypeLifetime;
+    return AIUASubscriptionProductTypeLifetimeBenefits;
 }
 
 #pragma mark - VIP Member Status
