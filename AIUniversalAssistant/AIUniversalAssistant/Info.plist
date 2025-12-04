@@ -4,6 +4,12 @@
 <dict>
 	<key>AppStoreID</key>
 	<string>6755778624</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>mqqapi</string>
+		<string>mqq</string>
+		<string>mqqopensdkapi</string>
+	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>

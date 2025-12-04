@@ -9,6 +9,7 @@
 #import "AIUASettingsCell.h"
 #import "AIUAWritingRecordsViewController.h"
 #import "AIUAAboutViewController.h"
+#import "AIUAContactUsViewController.h"
 #import "AIUAMembershipViewController.h"
 #import "AIUAWordPackViewController.h"
 #import "AIUAIAPManager.h"
@@ -264,8 +265,9 @@
 }
 
 - (void)showContactUs {
-    // TODO: 实现联系客服页面
-    NSLog(@"显示联系客服");
+    AIUAContactUsViewController *vc = [[AIUAContactUsViewController alloc] init];
+    vc.hidesBottomBarWhenPushed = YES;
+    [self.navigationController pushViewController:vc animated:YES];
 }
 
 - (void)showAboutUs {
