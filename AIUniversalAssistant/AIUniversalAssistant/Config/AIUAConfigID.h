@@ -39,9 +39,9 @@
 #define AIUA_AD_ENABLED          1    // 1: 开启广告  0: 关闭广告
 
 // 会员订阅检测开关（如果不想进行会员订阅检测，设置为0，所有用户将被视为VIP）
-#define AIUA_VIP_CHECK_ENABLED   0    // 1: 开启会员检测  0: 关闭会员检测（所有用户视为VIP）
+#define AIUA_VIP_CHECK_ENABLED   1    // 1: 开启会员检测  0: 关闭会员检测（所有用户视为VIP）
 
 // 过期字数包提醒测试开关（用于测试过期提醒功能）
-#define AIUA_EXPIRING_WORDS_TEST_ENABLED   1    // 1: 开启测试数据  0: 关闭测试数据（使用真实数据）
+#define AIUA_EXPIRING_WORDS_TEST_ENABLED   0    // 1: 开启测试数据  0: 关闭测试数据（使用真实数据）
 
 #endif /* AIUAConfigID_h */
