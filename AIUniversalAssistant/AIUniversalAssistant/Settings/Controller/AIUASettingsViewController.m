@@ -48,8 +48,8 @@
 
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
-    // 每次显示时刷新缓存大小
-    [self updateCacheSizeDisplay];
+    // 每次显示时刷新数据（包括VIP状态变化导致的菜单项变化）
+    [self setupData];
 }
 
 - (void)dealloc {
@@ -63,17 +63,8 @@
 }
 
 - (void)subscriptionStatusChanged:(NSNotification *)notification {
-    // 订阅状态改变，刷新会员特权行
-    // 同步更新数据源中的副标题，避免出现先空后刷新的延迟感
-    if (self.settingsData.count > 0) {
-        NSMutableArray *mutable = [self.settingsData mutableCopy];
-        NSMutableDictionary *first = [mutable[0] mutableCopy];
-        first[@"subtitle"] = [self getMembershipStatusText];
-        mutable[0] = first;
-        self.settingsData = [mutable copy];
-    }
-    NSIndexPath *indexPath = [NSIndexPath indexPathForRow:0 inSection:0];
-    [self.tableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationNone];
+    // 订阅状态改变，重新构建整个菜单列表（因为VIP状态改变会影响菜单项的显示）
+    [self setupData];
 }
 
 - (void)cacheCleared:(NSNotification *)notification {
@@ -118,17 +109,31 @@
 - (void)setupData {
     // 预计算会员状态文案，避免Cell里二次计算导致的视觉延迟
     NSString *memberSubtitle = [self getMembershipStatusText];
-    self.settingsData = @[
-        @{@"title": L(@"member_privileges"), @"icon": @"crown.fill", @"color": @"#FFD700", @"action": @"memberPrivileges", @"subtitle": memberSubtitle ?: @""},
-        @{@"title": L(@"creation_records"), @"icon": @"doc.text.fill", @"color": @"#3B82F6", @"action": @"creationRecords"},
-        @{@"title": L(@"writing_word_packs"), @"icon": @"cube.fill", @"color": @"#10B981", @"action": @"wordPacks"},
-        @{@"title": L(@"clear_cache"), @"icon": @"trash.fill", @"color": @"#F97316", @"action": @"clearCache"},
-        @{@"title": L(@"rate_app"), @"icon": @"star.fill", @"color": @"#EF4444", @"action": @"rateApp"},
-        @{@"title": L(@"share_app"), @"icon": @"square.and.arrow.up.fill", @"color": @"#06B6D4", @"action": @"shareApp"},
-        @{@"title": L(@"watch_reward_title"), @"icon": @"play.rectangle.on.rectangle.fill", @"color": @"#22C55E", @"action": @"watchReward"},
-        @{@"title": L(@"contact_us"), @"icon": @"envelope.fill", @"color": @"#F59E0B", @"action": @"contactUs"},
-        @{@"title": L(@"about_us"), @"icon": @"info.circle.fill", @"color": @"#8B5CF6", @"action": @"aboutUs"}
-    ];
+    BOOL isVIP = [[AIUAIAPManager sharedManager] isVIPMember];
+    
+    // 基础菜单项
+    NSMutableArray *menuItems = [NSMutableArray array];
+    [menuItems addObject:@{@"title": L(@"member_privileges"), @"icon": @"crown.fill", @"color": @"#FFD700", @"action": @"memberPrivileges", @"subtitle": memberSubtitle ?: @""}];
+    [menuItems addObject:@{@"title": L(@"creation_records"), @"icon": @"doc.text.fill", @"color": @"#3B82F6", @"action": @"creationRecords"}];
+    
+    // 只有VIP会员才显示字数包购买和看激励视频入口
+    if (isVIP) {
+        [menuItems addObject:@{@"title": L(@"writing_word_packs"), @"icon": @"cube.fill", @"color": @"#10B981", @"action": @"wordPacks"}];
+    }
+    
+    [menuItems addObject:@{@"title": L(@"clear_cache"), @"icon": @"trash.fill", @"color": @"#F97316", @"action": @"clearCache"}];
+    [menuItems addObject:@{@"title": L(@"rate_app"), @"icon": @"star.fill", @"color": @"#EF4444", @"action": @"rateApp"}];
+    [menuItems addObject:@{@"title": L(@"share_app"), @"icon": @"square.and.arrow.up.fill", @"color": @"#06B6D4", @"action": @"shareApp"}];
+    
+    // 只有VIP会员才显示看激励视频入口
+    if (isVIP) {
+        [menuItems addObject:@{@"title": L(@"watch_reward_title"), @"icon": @"play.rectangle.on.rectangle.fill", @"color": @"#22C55E", @"action": @"watchReward"}];
+    }
+    
+    [menuItems addObject:@{@"title": L(@"contact_us"), @"icon": @"envelope.fill", @"color": @"#F59E0B", @"action": @"contactUs"}];
+    [menuItems addObject:@{@"title": L(@"about_us"), @"icon": @"info.circle.fill", @"color": @"#8B5CF6", @"action": @"aboutUs"}];
+    
+    self.settingsData = [menuItems copy];
     [self.tableView reloadData];
 }
 

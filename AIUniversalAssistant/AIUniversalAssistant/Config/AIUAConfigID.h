@@ -39,6 +39,6 @@
 #define AIUA_AD_ENABLED          1    // 1: 开启广告  0: 关闭广告
 
 // 会员订阅检测开关（如果不想进行会员订阅检测，设置为0，所有用户将被视为VIP）
-#define AIUA_VIP_CHECK_ENABLED   1    // 1: 开启会员检测  0: 关闭会员检测（所有用户视为VIP）
+#define AIUA_VIP_CHECK_ENABLED   0    // 1: 开启会员检测  0: 关闭会员检测（所有用户视为VIP）
 
 #endif /* AIUAConfigID_h */
