@@ -216,6 +216,11 @@
 "consumed_words" = "消費済み: %@字";
 "vip_gift_expired" = "会員贈呈文字数が期限切れです";
 "word_pack_expired" = "文字数パックが期限切れです";
+"word_pack_expiring_soon" = "⚠️ 7日以内に期限切れ: %@字、お早めにご利用ください";
+"expiring_words_in_7_days" = "⚠️ 7日以内に期限切れ: %@字、お早めにご利用ください";
+"tomorrow" = "明日";
+"day_after_tomorrow" = "明後日";
+"days_later" = "%ld日後";
 "icloud_unavailable_title" = "iCloudが利用できません";
 "icloud_unavailable_message" = "デバイスにApple IDがログインしていないか、iCloud Driveが有効になっていないことが検出されました。データ同期機能を使用するには、設定でApple IDにログインし、iCloud Driveを有効にしてください。";
 "go_to_settings" = "設定に移動";

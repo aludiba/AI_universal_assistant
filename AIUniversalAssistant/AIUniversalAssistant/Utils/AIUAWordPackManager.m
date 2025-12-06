@@ -11,6 +11,7 @@
 #import "AIUAAlertHelper.h"
 #import "AIUAToolsManager.h"
 #import "AIUAMacros.h"
+#import "AIUAConfigID.h"
 #import <UIKit/UIKit.h>
 
 // 通知名称
@@ -76,6 +77,9 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
         if (!isVIP) {
             [self setLocalInteger:0 forKey:kAIUAVIPGiftedWords];
         }
+        
+        // 启动时清除已过期的购买记录
+        [self cleanExpiredPurchases];
     }
     return self;
 }
@@ -134,6 +138,9 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
 }
 
 - (NSInteger)purchasedWords {
+    // 先清除已过期的记录（避免数据积累）
+    [self cleanExpiredPurchases];
+    
     // 遍历所有购买记录，计算未过期的字数
     NSArray *purchases = [self localObjectForKey:kAIUAWordPackPurchases];
     if (!purchases) {
@@ -165,6 +172,119 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
 - (NSInteger)consumedWords {
     NSInteger consumed = [self localIntegerForKey:kAIUAConsumedWords];
     return consumed;
+}
+
+- (NSDictionary<NSNumber *, NSNumber *> *)expiringWordsByDays {
+    // 检查测试开关
+    if (AIUA_EXPIRING_WORDS_TEST_ENABLED) {
+        NSLog(@"[WordPack] 使用测试数据 - 过期字数包提醒");
+        return [self getTestExpiringWordsByDays];
+    }
+    
+    // 遍历所有购买记录，按天数分组计算7天内即将过期的字数
+    NSArray *purchases = [self localObjectForKey:kAIUAWordPackPurchases];
+    if (!purchases) {
+        return @{};
+    }
+    
+    NSMutableDictionary<NSNumber *, NSNumber *> *expiringByDays = [NSMutableDictionary dictionary];
+    NSDate *now = [NSDate date];
+    
+    for (NSDictionary *purchase in purchases) {
+        NSDate *expiryDate = purchase[@"expiryDate"];
+        if (expiryDate) {
+            // 检查是否未过期
+            if ([now compare:expiryDate] == NSOrderedAscending) {
+                // 计算剩余天数（向上取整，确保今天过期的也算1天）
+                NSTimeInterval timeInterval = [expiryDate timeIntervalSinceDate:now];
+                NSInteger daysRemaining = (NSInteger)ceil(timeInterval / (24 * 60 * 60));
+                
+                // 只处理1-7天内的（不包括今天，今天过期的算1天）
+                if (daysRemaining >= 1 && daysRemaining <= 7) {
+                    NSInteger remainingWords = [purchase[@"remainingWords"] integerValue];
+                    NSNumber *daysKey = @(daysRemaining);
+                    
+                    // 累加对应天数的字数
+                    NSInteger existingWords = [expiringByDays[daysKey] integerValue];
+                    expiringByDays[daysKey] = @(existingWords + remainingWords);
+                }
+            }
+        }
+    }
+    
+    NSLog(@"[WordPack] 按天数分组的即将过期字数: %@", expiringByDays);
+    return [expiringByDays copy];
+}
+
+#pragma mark - 测试数据
+
+- (NSDictionary<NSNumber *, NSNumber *> *)getTestExpiringWordsByDays {
+    // 生成测试数据：模拟7天内即将过期的字数
+    // 7天后: 10000字
+    // 6天后: 5000字
+    // 5天后: 8000字
+    // 4天后: 3000字
+    // 3天后: 12000字
+    // 2天后: 6000字
+    // 明天: 15000字
+    NSDictionary<NSNumber *, NSNumber *> *testData = @{
+        @7: @10000,  // 7天后过期10000字
+        @6: @5000,   // 6天后过期5000字
+        @5: @8000,   // 5天后过期8000字
+        @4: @3000,   // 4天后过期3000字
+        @3: @12000,  // 3天后过期12000字
+        @2: @6000,   // 后天过期6000字
+        @1: @15000   // 明天过期15000字
+    };
+    
+    NSLog(@"[WordPack] 测试数据 - 过期字数包提醒: %@", testData);
+    return testData;
+}
+
+#pragma mark - 清除过期记录
+
+- (void)cleanExpiredPurchases {
+    NSArray *existingPurchases = [self localObjectForKey:kAIUAWordPackPurchases];
+    if (!existingPurchases || existingPurchases.count == 0) {
+        return;
+    }
+    
+    NSMutableArray *validPurchases = [NSMutableArray array];
+    NSDate *now = [NSDate date];
+    NSInteger expiredCount = 0;
+    
+    for (NSDictionary *purchase in existingPurchases) {
+        NSDate *expiryDate = purchase[@"expiryDate"];
+        if (expiryDate && [now compare:expiryDate] == NSOrderedAscending) {
+            // 未过期，保留
+            [validPurchases addObject:purchase];
+        } else {
+            // 已过期，清除
+            expiredCount++;
+            NSInteger expiredWords = [purchase[@"remainingWords"] integerValue];
+            if (expiredWords > 0) {
+                NSLog(@"[WordPack] 清除过期记录: %@ 字，过期时间: %@", @(expiredWords), expiryDate);
+            }
+        }
+    }
+    
+    if (expiredCount > 0) {
+        // 保存清理后的记录
+        [self setLocalObject:[validPurchases copy] forKey:kAIUAWordPackPurchases];
+        
+        // 同步到iCloud
+        if (self.iCloudSyncEnabled) {
+            [self syncToiCloud];
+        }
+        
+        NSLog(@"[WordPack] ✓ 已清除 %ld 条过期购买记录，剩余 %ld 条有效记录", 
+              (long)expiredCount, (long)validPurchases.count);
+        
+        // 发送通知，通知UI更新
+        [[NSNotificationCenter defaultCenter] postNotificationName:AIUAWordPackPurchasedNotification
+                                                            object:nil
+                                                          userInfo:nil];
+    }
 }
 
 #pragma mark - 字数包购买

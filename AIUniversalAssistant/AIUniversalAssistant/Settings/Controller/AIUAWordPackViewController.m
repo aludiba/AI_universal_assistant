@@ -22,6 +22,8 @@
 @property (nonatomic, strong) UIView *wordsInfoView;
 @property (nonatomic, strong) UILabel *vipGiftedWordsLabel;
 @property (nonatomic, strong) UILabel *purchasedWordsLabel;
+@property (nonatomic, strong) UIView *expiringWarningContainer; // 即将过期提醒容器
+@property (nonatomic, strong) UILabel *expiringWarningLabel; // 即将过期提醒标签
 @property (nonatomic, strong) UILabel *totalWordsLabel;
 
 // VIP赠送提示卡片
@@ -209,13 +211,37 @@
         make.left.right.equalTo(self.vipGiftedWordsLabel);
     }];
     
+    // 即将过期提醒容器
+    self.expiringWarningContainer = [[UIView alloc] init];
+    self.expiringWarningContainer.backgroundColor = [UIColor clearColor];
+    self.expiringWarningContainer.hidden = YES; // 默认隐藏
+    [self.wordsInfoView addSubview:self.expiringWarningContainer];
+    
+    [self.expiringWarningContainer mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.equalTo(self.purchasedWordsLabel.mas_bottom).offset(8);
+        make.left.right.equalTo(self.vipGiftedWordsLabel);
+    }];
+    
+    // 即将过期提醒标签
+    self.expiringWarningLabel = [[UILabel alloc] init];
+    self.expiringWarningLabel.font = AIUAUIFontSystem(13);
+    self.expiringWarningLabel.textColor = AIUAUIColorRGB(200, 50, 0);
+    self.expiringWarningLabel.numberOfLines = 0;
+    [self.expiringWarningContainer addSubview:self.expiringWarningLabel];
+    
+    [self.expiringWarningLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.equalTo(self.expiringWarningContainer);
+        make.left.right.equalTo(self.expiringWarningContainer);
+        make.bottom.equalTo(self.expiringWarningContainer);
+    }];
+    
     // 分隔线
     UIView *divider = [[UIView alloc] init];
     divider.backgroundColor = AIUAUIColorRGB(220, 220, 220);
     [self.wordsInfoView addSubview:divider];
     
     [divider mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.purchasedWordsLabel.mas_bottom).offset(12);
+        make.top.equalTo(self.expiringWarningContainer.mas_bottom).offset(12);
         make.left.equalTo(self.wordsInfoView).offset(16);
         make.right.equalTo(self.wordsInfoView).offset(-16);
         make.height.equalTo(@0.5);
@@ -243,6 +269,7 @@
     self.vipGiftTipView.layer.borderColor = AIUAUIColorRGB(255, 220, 150).CGColor;
     [self.contentView addSubview:self.vipGiftTipView];
     
+    // VIP提示卡片的约束：优先依赖即将过期提醒，如果隐藏则依赖字数信息视图
     [self.vipGiftTipView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.top.equalTo(self.wordsInfoView.mas_bottom).offset(16);
         make.left.equalTo(self.contentView).offset(20);
@@ -469,13 +496,36 @@
     NSInteger vipWords = [manager vipGiftedWords];
     NSInteger purchasedWords = [manager purchasedWords];
     NSInteger totalWords = [manager totalAvailableWords];
+    NSDictionary<NSNumber *, NSNumber *> *expiringByDays = [manager expiringWordsByDays];
     
     self.vipGiftedWordsLabel.text = [NSString stringWithFormat:L(@"vip_gifted_words"), [self formatNumber:vipWords]];
     self.purchasedWordsLabel.text = [NSString stringWithFormat:L(@"purchased_words"), [self formatNumber:purchasedWords]];
     self.totalWordsLabel.text = [NSString stringWithFormat:L(@"total_remaining_words"), [self formatNumber:totalWords]];
     
-    NSLog(@"[WordPack] 字数显示已更新 - VIP:%ld, 购买:%ld, 总计:%ld", 
-          (long)vipWords, (long)purchasedWords, (long)totalWords);
+    // 更新即将过期提醒
+    [self updateExpiringWarnings:expiringByDays];
+    
+    NSLog(@"[WordPack] 字数显示已更新 - VIP:%ld, 购买:%ld, 总计:%ld, 即将过期分组:%@", 
+          (long)vipWords, (long)purchasedWords, (long)totalWords, expiringByDays);
+}
+
+- (void)updateExpiringWarnings:(NSDictionary<NSNumber *, NSNumber *> *)expiringByDays {
+    // 计算所有7天内即将过期的总字数
+    NSInteger totalExpiringWords = 0;
+    for (NSNumber *daysKey in expiringByDays.allKeys) {
+        NSInteger words = [expiringByDays[daysKey] integerValue];
+        totalExpiringWords += words;
+    }
+    
+    if (totalExpiringWords == 0) {
+        // 没有即将过期的字数，隐藏容器
+        self.expiringWarningContainer.hidden = YES;
+        return;
+    }
+    
+    // 显示容器并更新标签文本
+    self.expiringWarningContainer.hidden = NO;
+    self.expiringWarningLabel.text = [NSString stringWithFormat:L(@"expiring_words_in_7_days"), [self formatNumber:totalExpiringWords]];
 }
 
 #pragma mark - Actions

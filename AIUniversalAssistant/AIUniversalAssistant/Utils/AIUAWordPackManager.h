@@ -54,6 +54,19 @@ extern NSString * const AIUAWordConsumedNotification;
  */
 - (NSInteger)consumedWords;
 
+/**
+ * 获取即将过期的字数（7天内），按天数分组
+ * @return 字典，key为剩余天数（NSNumber），value为对应天数的字数（NSNumber）
+ *         例如：@{@7: @10000, @3: @5000} 表示7天后过期10000字，3天后过期5000字
+ */
+- (NSDictionary<NSNumber *, NSNumber *> *)expiringWordsByDays;
+
+/**
+ * 清除已过期的购买记录
+ * 自动清理所有过期时间已到的字数包记录，释放存储空间
+ */
+- (void)cleanExpiredPurchases;
+
 #pragma mark - 字数包购买
 
 /**
