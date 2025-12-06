@@ -869,7 +869,7 @@
         StrongType(self);
         BOOL success = [[AIUADataManager sharedManager] deleteWritingWithID:documentID];
         if (success) {
-            self.isDeleteDocumentSuccess = YES;
+            strongself.isDeleteDocumentSuccess = YES;
             [strongself.navigationController popViewControllerAnimated:YES];
             [AIUAMBProgressManager showText:nil withText:L(@"deleted_success") andSubText:nil isBottom:YES backColor:[UIColor whiteColor]];
         } else {
@@ -1184,23 +1184,23 @@
         dispatch_async(dispatch_get_main_queue(), ^{
             StrongType(self);
             if (error) {
-                [AIUAMBProgressManager hideHUD:self.view];
-                self.isGenerating = NO;
-                self.stopButton.hidden = YES;
+                [AIUAMBProgressManager hideHUD:strongself.view];
+                strongself.isGenerating = NO;
+                strongself.stopButton.hidden = YES;
                 // 显示buttonStack
-                if (self.currentButtonStack) {
-                    self.currentButtonStack.hidden = NO;
-                } else if (self.generatedContent && self.generatedContent.length > 0) {
+                if (strongself.currentButtonStack) {
+                    strongself.currentButtonStack.hidden = NO;
+                } else if (strongself.generatedContent && strongself.generatedContent.length > 0) {
                     // 如果有生成内容但没有buttonStack，创建它
-                    [self setupResultButtonsForType:self.currentEditType];
+                    [strongself setupResultButtonsForType:strongself.currentEditType];
                 }
                 // 恢复生成视图中的返回按钮
-                if (self.generationBackButton) {
-                    self.generationBackButton.enabled = YES;
-                    self.generationBackButton.alpha = 1.0;
+                if (strongself.generationBackButton) {
+                    strongself.generationBackButton.enabled = YES;
+                    strongself.generationBackButton.alpha = 1.0;
                 }
                 // 恢复输入框和工具栏按钮
-                [self setUIEnabled:YES];
+                [strongself setUIEnabled:YES];
                 
                 if (error.code == NSURLErrorCancelled) {
                     return;
@@ -1210,7 +1210,7 @@
                                            message:error.localizedDescription
                                      cancelBtnText:nil
                                     confirmBtnText:L(@"confirm")
-                                      inController:self
+                                      inController:strongself
                                       cancelAction:nil
                                      confirmAction:nil];
                 return;
@@ -1218,33 +1218,33 @@
             
             if (chunk && chunk.length > 0) {
                 NSString *text = [AIUAToolsManager removeMarkdownSymbols:chunk];
-                [self.generatedContent appendString:text];
-                self.generationTextView.text = self.generatedContent;
+                [strongself.generatedContent appendString:text];
+                strongself.generationTextView.text = strongself.generatedContent;
                 // 自动滚动到底部
-                [self scrollGenerationTextViewToBottom];
+                [strongself scrollGenerationTextViewToBottom];
             }
             
             if (finished) {
-                [AIUAMBProgressManager hideHUD:self.view];
-                self.isGenerating = NO;
+                [AIUAMBProgressManager hideHUD:strongself.view];
+                strongself.isGenerating = NO;
                 // 隐藏停止生成按钮，显示buttonStack
-                self.stopButton.hidden = YES;
-                if (self.currentButtonStack) {
-                    self.currentButtonStack.hidden = NO;
+                strongself.stopButton.hidden = YES;
+                if (strongself.currentButtonStack) {
+                    strongself.currentButtonStack.hidden = NO;
                 }
-                [self setupResultButtonsForType:type];
+                [strongself setupResultButtonsForType:type];
 
                 // 恢复生成视图中的返回按钮
-                if (self.generationBackButton) {
-                    self.generationBackButton.enabled = YES;
-                    self.generationBackButton.alpha = 1.0;
+                if (strongself.generationBackButton) {
+                    strongself.generationBackButton.enabled = YES;
+                    strongself.generationBackButton.alpha = 1.0;
                 }
                 // 恢复输入框和工具栏按钮
-                [self setUIEnabled:YES];
+                [strongself setUIEnabled:YES];
                 
                 // 计算实际消耗的字数（输入 + 输出）
-                NSInteger inputWords = [AIUAWordPackManager countWordsInText:self.currentContent ?: @""];
-                NSInteger outputWords = [AIUAWordPackManager countWordsInText:self.generatedContent];
+                NSInteger inputWords = [AIUAWordPackManager countWordsInText:strongself.currentContent ?: @""];
+                NSInteger outputWords = [AIUAWordPackManager countWordsInText:strongself.generatedContent];
                 NSInteger totalWords = inputWords + outputWords;
                 
                 if (totalWords > 0) {
