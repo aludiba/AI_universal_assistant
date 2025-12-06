@@ -153,7 +153,7 @@
 "lifetime_member" = "永久会员";
 "lifetime_desc" = "一次购买，永久使用";
 "yearly_plan" = "年度会员";
-"yearly_desc" = "约0.5毛/天";
+"yearly_desc" = "约0.5元/天";
 "monthly_plan" = "月度会员";
 "monthly_desc" = "短期创作首选";
 "weekly_plan" = "周度会员";

@@ -153,7 +153,7 @@
 "lifetime_member" = "Lifetime Member";
 "lifetime_desc" = "One-time purchase, lifetime access";
 "yearly_plan" = "Yearly Plan";
-"yearly_desc" = "About ¢5/day";
+"yearly_desc" = "About $0.07/day";
 "monthly_plan" = "Monthly Plan";
 "monthly_desc" = "Best for short-term";
 "weekly_plan" = "Weekly Plan";
