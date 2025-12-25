@@ -56,10 +56,10 @@
     [self.tableView registerClass:[AIUAWritingRecordCell class] forCellReuseIdentifier:@"AIUAWritingRecordCell"];
     [self.view addSubview:self.tableView];
     
-    // 空状态提示
+    // 空状态提示（适配暗黑模式）
     self.emptyLabel = [[UILabel alloc] init];
     self.emptyLabel.text = L(@"no_writing_records");
-    self.emptyLabel.textColor = AIUAUIColorRGB(156, 163, 175);
+    self.emptyLabel.textColor = AIUA_SECONDARY_LABEL_COLOR; // 使用系统二级标签颜色，自动适配暗黑模式
     self.emptyLabel.font = AIUAUIFontSystem(16);
     self.emptyLabel.textAlignment = NSTextAlignmentCenter;
     self.emptyLabel.hidden = YES;
@@ -190,9 +190,9 @@
             [strongself.tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationAutomatic];
             strongself.emptyLabel.hidden = strongself.writingRecords.count > 0;
             
-            [AIUAMBProgressManager showText:nil withText:L(@"deleted_success") andSubText:nil isBottom:YES];
+            [AIUAMBProgressManager showText:nil withText:L(@"deleted_success") andSubText:nil isBottom:NO];
         } else {
-            [AIUAMBProgressManager showText:nil withText:L(@"delete_failed") andSubText:nil isBottom:YES];
+            [AIUAMBProgressManager showText:nil withText:L(@"delete_failed") andSubText:nil isBottom:NO];
         }
     }];
 }

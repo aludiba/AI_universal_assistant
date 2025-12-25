@@ -22,7 +22,7 @@
     [super setupUI];
     
     self.title = L(@"about_us");
-    self.view.backgroundColor = AIUAUIColorRGB(246, 248, 250);
+    self.view.backgroundColor = AIUA_BACK_COLOR; // 使用系统背景色，自动适配暗黑模式
     
     // 创建滚动视图
     self.scrollView = [[UIScrollView alloc] init];
@@ -178,20 +178,20 @@
 
 - (UIView *)createCardWithTitle:(NSString *)title content:(NSString *)content {
     UIView *card = [[UIView alloc] init];
-    card.backgroundColor = [UIColor whiteColor];
+    card.backgroundColor = AIUA_CARD_BACKGROUND_COLOR; // 使用系统卡片背景色，自动适配暗黑模式
     card.layer.cornerRadius = 12;
     card.layer.masksToBounds = YES;
     
     UILabel *titleLabel = [[UILabel alloc] init];
     titleLabel.text = title;
     titleLabel.font = AIUAUIFontBold(16);
-    titleLabel.textColor = AIUAUIColorRGB(31, 35, 41);
+    titleLabel.textColor = AIUA_LABEL_COLOR; // 使用系统标签颜色，自动适配暗黑模式
     [card addSubview:titleLabel];
     
     UILabel *contentLabel = [[UILabel alloc] init];
     contentLabel.text = content;
     contentLabel.font = AIUAUIFontSystem(14);
-    contentLabel.textColor = AIUAUIColorRGB(75, 85, 99);
+    contentLabel.textColor = AIUA_SECONDARY_LABEL_COLOR; // 使用系统二级标签颜色，自动适配暗黑模式
     contentLabel.numberOfLines = 0;
     [card addSubview:contentLabel];
     
@@ -214,7 +214,7 @@
     [button setTitle:title forState:UIControlStateNormal];
     [button setTitleColor:AIUAUIColorRGB(59, 130, 246) forState:UIControlStateNormal];
     button.titleLabel.font = AIUAUIFontSystem(15);
-    button.backgroundColor = [UIColor whiteColor];
+    button.backgroundColor = AIUA_CARD_BACKGROUND_COLOR; // 使用系统卡片背景色，自动适配暗黑模式
     button.layer.cornerRadius = 8;
     button.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
     button.contentEdgeInsets = UIEdgeInsetsMake(0, 16, 0, 16);

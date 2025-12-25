@@ -99,4 +99,33 @@
     [controller presentViewController:alertController animated:YES completion:nil];
 }
 
++ (void)showDebugErrorAlert:(NSString *)errorMessage context:(nullable NSString *)context {
+#if AIUA_SHOW_DEBUG_ERROR_ALERTS
+    if (!errorMessage || errorMessage.length == 0) {
+        return;
+    }
+    
+    // 构建标题
+    NSString *title = context ? [NSString stringWithFormat:@"[调试] %@", context] : @"[调试] 错误提示";
+    
+    // 获取顶层视图控制器
+    UIViewController *topVC = [AIUAToolsManager topViewController];
+    if (!topVC) {
+        NSLog(@"[AlertHelper] 无法显示调试错误弹窗：无法获取顶层视图控制器");
+        return;
+    }
+    
+    // 显示弹窗
+    [self showAlertWithTitle:title
+                     message:errorMessage
+               cancelBtnText:nil
+              confirmBtnText:L(@"confirm") ?: @"确定"
+                inController:topVC
+                cancelAction:nil
+               confirmAction:nil];
+    
+    NSLog(@"[AlertHelper] 显示调试错误弹窗: %@ - %@", context ?: @"未知", errorMessage);
+#endif
+}
+
 @end

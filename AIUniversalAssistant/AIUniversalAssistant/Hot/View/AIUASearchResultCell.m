@@ -12,7 +12,7 @@
 - (void)setupUI {
     [super setupUI];
     
-    self.contentView.backgroundColor = [UIColor whiteColor];
+    self.contentView.backgroundColor = AIUA_CARD_BACKGROUND_COLOR; // 使用系统卡片背景色，自动适配暗黑模式
     
     // 图标
     self.iconImageView = [[UIImageView alloc] init];
@@ -20,16 +20,16 @@
     self.iconImageView.tintColor = AIUA_BLUE_COLOR;
     [self.contentView addSubview:self.iconImageView];
     
-    // 标题标签
+    // 标题标签（适配暗黑模式）
     self.titleLabel = [[UILabel alloc] init];
     self.titleLabel.font = AIUAUIFontMedium(16);
-    self.titleLabel.textColor = [UIColor darkTextColor];
+    self.titleLabel.textColor = AIUA_LABEL_COLOR; // 使用系统标签颜色，自动适配暗黑模式
     [self.contentView addSubview:self.titleLabel];
     
-    // 副标题标签
+    // 副标题标签（适配暗黑模式）
     self.subtitleLabel = [[UILabel alloc] init];
     self.subtitleLabel.font = AIUAUIFontSystem(13);
-    self.subtitleLabel.textColor = [UIColor grayColor];
+    self.subtitleLabel.textColor = AIUA_SECONDARY_LABEL_COLOR; // 使用系统二级标签颜色，自动适配暗黑模式
     self.subtitleLabel.numberOfLines = 1;
     [self.contentView addSubview:self.subtitleLabel];
     

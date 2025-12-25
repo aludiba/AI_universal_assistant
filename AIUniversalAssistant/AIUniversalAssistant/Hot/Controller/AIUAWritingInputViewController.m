@@ -80,17 +80,17 @@
     self.contentView = [[UIView alloc] init];
     [self.scrollView addSubview:self.contentView];
     
-    // 输入容器
+    // 输入容器（适配暗黑模式）
     self.inputContainer = [[UIView alloc] init];
-    self.inputContainer.backgroundColor = [UIColor whiteColor];
+    self.inputContainer.backgroundColor = AIUA_CARD_BACKGROUND_COLOR; // 使用系统卡片背景色，自动适配暗黑模式
     self.inputContainer.layer.cornerRadius = 12;
     self.inputContainer.layer.masksToBounds = YES;
     [self.contentView addSubview:self.inputContainer];
     
-    // 主题标题
+    // 主题标题（适配暗黑模式）
     self.themeTitleLabel = [[UILabel alloc] init];
     self.themeTitleLabel.font = AIUAUIFontSystem(16);
-    self.themeTitleLabel.textColor = AIUAUIColorRGB(34, 34, 34);
+    self.themeTitleLabel.textColor = AIUA_LABEL_COLOR; // 使用系统标签颜色，自动适配暗黑模式
     self.themeTitleLabel.text = L(@"theme");
     [self.inputContainer addSubview:self.themeTitleLabel];
     
@@ -186,11 +186,11 @@
     BOOL isFavorite = [[AIUADataManager sharedManager] isFavorite:itemId];
     [self.favoriteButton setSelected:isFavorite];
     self.favoriteButton.tintColor = isFavorite ? AIUAUIColorSimplifyRGB(1.0, 0.2, 0.2) : AIUAUIColorSimplifyRGB(0.6, 0.6, 0.6);
-    self.favoriteButton.backgroundColor = [UIColor whiteColor];
+    self.favoriteButton.backgroundColor = AIUA_CARD_BACKGROUND_COLOR; // 使用系统卡片背景色，自动适配暗黑模式
     self.favoriteButton.layer.cornerRadius = 12;
     self.favoriteButton.layer.masksToBounds = YES;
     self.favoriteButton.layer.borderWidth = 1;
-    self.favoriteButton.layer.borderColor = AIUAUIColorRGB(229, 231, 235).CGColor;
+    self.favoriteButton.layer.borderColor = AIUA_DIVIDER_COLOR.CGColor; // 使用系统分隔线颜色，自动适配暗黑模式
     [self.favoriteButton addTarget:self action:@selector(favoriteButtonTapped) forControlEvents:UIControlEventTouchUpInside];
     [self.bottomContainer addSubview:self.favoriteButton];
     
@@ -525,7 +525,7 @@
         self.favoriteButton.tintColor = AIUAUIColorSimplifyRGB(1.0, 0.2, 0.2);
         // 添加收藏
         [[AIUADataManager sharedManager] addFavorite:self.templateItem];
-        [AIUAMBProgressManager showText:nil withText:L(@"favorited") andSubText:nil isBottom:YES];
+        [AIUAMBProgressManager showText:nil withText:L(@"favorited") andSubText:nil isBottom:NO];
         self.favoriteButton.selected = isFavorite;
     }
 }

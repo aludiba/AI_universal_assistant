@@ -12,10 +12,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 // 订阅产品ID（需要在App Store Connect中创建）
 typedef NS_ENUM(NSInteger, AIUASubscriptionProductType) {
-    AIUASubscriptionProductTypeLifetimeBenefits = 0,    // com.aiassistant.lifetimeBenefits
-    AIUASubscriptionProductTypeYearly,          // com.aiassistant.yearly
-    AIUASubscriptionProductTypeMonthly,         // com.aiassistant.monthly
-    AIUASubscriptionProductTypeWeekly           // com.aiassistant.weekly
+    AIUASubscriptionProductTypeLifetimeBenefits = 0,
+    AIUASubscriptionProductTypeYearly,
+    AIUASubscriptionProductTypeMonthly,
+    AIUASubscriptionProductTypeWeekly           
 };
 
 // 购买结果回调

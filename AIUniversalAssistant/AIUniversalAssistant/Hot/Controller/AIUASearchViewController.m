@@ -134,7 +134,7 @@
 
 - (UIView *)createHistoryHeaderView {
     UIView *headerView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, self.view.frame.size.width, 44)];
-    headerView.backgroundColor = [UIColor whiteColor];
+    headerView.backgroundColor = AIUA_BACK_COLOR; // 使用系统背景色，自动适配暗黑模式
     
     UILabel *titleLabel = [[UILabel alloc] init];
     titleLabel.text = L(@"search_history");

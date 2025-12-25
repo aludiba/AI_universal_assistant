@@ -7,8 +7,9 @@
 
 #import "AIUASplashAdManager.h"
 
-// 判断是否已接入穿山甲SDK
-#if __has_include(<BUAdSDK/BUAdSDK.h>)
+#import "AIUAConfigID.h"
+// 判断是否已接入穿山甲SDK（需要同时检查广告开关和SDK是否存在）
+#if AIUA_AD_ENABLED && __has_include(<BUAdSDK/BUAdSDK.h>)
 #import <BUAdSDK/BUAdSDK.h>
 #define HAS_PANGLE_SDK 1
 #else

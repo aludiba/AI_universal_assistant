@@ -192,6 +192,14 @@
 "vip_general_locked_message" = "This feature requires VIP membership to use";
 "unlock_vip_features" = "Unlock All Features with VIP";
 
+// Trial
+"trial_notice" = "Trial Notice";
+"trial_used_with_remaining" = "You have used one trial opportunity. %ld trial(s) remaining. Please subscribe to continue using after trials expire.";
+"trial_last_used" = "You have used your last trial opportunity. Please subscribe to continue using.";
+"trial_expired_title" = "Trial Expired";
+"trial_expired_message" = "Your trial opportunities have expired. Subscribe now to continue using all features.";
+"i_know" = "Got it";
+
 // Word Pack
 "writing_word_packs" = "Writing Word Packs";
 "vip_gifted_words" = "Subscription Gift: %@ words";
@@ -221,6 +229,8 @@
 "icloud_unavailable_title" = "iCloud Unavailable";
 "icloud_unavailable_message" = "Your device is not signed in with an Apple ID or iCloud Drive is not enabled. To use data sync, please sign in with your Apple ID and enable iCloud Drive in Settings.";
 "go_to_settings" = "Go to Settings";
+"icloud_settings_guide_title" = "How to Enable iCloud";
+"icloud_settings_guide_message" = "Please follow these steps:\n\n1. In Settings, tap your Apple ID at the top\n2. Select \"iCloud\"\n3. Make sure \"iCloud Drive\" is enabled\n\nReturn to the app when finished.";
 
 // Clear Cache
 "clear_cache" = "Clear Cache";
@@ -245,3 +255,7 @@
 "reward_daily_limit_reached" = "You've used up today's viewing times. Please try again tomorrow";
 "reward_failed_title" = "Loading Failed";
 "buy_now" = "Buy Now";
+
+// Trial Mechanism
+"trial_expired_title" = "Trial Ended";
+"trial_expired_message" = "Your trial has ended. Please subscribe to continue using";

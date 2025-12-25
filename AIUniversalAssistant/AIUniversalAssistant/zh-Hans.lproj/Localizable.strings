@@ -192,6 +192,14 @@
 "vip_general_locked_message" = "此功能需要开通会员才能使用";
 "unlock_vip_features" = "开通会员，解锁全部功能";
 
+// 试用相关
+"trial_notice" = "试用提示";
+"trial_used_with_remaining" = "您已使用一次试用机会，还剩 %ld 次试用机会。试用结束后需要开通会员继续使用。";
+"trial_last_used" = "您已使用最后一次试用机会。下次使用需要开通会员。";
+"trial_expired_title" = "试用机会已用完";
+"trial_expired_message" = "您的试用机会已用完，开通会员即可继续使用全部功能。";
+"i_know" = "我知道了";
+
 // 评分和分享
 "rate_app" = "前往评分";
 "share_app" = "分享APP";
@@ -227,6 +235,8 @@
 "icloud_unavailable_title" = "iCloud不可用";
 "icloud_unavailable_message" = "检测到您的设备未登录Apple ID或未开启iCloud Drive。为了使用数据同步功能，请在设置中登录Apple ID并开启iCloud Drive。";
 "go_to_settings" = "前往设置";
+"icloud_settings_guide_title" = "如何开启iCloud";
+"icloud_settings_guide_message" = "请按照以下步骤操作：\n\n1. 在设置页面，点击顶部的「Apple ID」\n2. 选择「iCloud」\n3. 确保「iCloud云盘」已开启\n\n完成后返回应用即可。";
 
 // 清理缓存
 "clear_cache" = "清理缓存";
@@ -245,3 +255,7 @@
 "reward_daily_limit_reached" = "今天的观看次数已用完，请明天再来";
 "reward_failed_title" = "加载失败";
 "buy_now" = "立即购买";
+
+// 试用机制
+"trial_expired_title" = "试用已结束";
+"trial_expired_message" = "您的试用已结束，请开通会员继续使用";

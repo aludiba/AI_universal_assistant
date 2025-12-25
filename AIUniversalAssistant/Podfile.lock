@@ -1,39 +1,45 @@
 PODS:
-  - Ads-CN (6.7.0.8):
-    - Ads-CN/BUAdLive-Framework (= 6.7.0.8)
-    - Ads-CN/BUAdSDK (= 6.7.0.8)
-  - Ads-CN/BUAdLive-Framework (6.7.0.8):
-    - BUTTSDKFramework/LivePull-Lite (= 1.45.1.8-premium)
-  - Ads-CN/BUAdSDK (6.7.0.8)
-  - BUTTSDKFramework/Core (1.45.1.8-premium)
-  - BUTTSDKFramework/LiveBase (1.45.1.8-premium):
+  - Ads-CN (7.2.1.0):
+    - Ads-CN/BUAdLive-Framework (= 7.2.1.0)
+    - Ads-CN/BUAdSDK (= 7.2.1.0)
+  - Ads-CN/BUAdLive (7.2.1.0)
+  - Ads-CN/BUAdLive-Framework (7.2.1.0):
+    - Ads-CN/BUAdLive
+    - BUTTSDKFramework/LivePull-Lite (= 1.46.2.7-premium)
+  - Ads-CN/BUAdSDK (7.2.1.0)
+  - BUTTSDKFramework/Core (1.46.2.7-premium)
+  - BUTTSDKFramework/LiveBase (1.46.2.7-premium):
     - BUTTSDKFramework/Core
     - BUTTSDKFramework/Reachability
-  - BUTTSDKFramework/LivePlayer/Base (1.45.1.8-premium):
+  - BUTTSDKFramework/LivePlayer/Base (1.46.2.7-premium):
     - BUTTSDKFramework/Core
     - BUTTSDKFramework/LiveBase
     - BUTTSDKFramework/Reachability
-  - BUTTSDKFramework/LivePlayer/Lite (1.45.1.8-premium):
+  - BUTTSDKFramework/LivePlayer/Lite (1.46.2.7-premium):
     - BUTTSDKFramework/LivePlayer/Base
     - BUTTSDKFramework/PlayerCore/LiveLite
-  - BUTTSDKFramework/LivePull-Lite (1.45.1.8-premium):
+  - BUTTSDKFramework/LivePull-Lite (1.46.2.7-premium):
     - BUTTSDKFramework/LivePlayer/Lite
     - BUTTSDKFramework/Strategy/Lite
-  - BUTTSDKFramework/PlayerCore/LiveLite (1.45.1.8-premium):
+  - BUTTSDKFramework/PlayerCore/Base (1.46.2.7-premium):
+    - BUTTSDKFramework/Core
+    - BUTTSDKFramework/Tools
+  - BUTTSDKFramework/PlayerCore/LiveLite (1.46.2.7-premium):
+    - BUTTSDKFramework/PlayerCore/Base
     - BUTTSDKFramework/TTFFmpeg/LiveLite
-  - BUTTSDKFramework/Reachability (1.45.1.8-premium)
-  - BUTTSDKFramework/SSL (1.45.1.8-premium)
-  - BUTTSDKFramework/Strategy/Core (1.45.1.8-premium):
+  - BUTTSDKFramework/Reachability (1.46.2.7-premium)
+  - BUTTSDKFramework/SSL (1.46.2.7-premium)
+  - BUTTSDKFramework/Strategy/Core (1.46.2.7-premium):
     - BUTTSDKFramework/LiveBase
     - BUTTSDKFramework/Reachability
-  - BUTTSDKFramework/Strategy/Lite (1.45.1.8-premium):
+  - BUTTSDKFramework/Strategy/Lite (1.46.2.7-premium):
     - BUTTSDKFramework/LivePlayer/Lite
     - BUTTSDKFramework/Strategy/Core
-  - BUTTSDKFramework/Tools (1.45.1.8-premium):
+  - BUTTSDKFramework/Tools (1.46.2.7-premium):
     - BUTTSDKFramework/SSL
-  - BUTTSDKFramework/TTFFmpeg/Base (1.45.1.8-premium):
+  - BUTTSDKFramework/TTFFmpeg/Base (1.46.2.7-premium):
     - BUTTSDKFramework/Tools
-  - BUTTSDKFramework/TTFFmpeg/LiveLite (1.45.1.8-premium):
+  - BUTTSDKFramework/TTFFmpeg/LiveLite (1.46.2.7-premium):
     - BUTTSDKFramework/TTFFmpeg/Base
   - Masonry (1.1.0)
   - MBProgressHUD (1.2.0)
@@ -59,13 +65,13 @@ SPEC REPOS:
     - SDWebImage
 
 SPEC CHECKSUMS:
-  Ads-CN: 4dcb5105a7105f76bcefb246e69daf6c39db2778
-  BUTTSDKFramework: 914058900f46707f12a6e8c10e8da6ba4e891c3e
+  Ads-CN: d92a8153c4db60a5f195fe263da2e41de4e1d24c
+  BUTTSDKFramework: b5d45b40003335843f05088c2373cef0b5638a9e
   Masonry: 678fab65091a9290e40e2832a55e7ab731aad201
   MBProgressHUD: 3ee5efcc380f6a79a7cc9b363dd669c5e1ae7406
   MJRefresh: ff9e531227924c84ce459338414550a05d2aea78
   SDWebImage: f84b0feeb08d2d11e6a9b843cb06d75ebf5b8868
 
-PODFILE CHECKSUM: 19ac4f708adfa3bd9252f020f027fb2c1aca5eec
+PODFILE CHECKSUM: 02f39843df6e6c83e36cd51bf37d64b9d55319ce
 
 COCOAPODS: 1.16.2

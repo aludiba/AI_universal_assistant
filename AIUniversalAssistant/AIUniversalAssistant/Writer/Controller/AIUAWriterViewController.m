@@ -40,7 +40,7 @@
 - (void)setupNavigationBar {
     UIImage *recordsIcon = [UIImage systemImageNamed:@"list.bullet"];
     UIBarButtonItem *recordsButton = [[UIBarButtonItem alloc] initWithImage:recordsIcon style:UIBarButtonItemStylePlain target:self action:@selector(recordsButtonTapped)];
-    recordsButton.tintColor = [UIColor grayColor];
+    recordsButton.tintColor = AIUA_LABEL_COLOR; // 使用系统标签颜色，自动适配暗黑模式
     self.navigationItem.rightBarButtonItem = recordsButton;
 }
 
@@ -236,7 +236,7 @@
     if (section > 0 && [view isKindOfClass:[UITableViewHeaderFooterView class]]) {
         UITableViewHeaderFooterView *header = (UITableViewHeaderFooterView *)view;
         header.textLabel.font = AIUAUIFontBold(18);
-        header.textLabel.textColor = [UIColor darkTextColor];
+        header.textLabel.textColor = AIUA_LABEL_COLOR; // 使用系统标签颜色，自动适配暗黑模式
     }
 }
 

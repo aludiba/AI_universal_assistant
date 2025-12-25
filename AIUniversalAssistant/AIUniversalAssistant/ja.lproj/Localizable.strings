@@ -190,6 +190,14 @@
 "vip_feature_locked_message" = "「%@」機能を使用するには会員登録が必要です";
 "vip_general_locked_message" = "この機能を使用するには会員登録が必要です";
 "unlock_vip_features" = "会員登録してすべての機能をアンロック";
+
+// トライアル
+"trial_notice" = "トライアル通知";
+"trial_used_with_remaining" = "トライアル機会を1回使用しました。残り%ld回のトライアル機会があります。トライアル終了後、会員登録が必要です。";
+"trial_last_used" = "最後のトライアル機会を使用しました。次回の使用には会員登録が必要です。";
+"trial_expired_title" = "トライアル期間終了";
+"trial_expired_message" = "トライアル機会が終了しました。すべての機能を継続使用するには、会員登録してください。";
+"i_know" = "了解しました";
 // 評価と共有
 "rate_app" = "評価に移動";
 "share_app" = "アプリを共有";
@@ -224,6 +232,8 @@
 "icloud_unavailable_title" = "iCloudが利用できません";
 "icloud_unavailable_message" = "デバイスにApple IDがログインしていないか、iCloud Driveが有効になっていないことが検出されました。データ同期機能を使用するには、設定でApple IDにログインし、iCloud Driveを有効にしてください。";
 "go_to_settings" = "設定に移動";
+"icloud_settings_guide_title" = "iCloudを有効にする方法";
+"icloud_settings_guide_message" = "以下の手順に従ってください：\n\n1. 設定で、上部の「Apple ID」をタップ\n2. 「iCloud」を選択\n3. 「iCloud Drive」が有効になっていることを確認\n\n完了したら、アプリに戻ってください。";
 // キャッシュクリア
 "clear_cache" = "キャッシュをクリア";
 "clear_cache_message" = "最近使用した記録、検索履歴、作成記録をクリアします。合計 %@。お気に入りコンテンツはクリアされません。";
@@ -240,4 +250,8 @@
 "reward_daily_limit_reached" = "今日の視聴回数を使い切りました。また明日お試しください";
 "reward_failed_title" = "読み込み失敗";
 "buy_now" = "今すぐ購入";
+
+// トライアル機能
+"trial_expired_title" = "トライアル終了";
+"trial_expired_message" = "トライアルが終了しました。継続利用には会員登録が必要です";
 

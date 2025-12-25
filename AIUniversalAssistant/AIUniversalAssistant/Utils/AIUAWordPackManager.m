@@ -7,6 +7,7 @@
 
 #import "AIUAWordPackManager.h"
 #import "AIUAIAPManager.h"
+#import "AIUATrialManager.h"
 #import "AIUAKeychainManager.h"
 #import "AIUAAlertHelper.h"
 #import "AIUAToolsManager.h"
@@ -322,6 +323,8 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
             }
         } else {
             NSLog(@"[WordPack] 购买失败: %@", errorMessage);
+            // 显示调试错误弹窗
+            [AIUAAlertHelper showDebugErrorAlert:errorMessage context:@"购买字数包失败"];
             
             // 将NSString错误消息转换为NSError
             NSError *error = nil;
@@ -468,6 +471,32 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
 - (void)consumeWords:(NSInteger)words completion:(void (^)(BOOL, NSInteger))completion {
     NSLog(@"[WordPack] 尝试消耗 %ld 字", (long)words);
     
+    // 检查是否处于试用会话中（已经使用了试用次数）
+    AIUATrialManager *trialManager = [AIUATrialManager sharedManager];
+    if ([trialManager isInTrialSession]) {
+        NSLog(@"[WordPack] ✓ 用户处于试用会话中，字数不消耗");
+        // 试用会话中不消耗字数，直接返回成功
+        if (completion) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                completion(YES, [self totalAvailableWords]);
+            });
+        }
+        return;
+    }
+    
+    // 检查是否是VIP用户
+    BOOL isVIP = [[AIUAIAPManager sharedManager] isVIPMember];
+    if (isVIP) {
+        NSLog(@"[WordPack] ✓ VIP用户，字数不消耗");
+        // VIP用户不消耗字数
+        if (completion) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                completion(YES, [self totalAvailableWords]);
+            });
+        }
+        return;
+    }
+    
     // 检查是否有足够字数
     if (![self hasEnoughWords:words]) {
         NSLog(@"[WordPack] ❌ 字数不足");
@@ -524,9 +553,14 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
 
 - (void)consumeFromPurchasedPacks:(NSInteger)words {
     NSArray *existingPurchases = [self localObjectForKey:kAIUAWordPackPurchases];
-    NSMutableArray *purchases = existingPurchases ? [existingPurchases mutableCopy] : nil;
-    if (!purchases || purchases.count == 0) {
+    if (!existingPurchases || existingPurchases.count == 0) {
         return;
+    }
+    
+    // 创建可变数组，并将每个字典转换为可变字典
+    NSMutableArray *purchases = [NSMutableArray array];
+    for (NSDictionary *purchase in existingPurchases) {
+        [purchases addObject:[purchase mutableCopy]];
     }
     
     NSInteger remainingToConsume = words;
@@ -559,12 +593,31 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
         }
     }
     
-    // 保存更新后的购买记录到Keychain
-    [self setLocalObject:purchases forKey:kAIUAWordPackPurchases];
+    // 保存更新后的购买记录到Keychain（转换为不可变数组）
+    [self setLocalObject:[purchases copy] forKey:kAIUAWordPackPurchases];
 }
 
 - (BOOL)hasEnoughWords:(NSInteger)words {
-    return [self totalAvailableWords] >= words;
+    // 检查是否处于试用会话中（已经使用了试用次数）
+    AIUATrialManager *trialManager = [AIUATrialManager sharedManager];
+    if ([trialManager isInTrialSession]) {
+        NSLog(@"[WordPack] 用户处于试用会话中，字数不受限制");
+        return YES;
+    }
+    
+    // 检查是否是VIP用户
+    BOOL isVIP = [[AIUAIAPManager sharedManager] isVIPMember];
+    if (isVIP) {
+        NSLog(@"[WordPack] VIP用户，字数不受限制");
+        return YES;
+    }
+    
+    // 正常检查字数
+    BOOL hasEnough = [self totalAvailableWords] >= words;
+    if (!hasEnough) {
+        NSLog(@"[WordPack] 字数不足，需要: %ld，可用: %ld", (long)words, (long)[self totalAvailableWords]);
+    }
+    return hasEnough;
 }
 
 #pragma mark - 字数统计
@@ -596,6 +649,8 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
 #pragma mark - iCloud同步
 
 - (BOOL)isiCloudAvailable {
+    BOOL synced = [self.iCloudStore synchronize];
+    NSLog(@"iCloud KVS synchronize: %@", synced ? @"YES" : @"NO");
     // 检查iCloud Key-Value Store是否可用
     // 如果设备未登录Apple ID或未开启iCloud Drive，会返回nil或无法访问
     NSFileManager *fileManager = [NSFileManager defaultManager];
@@ -644,24 +699,62 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
 }
 
 - (void)openiCloudSettings {
-    // 跳转到iOS设置页面的iCloud设置
-    NSURL *settingsURL = [NSURL URLWithString:UIApplicationOpenSettingsURLString];
+    // 注意：使用 App-Prefs:root=CASTLE 是私有 API，可能导致 App Store 审核被拒
+    // 因此使用安全的公开 API：跳转到应用设置页面，并提供详细的操作指引
     
-    if ([[UIApplication sharedApplication] canOpenURL:settingsURL]) {
-        if (@available(iOS 10.0, *)) {
-            [[UIApplication sharedApplication] openURL:settingsURL options:@{} completionHandler:^(BOOL success) {
-                if (success) {
-                    NSLog(@"[WordPack] 已跳转到设置页面");
-                } else {
-                    NSLog(@"[WordPack] 跳转设置页面失败");
-                }
-            }];
-        } else {
-            [[UIApplication sharedApplication] openURL:settingsURL];
-        }
+    // 先跳转到应用设置页面（这是公开的 API，审核安全）
+//    [self openAppSettings];
+    
+    // 然后显示详细的操作指引，引导用户手动进入 iCloud 设置
+    // 注意：这里延迟显示，确保设置页面已经打开
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [self showiCloudSettingsGuide];
+    });
+}
+
+- (void)openAppSettings {
+    // 使用公开的 API 跳转到应用自己的设置页面
+    // 这是 Apple 官方推荐的方式，审核安全
+    NSURL *appSettingsURL = [NSURL URLWithString:UIApplicationOpenSettingsURLString];
+    
+    if (@available(iOS 10.0, *)) {
+        [[UIApplication sharedApplication] openURL:appSettingsURL options:@{} completionHandler:^(BOOL success) {
+            if (success) {
+                NSLog(@"[WordPack] 已跳转到应用设置页面");
+            } else {
+                NSLog(@"[WordPack] 跳转应用设置页面失败");
+            }
+        }];
     } else {
-        NSLog(@"[WordPack] 无法打开设置页面");
+        [[UIApplication sharedApplication] openURL:appSettingsURL];
+        NSLog(@"[WordPack] 已跳转到应用设置页面");
     }
+}
+
+- (void)showiCloudSettingsGuide {
+    // 显示详细的操作指引，引导用户进入 iCloud 设置
+    UIViewController *topVC = [AIUAToolsManager topViewController];
+    if (!topVC) {
+        return;
+    }
+    
+    NSString *title = L(@"icloud_settings_guide_title") ?: @"如何开启iCloud";
+    NSString *message = L(@"icloud_settings_guide_message") ?: @"请按照以下步骤操作：\n\n1. 在设置页面，点击顶部的「Apple ID」\n2. 选择「iCloud」\n3. 确保「iCloud云盘」已开启\n\n完成后返回应用即可。";
+    NSString *confirmText = L(@"confirm") ?: @"确定";
+    
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:title
+                                                                   message:message
+                                                            preferredStyle:UIAlertControllerStyleAlert];
+    
+    UIAlertAction *confirmAction = [UIAlertAction actionWithTitle:confirmText
+                                                             style:UIAlertActionStyleDefault
+                                                           handler:nil];
+    [alert addAction:confirmAction];
+    
+    // 延迟显示，确保设置页面已经打开
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [topVC presentViewController:alert animated:YES completion:nil];
+    });
 }
 
 - (void)enableiCloudSync {

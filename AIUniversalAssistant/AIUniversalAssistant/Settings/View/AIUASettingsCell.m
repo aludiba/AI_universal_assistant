@@ -25,9 +25,9 @@
     
     self.backgroundColor = [UIColor clearColor];
     
-    // 容器视图
+    // 容器视图（适配暗黑模式）
     self.containerView = [[UIView alloc] init];
-    self.containerView.backgroundColor = [UIColor whiteColor];
+    self.containerView.backgroundColor = AIUA_CARD_BACKGROUND_COLOR;
     self.containerView.layer.cornerRadius = 12;
     self.containerView.layer.masksToBounds = YES;
     [self.contentView addSubview:self.containerView];
@@ -39,32 +39,32 @@
     self.iconImageView.layer.masksToBounds = YES;
     [self.containerView addSubview:self.iconImageView];
     
-    // 标题
+    // 标题（适配暗黑模式）
     self.titleLabel = [[UILabel alloc] init];
     self.titleLabel.font = AIUAUIFontSystem(16);
-    self.titleLabel.textColor = AIUAUIColorRGB(31, 35, 41);
+    self.titleLabel.textColor = AIUA_LABEL_COLOR;
     self.titleLabel.lineBreakMode = NSLineBreakByWordWrapping;
     self.titleLabel.numberOfLines = 0; // 多行展示，避免截断
     // 允许标题在水平方向被压缩
     [self.titleLabel setContentCompressionResistancePriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisHorizontal];
     [self.containerView addSubview:self.titleLabel];
     
-    // 副标题
+    // 副标题（适配暗黑模式）
     self.subtitleLabel = [[UILabel alloc] init];
     self.subtitleLabel.font = AIUAUIFontSystem(13);
-    self.subtitleLabel.textColor = AIUAUIColorRGB(156, 163, 175);
+    self.subtitleLabel.textColor = AIUA_SECONDARY_LABEL_COLOR;
     self.subtitleLabel.numberOfLines = 1;
     // 副标题优先完整展示
     [self.subtitleLabel setContentHuggingPriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
     [self.subtitleLabel setContentCompressionResistancePriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
     [self.containerView addSubview:self.subtitleLabel];
     
-    // 箭头
+    // 箭头（适配暗黑模式）
     UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:12
                                                                                          weight:UIImageSymbolWeightMedium];
     UIImage *arrowImage = [UIImage systemImageNamed:@"chevron.right" withConfiguration:config];
     self.arrowImageView = [[UIImageView alloc] initWithImage:arrowImage];
-    self.arrowImageView.tintColor = AIUAUIColorRGB(209, 213, 219);
+    self.arrowImageView.tintColor = AIUA_TERTIARY_LABEL_COLOR; // 使用系统三级标签颜色，自动适配暗黑模式
     [self.containerView addSubview:self.arrowImageView];
     
     [self setupConstraints];

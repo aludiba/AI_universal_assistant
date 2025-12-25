@@ -7,8 +7,9 @@
 
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
+#import "AIUAConfigID.h"
 
-#if __has_include(<BUAdSDK/BUAdSDK.h>)
+#if AIUA_AD_ENABLED && __has_include(<BUAdSDK/BUAdSDK.h>)
 #import <BUAdSDK/BUAdSDK.h>
 #endif
 
@@ -19,7 +20,7 @@ typedef void(^AIUARewardAdEarnedReward)(void);
 typedef void(^AIUARewardAdClosed)(void);
 typedef void(^AIUARewardAdFailed)(NSError *error);
 
-#if __has_include(<BUAdSDK/BUAdSDK.h>)
+#if AIUA_AD_ENABLED && __has_include(<BUAdSDK/BUAdSDK.h>)
 @interface AIUARewardAdManager : NSObject <BUNativeExpressRewardedVideoAdDelegate>
 #else
 @interface AIUARewardAdManager : NSObject

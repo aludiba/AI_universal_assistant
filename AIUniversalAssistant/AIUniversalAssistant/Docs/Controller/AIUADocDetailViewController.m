@@ -121,7 +121,7 @@
     }
     UIImage *ellipsisIcon = [UIImage systemImageNamed:@"ellipsis"];
     UIBarButtonItem *ellipsisButton = [[UIBarButtonItem alloc] initWithImage:ellipsisIcon style:UIBarButtonItemStylePlain target:self action:@selector(ellipsisTapped)];
-    ellipsisButton.tintColor = [UIColor grayColor];
+    ellipsisButton.tintColor = AIUA_LABEL_COLOR; // 使用系统标签颜色，自动适配暗黑模式
     self.navigationItem.rightBarButtonItem = ellipsisButton;
 }
 
@@ -144,7 +144,7 @@
     self.tableView.delegate = self;
     self.tableView.dataSource = self;
     self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
-    self.tableView.backgroundColor = [UIColor whiteColor];
+    self.tableView.backgroundColor = AIUA_BACK_COLOR; // 使用系统背景色，自动适配暗黑模式
     [self.view addSubview:self.tableView];
     
     [self.tableView mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -155,18 +155,21 @@
 
 - (void)setupHeaderView {
     self.headerView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, self.view.frame.size.width, 80)];
-    self.headerView.backgroundColor = [UIColor whiteColor];
+    self.headerView.backgroundColor = [UIColor clearColor];
     
     // 标题输入框
     self.titleTextView = [[UITextView alloc] init];
     self.titleTextView.font = AIUAUIFontBold(20);
-    self.titleTextView.textColor = [UIColor blackColor];
+    self.titleTextView.textColor = AIUA_LABEL_COLOR; // 使用系统标签颜色，自动适配暗黑模式
     self.titleTextView.backgroundColor = [UIColor clearColor];
-    self.titleTextView.scrollEnabled = YES;
+    self.titleTextView.scrollEnabled = NO; // 禁用滚动，限制为两行
     self.titleTextView.delegate = self;
     self.titleTextView.text = self.currentTitle;
     self.titleTextView.placeholder = L(@"enter_title");
-    self.titleTextView.placeholderColor = [UIColor lightGrayColor];
+    self.titleTextView.placeholderColor = AIUA_SECONDARY_LABEL_COLOR; // 使用系统二级标签颜色，自动适配暗黑模式
+    // 限制最大行数为2行
+    self.titleTextView.textContainer.maximumNumberOfLines = 2;
+    self.titleTextView.textContainer.lineBreakMode = NSLineBreakByTruncatingTail;
     [self.headerView addSubview:self.titleTextView];
     
     [self.titleTextView mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -176,16 +179,15 @@
         make.height.greaterThanOrEqualTo(@40);
     }];
     
-    // 分隔线
+    // 分隔线（靠底部）
     UIView *separator = [[UIView alloc] init];
     separator.backgroundColor = AIUA_DIVIDER_COLOR;
     [self.headerView addSubview:separator];
     
     [separator mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.titleTextView.mas_bottom).offset(8);
         make.left.right.equalTo(self.headerView);
+        make.bottom.equalTo(self.headerView);
         make.height.equalTo(@1);
-        make.bottom.equalTo(self.headerView).offset(-8);
     }];
     
     self.tableView.tableHeaderView = self.headerView;
@@ -194,19 +196,23 @@
 - (void)setupContentTextView  {
     self.contentTextView = [[UITextView alloc] init];
     self.contentTextView.font = AIUAUIFontSystem(16);
-    self.contentTextView.textColor = [UIColor darkGrayColor];
+    self.contentTextView.textColor = AIUA_LABEL_COLOR; // 使用系统标签颜色，自动适配暗黑模式
     self.contentTextView.backgroundColor = [UIColor clearColor];
     self.contentTextView.delegate = self;
     self.contentTextView.text = self.currentContent;
     self.contentTextView.placeholder = L(@"enter_main_text");
-    self.contentTextView.placeholderColor = [UIColor lightGrayColor];
+    self.contentTextView.placeholderColor = AIUA_SECONDARY_LABEL_COLOR; // 使用系统二级标签颜色，自动适配暗黑模式
     self.contentTextView.scrollEnabled = NO;
     self.ContentTextViewHeight = [self getContentTextViewHeight];
 }
 
 - (void)setupToolbarView {
     self.toolbarView = [[UIView alloc] init];
-    self.toolbarView.backgroundColor = AIUAUIColorSimplifyRGB(0.95, 0.95, 0.95);
+    // 使用动态颜色，适配暗黑模式
+    self.toolbarView.backgroundColor = AIUA_DynamicColor(
+        AIUAUIColorSimplifyRGB(0.95, 0.95, 0.95),  // 浅色模式：浅灰色
+        AIUAUIColorSimplifyRGB(0.15, 0.15, 0.15)   // 暗黑模式：深灰色
+    );
     [self.view addSubview:self.toolbarView];
     
     [self.toolbarView mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -238,13 +244,13 @@
         UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
         button.tag = i;
         [button setTitle:buttonTitles[i] forState:UIControlStateNormal];
-        [button setTitleColor:AIUAUIColorSimplifyRGB(0.2, 0.2, 0.2) forState:UIControlStateNormal];
+        [button setTitleColor:AIUA_LABEL_COLOR forState:UIControlStateNormal]; // 使用系统标签颜色，自动适配暗黑模式
         button.titleLabel.font = AIUAUIFontSystem(12);
         
         // 设置图标
         UIImage *icon = [UIImage systemImageNamed:buttonIcons[i]];
         [button setImage:icon forState:UIControlStateNormal];
-        button.tintColor = AIUAUIColorSimplifyRGB(0.2, 0.2, 0.2);
+        button.tintColor = AIUA_LABEL_COLOR; // 使用系统标签颜色，自动适配暗黑模式
         
         // 调整图片和文字的位置
         button.imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 4);
@@ -265,7 +271,11 @@
 
 - (void)setupStyleSelectionView {
     self.styleSelectionView = [[UIView alloc] init];
-    self.styleSelectionView.backgroundColor = AIUAUIColorSimplifyRGB(0.98, 0.98, 0.98);
+    // 使用动态颜色，适配暗黑模式
+    self.styleSelectionView.backgroundColor = AIUA_DynamicColor(
+        AIUAUIColorSimplifyRGB(0.98, 0.98, 0.98),  // 浅色模式：浅灰色
+        AIUAUIColorSimplifyRGB(0.15, 0.15, 0.15)   // 暗黑模式：深灰色
+    );
     self.styleSelectionView.hidden = YES;
     [self.view addSubview:self.styleSelectionView];
     
@@ -301,7 +311,7 @@
     // 添加标题
     UILabel *titleLabel = [[UILabel alloc] init];
     titleLabel.font = AIUAUIFontSystem(14);
-    titleLabel.textColor = [UIColor darkGrayColor];
+    titleLabel.textColor = AIUA_LABEL_COLOR; // 使用系统标签颜色，自动适配暗黑模式
     [titleContainer addSubview:titleLabel];
     
     [titleLabel mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -335,9 +345,9 @@
     for (NSString *style in self.selectionStyles) {
         UIButton *styleButton = [UIButton buttonWithType:UIButtonTypeSystem];
         [styleButton setTitle:style forState:UIControlStateNormal];
-        [styleButton setTitleColor:[UIColor darkGrayColor] forState:UIControlStateNormal];
+        [styleButton setTitleColor:AIUA_LABEL_COLOR forState:UIControlStateNormal]; // 使用系统标签颜色，自动适配暗黑模式
         styleButton.titleLabel.font = AIUAUIFontSystem(14);
-        styleButton.backgroundColor = [UIColor whiteColor];
+        styleButton.backgroundColor = AIUA_CARD_BACKGROUND_COLOR; // 使用系统卡片背景色，自动适配暗黑模式
         styleButton.layer.cornerRadius = 6;
         styleButton.layer.borderWidth = 1;
         styleButton.layer.borderColor = AIUA_DIVIDER_COLOR.CGColor;
@@ -370,7 +380,11 @@
 
 - (void)setupGenerationView {
     self.generationView = [[UIView alloc] init];
-    self.generationView.backgroundColor = AIUAUIColorSimplifyRGB(0.98, 0.98, 0.98);
+    // 使用动态颜色，适配暗黑模式
+    self.generationView.backgroundColor = AIUA_DynamicColor(
+        AIUAUIColorSimplifyRGB(0.98, 0.98, 0.98),  // 浅色模式：浅灰色
+        AIUAUIColorSimplifyRGB(0.15, 0.15, 0.15)   // 暗黑模式：深灰色
+    );
     self.generationView.hidden = YES;
     [self.view addSubview:self.generationView];
     
@@ -380,12 +394,16 @@
         make.height.equalTo(@200);
     }];
     
-    // 停止生成按钮
+    // 停止生成按钮（适配暗黑模式）
     UIButtonConfiguration *config = [UIButtonConfiguration plainButtonConfiguration];
     config.image = [self stopButtonImage];
     config.imagePadding = 4;
     config.baseForegroundColor = AIUAUIColorRGB(239, 68, 68);
-    config.background.backgroundColor = AIUAUIColorRGB(254, 242, 242);
+    // 使用动态颜色，适配暗黑模式
+    config.background.backgroundColor = AIUA_DynamicColor(
+        AIUAUIColorRGB(254, 242, 242),  // 浅色模式：浅红色
+        AIUAUIColorRGB(75, 5, 5)         // 暗黑模式：深红色
+    );
     config.contentInsets = NSDirectionalEdgeInsetsMake(8, 16, 8, 16);
     config.cornerStyle = UIButtonConfigurationCornerStyleMedium;
 
@@ -393,7 +411,11 @@
     stopButton.configuration = config;
     stopButton.layer.cornerRadius = 6;
     stopButton.layer.borderWidth = 1;
-    stopButton.layer.borderColor = AIUAUIColorRGB(254, 202, 202).CGColor;
+    // 使用动态颜色，适配暗黑模式
+    stopButton.layer.borderColor = AIUA_DynamicColor(
+        AIUAUIColorRGB(254, 202, 202),  // 浅色模式：浅红色边框
+        AIUAUIColorRGB(120, 20, 20)     // 暗黑模式：深红色边框
+    ).CGColor;
     stopButton.hidden = YES;
     [stopButton addTarget:self action:@selector(stopButtonTapped) forControlEvents:UIControlEventTouchUpInside];
     self.stopButton = stopButton;
@@ -434,7 +456,7 @@
     UILabel *titleLabel = [[UILabel alloc] init];
     titleLabel.text = L(@"generated_content");
     titleLabel.font = AIUAUIFontSystem(14);
-    titleLabel.textColor = [UIColor darkGrayColor];
+    titleLabel.textColor = AIUA_LABEL_COLOR; // 使用系统标签颜色，自动适配暗黑模式
     [titleContainer addSubview:titleLabel];
     
     [titleLabel mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -446,8 +468,8 @@
     // 生成内容文本框
     self.generationTextView = [[UITextView alloc] init];
     self.generationTextView.font = AIUAUIFontSystem(14);
-    self.generationTextView.textColor = [UIColor darkGrayColor];
-    self.generationTextView.backgroundColor = [UIColor whiteColor];
+    self.generationTextView.textColor = AIUA_LABEL_COLOR; // 使用系统标签颜色，自动适配暗黑模式
+    self.generationTextView.backgroundColor = AIUA_CARD_BACKGROUND_COLOR; // 使用系统卡片背景色，自动适配暗黑模式
     self.generationTextView.layer.cornerRadius = 6;
     self.generationTextView.layer.borderWidth = 1;
     self.generationTextView.layer.borderColor = AIUA_DIVIDER_COLOR.CGColor;
@@ -489,9 +511,9 @@
         for (NSString *length in lengths) {
             UIButton *lengthButton = [UIButton buttonWithType:UIButtonTypeSystem];
             [lengthButton setTitle:length forState:UIControlStateNormal];
-            [lengthButton setTitleColor:[UIColor darkGrayColor] forState:UIControlStateNormal];
+            [lengthButton setTitleColor:AIUA_LABEL_COLOR forState:UIControlStateNormal]; // 使用系统标签颜色，自动适配暗黑模式
             lengthButton.titleLabel.font = AIUAUIFontSystem(14);
-            lengthButton.backgroundColor = [UIColor whiteColor];
+            lengthButton.backgroundColor = AIUA_CARD_BACKGROUND_COLOR; // 使用系统卡片背景色，自动适配暗黑模式
             lengthButton.layer.cornerRadius = 6;
             lengthButton.layer.borderWidth = 1;
             lengthButton.layer.borderColor = AIUA_DIVIDER_COLOR.CGColor;
@@ -526,9 +548,9 @@
         for (NSString *language in languages) {
             UIButton *languageButton = [UIButton buttonWithType:UIButtonTypeSystem];
             [languageButton setTitle:language forState:UIControlStateNormal];
-            [languageButton setTitleColor:[UIColor darkGrayColor] forState:UIControlStateNormal];
+            [languageButton setTitleColor:AIUA_LABEL_COLOR forState:UIControlStateNormal]; // 使用系统标签颜色，自动适配暗黑模式
             languageButton.titleLabel.font = AIUAUIFontSystem(14);
-            languageButton.backgroundColor = [UIColor whiteColor];
+            languageButton.backgroundColor = AIUA_CARD_BACKGROUND_COLOR; // 使用系统卡片背景色，自动适配暗黑模式
             languageButton.layer.cornerRadius = 6;
             languageButton.layer.borderWidth = 1;
             languageButton.layer.borderColor = AIUA_DIVIDER_COLOR.CGColor;
@@ -567,9 +589,9 @@
         for (NSString *style in self.selectionStyles) {
             UIButton *styleButton = [UIButton buttonWithType:UIButtonTypeSystem];
             [styleButton setTitle:style forState:UIControlStateNormal];
-            [styleButton setTitleColor:[UIColor darkGrayColor] forState:UIControlStateNormal];
+            [styleButton setTitleColor:AIUA_LABEL_COLOR forState:UIControlStateNormal]; // 使用系统标签颜色，自动适配暗黑模式
             styleButton.titleLabel.font = AIUAUIFontSystem(14);
-            styleButton.backgroundColor = [UIColor whiteColor];
+            styleButton.backgroundColor = AIUA_CARD_BACKGROUND_COLOR; // 使用系统卡片背景色，自动适配暗黑模式
             styleButton.layer.cornerRadius = 6;
             styleButton.layer.borderWidth = 1;
             styleButton.layer.borderColor = AIUA_DIVIDER_COLOR.CGColor;
@@ -712,6 +734,41 @@
 
 #pragma mark - UITextViewDelegate
 
+- (BOOL)textView:(UITextView *)textView shouldChangeTextInRange:(NSRange)range replacementText:(NSString *)text {
+    // 限制标题输入框最多两行
+    if (textView == self.titleTextView) {
+        // 如果输入的是换行符，检查是否已经有两行
+        if ([text isEqualToString:@"\n"]) {
+            // 计算当前文本的行数（通过换行符数量）
+            NSUInteger lineCount = [[textView.text componentsSeparatedByString:@"\n"] count];
+            if (lineCount >= 2) {
+                return NO; // 已经两行，禁止输入换行符
+            }
+        }
+        
+        // 计算输入后的文本
+        NSString *newText = [textView.text stringByReplacingCharactersInRange:range withString:text];
+        
+        // 使用 sizeThatFits 计算新文本的高度
+        CGSize textSize = [newText boundingRectWithSize:CGSizeMake(textView.frame.size.width - textView.textContainerInset.left - textView.textContainerInset.right, CGFLOAT_MAX)
+                                                 options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading
+                                              attributes:@{NSFontAttributeName: textView.font}
+                                                 context:nil].size;
+        
+        // 计算单行高度
+        CGFloat singleLineHeight = textView.font.lineHeight;
+        // 两行的最大高度（考虑行间距）
+        CGFloat maxHeight = singleLineHeight * 2 + textView.font.leading;
+        
+        // 如果新文本高度超过两行，禁止输入
+        if (textSize.height > maxHeight) {
+            return NO;
+        }
+    }
+    
+    return YES;
+}
+
 - (void)textViewDidChange:(UITextView *)textView {
     self.hasUserEdited = YES;
     
@@ -838,7 +895,8 @@
     NSString *content = document[@"content"] ?: @"";
     if (content.length > 0) {
         [UIPasteboard generalPasteboard].string = [NSString stringWithFormat:@"%@\n%@", document[@"title"] ?: @"", content];
-        [AIUAMBProgressManager showText:nil withText:L(@"copied_to_clipboard") andSubText:nil isBottom:YES backColor:[UIColor whiteColor]];
+        // 使用动态颜色，适配暗黑模式
+        [AIUAMBProgressManager showText:nil withText:L(@"copied_to_clipboard") andSubText:nil isBottom:NO backColor:AIUA_DynamicColor([UIColor whiteColor], [UIColor blackColor])];
     } else {
         [AIUAAlertHelper showAlertWithTitle:L(@"prompt")
                                    message:L(@"please_enter_content_first")
@@ -871,9 +929,11 @@
         if (success) {
             strongself.isDeleteDocumentSuccess = YES;
             [strongself.navigationController popViewControllerAnimated:YES];
-            [AIUAMBProgressManager showText:nil withText:L(@"deleted_success") andSubText:nil isBottom:YES backColor:[UIColor whiteColor]];
+            // 使用动态颜色，适配暗黑模式
+            [AIUAMBProgressManager showText:nil withText:L(@"deleted_success") andSubText:nil isBottom:NO backColor:AIUA_DynamicColor([UIColor whiteColor], [UIColor blackColor])];
         } else {
-            [AIUAMBProgressManager showText:nil withText:L(@"delete_failed") andSubText:nil isBottom:YES backColor:[UIColor whiteColor]];
+            // 使用动态颜色，适配暗黑模式
+            [AIUAMBProgressManager showText:nil withText:L(@"delete_failed") andSubText:nil isBottom:NO backColor:AIUA_DynamicColor([UIColor whiteColor], [UIColor blackColor])];
         }
     }];
 }
@@ -939,8 +999,8 @@
                 [button setTitleColor:[UIColor systemBlueColor] forState:UIControlStateNormal];
                 button.tintColor = [UIColor systemBlueColor];
             } else {
-                [button setTitleColor:AIUAUIColorSimplifyRGB(0.2, 0.2, 0.2) forState:UIControlStateNormal];
-                button.tintColor = AIUAUIColorSimplifyRGB(0.2, 0.2, 0.2);
+                [button setTitleColor:AIUA_LABEL_COLOR forState:UIControlStateNormal]; // 使用系统标签颜色，自动适配暗黑模式
+                button.tintColor = AIUA_LABEL_COLOR; // 使用系统标签颜色，自动适配暗黑模式
             }
         }
         
@@ -965,8 +1025,8 @@
                 button.backgroundColor = [UIColor systemBlueColor];
                 [button setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
             } else {
-                button.backgroundColor = [UIColor whiteColor];
-                [button setTitleColor:[UIColor darkGrayColor] forState:UIControlStateNormal];
+                button.backgroundColor = AIUA_CARD_BACKGROUND_COLOR; // 使用系统卡片背景色，自动适配暗黑模式
+                [button setTitleColor:AIUA_LABEL_COLOR forState:UIControlStateNormal]; // 使用系统标签颜色，自动适配暗黑模式
             }
         }
     }
@@ -983,8 +1043,8 @@
                 button.backgroundColor = [UIColor systemBlueColor];
                 [button setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
             } else {
-                button.backgroundColor = [UIColor whiteColor];
-                [button setTitleColor:[UIColor darkGrayColor] forState:UIControlStateNormal];
+                button.backgroundColor = AIUA_CARD_BACKGROUND_COLOR; // 使用系统卡片背景色，自动适配暗黑模式
+                [button setTitleColor:AIUA_LABEL_COLOR forState:UIControlStateNormal]; // 使用系统标签颜色，自动适配暗黑模式
             }
         }
     }
@@ -1001,8 +1061,8 @@
                 button.backgroundColor = [UIColor systemBlueColor];
                 [button setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
             } else {
-                button.backgroundColor = [UIColor whiteColor];
-                [button setTitleColor:[UIColor darkGrayColor] forState:UIControlStateNormal];
+                button.backgroundColor = AIUA_CARD_BACKGROUND_COLOR; // 使用系统卡片背景色，自动适配暗黑模式
+                [button setTitleColor:AIUA_LABEL_COLOR forState:UIControlStateNormal]; // 使用系统标签颜色，自动适配暗黑模式
             }
         }
     }
@@ -1063,8 +1123,8 @@
         [self.view layoutIfNeeded];
         for (int i = 0; i < self.toolbarButtonsArray.count; i++) {
             UIButton *button = self.toolbarButtonsArray[i];
-            [button setTitleColor:AIUAUIColorSimplifyRGB(0.2, 0.2, 0.2) forState:UIControlStateNormal];
-            button.tintColor = AIUAUIColorSimplifyRGB(0.2, 0.2, 0.2);
+            [button setTitleColor:AIUA_LABEL_COLOR forState:UIControlStateNormal]; // 使用系统标签颜色，自动适配暗黑模式
+            button.tintColor = AIUA_LABEL_COLOR; // 使用系统标签颜色，自动适配暗黑模式
         }
     }];
 }

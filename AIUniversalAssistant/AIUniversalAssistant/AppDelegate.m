@@ -11,9 +11,10 @@
 #import "AIUAWordPackManager.h"
 #import "AIUASplashViewController.h"
 #import "AIUAToolsManager.h"
-
-// 判断是否已接入穿山甲SDK
-#if __has_include(<BUAdSDK/BUAdSDK.h>)
+#import "AIUAKeychainManager.h"
+#import "AIUAConfigID.h"
+// 判断是否已接入穿山甲SDK（需要同时检查广告开关和SDK是否存在）
+#if AIUA_AD_ENABLED && __has_include(<BUAdSDK/BUAdSDK.h>)
 #import <BUAdSDK/BUAdSDK.h>
 #define HAS_PANGLE_SDK 1
 #else
@@ -31,7 +32,7 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     NSLog(@"========== 应用启动开始 ==========");
-    
+    [[AIUAKeychainManager sharedManager] removeAllObjects];
     // 越狱检测
     if ([AIUAIAPManager isJailbroken]) {
         NSLog(@"[Security] 检测到越狱设备，应用将退出");
@@ -88,6 +89,11 @@
         NSLog(@"[启动] 跳过广告，直接进入主界面");
         self.window.rootViewController = [[AIUATabBarController alloc] init];
         [self.window makeKeyAndVisible];
+        
+        // 没有开屏广告时，延迟显示iCloud提醒（在首页弹出）
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [self showiCloudAlertAfterSplashAd];
+        });
     }
     
     // 记录应用启动次数
@@ -155,18 +161,32 @@
         self.window.rootViewController = [[AIUATabBarController alloc] init];
         [self.window makeKeyAndVisible];
         NSLog(@"[主界面] 已展示");
+        
+        // 开屏广告关闭后，延迟显示iCloud提醒（在首页弹出）
+        [self showiCloudAlertAfterSplashAd];
     });
 }
 
-- (void)applicationDidBecomeActive:(UIApplication *)application {
-    // 这会从本地收据中提取订阅信息，即使用户重新下载或更换设备
-    [[AIUAIAPManager sharedManager] checkSubscriptionStatus];
-    
-    // 检查iCloud可用性并提示用户（如果需要）
-    // 只在应用激活时提示一次，避免频繁打扰用户
-    static BOOL hasShowniCloudAlert = NO;
-    if (!hasShowniCloudAlert) {
+- (void)showiCloudAlertAfterSplashAd {
+    // 延迟1秒显示，确保主界面已经完全加载
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        // 确保当前显示的是主界面（TabBarController）
+        UIViewController *rootVC = self.window.rootViewController;
+        if (![rootVC isKindOfClass:[AIUATabBarController class]]) {
+            NSLog(@"[iCloud提醒] 当前不是主界面，跳过显示");
+            return;
+        }
+        
+        // 获取当前显示的页面（应该是首页）
         UIViewController *topVC = [AIUAToolsManager topViewController];
+        if (!topVC) {
+            NSLog(@"[iCloud提醒] 无法获取顶层视图控制器，跳过显示");
+            return;
+        }
+        
+        // 检查iCloud可用性并提示用户
+        static BOOL hasShowniCloudAlert = NO;
+        if (!hasShowniCloudAlert) {
         BOOL isAvailable = [[AIUAWordPackManager sharedManager] checkiCloudAvailabilityAndPrompt:topVC showAlert:YES];
         if (!isAvailable) {
             hasShowniCloudAlert = YES;
@@ -176,6 +196,15 @@
             });
         }
     }
+    });
+}
+
+- (void)applicationDidBecomeActive:(UIApplication *)application {
+    // 这会从本地收据中提取订阅信息，即使用户重新下载或更换设备
+    [[AIUAIAPManager sharedManager] checkSubscriptionStatus];
+    
+    // 注意：iCloud提醒已移至开屏广告关闭后的首页显示（showiCloudAlertAfterSplashAd）
+    // 这里不再显示iCloud提醒，避免在开屏广告之前弹出
     
     // 启用iCloud同步
     [[AIUAWordPackManager sharedManager] enableiCloudSync];

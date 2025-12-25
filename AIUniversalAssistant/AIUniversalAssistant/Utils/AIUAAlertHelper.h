@@ -30,6 +30,13 @@ typedef void(^AIUAAlertActionBlock)(void);
                          inController:(nullable UIViewController *)controller
                          actionHandler:(nullable  void(^)(NSString *actionTitle))handler;
 
+/**
+ * 显示调试错误弹窗（仅在 AIUA_SHOW_DEBUG_ERROR_ALERTS 为1时显示）
+ * @param errorMessage 错误信息
+ * @param context 错误上下文（可选，用于标识错误来源）
+ */
++ (void)showDebugErrorAlert:(NSString *)errorMessage context:(nullable NSString *)context;
+
 @end
 
 NS_ASSUME_NONNULL_END

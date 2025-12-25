@@ -17,27 +17,27 @@
     self.backgroundColor = [UIColor clearColor];
     self.contentView.backgroundColor = [UIColor clearColor];
     
-    // 容器视图
+    // 容器视图（适配暗黑模式）
     self.containerView = [[UIView alloc] init];
-    self.containerView.backgroundColor = [UIColor whiteColor];
+    self.containerView.backgroundColor = [UIColor clearColor];
     self.containerView.layer.cornerRadius = 12;
     self.containerView.layer.masksToBounds = YES;
     self.containerView.layer.borderWidth = 1;
-    self.containerView.layer.borderColor = AIUAUIColorRGB(229, 231, 235).CGColor;
+    self.containerView.layer.borderColor = AIUA_DIVIDER_COLOR.CGColor; // 使用系统分隔线颜色，自动适配暗黑模式
     [self.contentView addSubview:self.containerView];
     
-    // 图标
+    // 图标（适配暗黑模式）
     self.iconImageView = [[UIImageView alloc] init];
     self.iconImageView.image = [UIImage systemImageNamed:@"plus"];
-    self.iconImageView.tintColor = AIUAUIColorRGB(157, 161, 167);
+    self.iconImageView.tintColor = AIUA_SECONDARY_LABEL_COLOR; // 使用系统二级标签颜色，自动适配暗黑模式
     self.iconImageView.contentMode = UIViewContentModeScaleAspectFit;
     [self.containerView addSubview:self.iconImageView];
     
-    // 标题
+    // 标题（适配暗黑模式）
     self.titleLabel = [[UILabel alloc] init];
     self.titleLabel.text = L(@"new_document");
     self.titleLabel.font = AIUAUIFontSystem(16);
-    self.titleLabel.textColor = AIUAUIColorRGB(162, 166, 177);
+    self.titleLabel.textColor = AIUA_SECONDARY_LABEL_COLOR; // 使用系统二级标签颜色，自动适配暗黑模式
     self.titleLabel.textAlignment = NSTextAlignmentCenter;
     [self.containerView addSubview:self.titleLabel];
     

@@ -97,30 +97,30 @@
     self.scrollView.showsVerticalScrollIndicator = NO;
     [self.view addSubview:self.scrollView];
     
-    // 内容视图
+    // 内容视图（适配暗黑模式）
     self.contentView = [[UIView alloc] init];
-    self.contentView.backgroundColor = [UIColor whiteColor];
+    self.contentView.backgroundColor = AIUA_CARD_BACKGROUND_COLOR; // 使用系统卡片背景色，自动适配暗黑模式
     self.contentView.layer.cornerRadius = 12;
     self.contentView.layer.masksToBounds = YES;
     [self.scrollView addSubview:self.contentView];
     
-    // 标题标签
+    // 标题标签（适配暗黑模式）
     self.titleLabel = [[UILabel alloc] init];
     self.titleLabel.font = AIUAUIFontSystem(20);
-    self.titleLabel.textColor = AIUAUIColorRGB(34, 34, 34);
+    self.titleLabel.textColor = AIUA_LABEL_COLOR; // 使用系统标签颜色，自动适配暗黑模式
     self.titleLabel.numberOfLines = 0;
     self.titleLabel.textAlignment = NSTextAlignmentCenter;
     [self.contentView addSubview:self.titleLabel];
     
-    // 分隔线
+    // 分隔线（适配暗黑模式）
     self.separatorLine = [[UIView alloc] init];
-    self.separatorLine.backgroundColor = AIUAUIColorRGB(229, 231, 235);
+    self.separatorLine.backgroundColor = AIUA_DIVIDER_COLOR; // 使用系统分隔线颜色，自动适配暗黑模式
     [self.contentView addSubview:self.separatorLine];
     
-    // 内容TextView - 使用UITextView支持富文本
+    // 内容TextView - 使用UITextView支持富文本（适配暗黑模式）
     self.contentTextView = [[UITextView alloc] init];
     self.contentTextView.font = AIUAUIFontSystem(16);
-    self.contentTextView.textColor = AIUAUIColorRGB(68, 68, 68);
+    self.contentTextView.textColor = AIUA_LABEL_COLOR; // 使用系统标签颜色，自动适配暗黑模式
     self.contentTextView.editable = NO; // 不可编辑，只用于显示
     self.contentTextView.scrollEnabled = NO; // 禁用自身滚动，使用外部scrollView
     self.contentTextView.backgroundColor = [UIColor clearColor];
@@ -147,10 +147,15 @@
     [stopButton addTarget:self action:@selector(stopButtonTapped) forControlEvents:UIControlEventTouchUpInside];
     self.stopButton = stopButton;
     
-    // 底部按钮容器
+    // 底部按钮容器（适配暗黑模式）
     self.bottomButtonContainer = [[UIView alloc] init];
-    self.bottomButtonContainer.backgroundColor = [UIColor whiteColor];
-    self.bottomButtonContainer.layer.shadowColor = [UIColor blackColor].CGColor;
+    self.bottomButtonContainer.backgroundColor = AIUA_CARD_BACKGROUND_COLOR; // 使用系统卡片背景色，自动适配暗黑模式
+    // 阴影颜色使用动态颜色，适配暗黑模式
+    UIColor *shadowColor = AIUA_DynamicColor(
+        [[UIColor blackColor] colorWithAlphaComponent:0.1],  // 浅色模式：黑色半透明
+        [[UIColor blackColor] colorWithAlphaComponent:0.3]   // 暗黑模式：黑色更不透明
+    );
+    self.bottomButtonContainer.layer.shadowColor = shadowColor.CGColor;
     self.bottomButtonContainer.layer.shadowOffset = CGSizeMake(0, -2);
     self.bottomButtonContainer.layer.shadowOpacity = 0.1;
     self.bottomButtonContainer.layer.shadowRadius = 4;
@@ -545,15 +550,18 @@
     // 生成新的ID
     self.currentWritingID = [[AIUADataManager sharedManager] generateUniqueID];
     
-    self.currentWritingDocParam = @{
-        @"id": self.currentWritingID,
-        @"title": self.finalTitle ?: @"",
-        @"content": self.finalContent ?: @"",
-        @"prompt": self.prompt ?: @"",
-        @"createTime": [[AIUADataManager sharedManager] currentTimeString],
-        @"type": self.type ?: @"",
-        @"wordCount": @(self.finalContent.length),
-    };
+    // 使用可变字典，避免在流式生成过程中出现不可变字典的问题
+    NSMutableDictionary *writingRecord = [NSMutableDictionary dictionary];
+    writingRecord[@"id"] = self.currentWritingID;
+    writingRecord[@"title"] = self.finalTitle ?: @"";
+    writingRecord[@"content"] = self.finalContent ?: @"";
+    writingRecord[@"prompt"] = self.prompt ?: @"";
+    writingRecord[@"createTime"] = [[AIUADataManager sharedManager] currentTimeString];
+    writingRecord[@"type"] = self.type ?: @"";
+    writingRecord[@"wordCount"] = @(self.finalContent.length);
+    
+    // 保存不可变副本，避免后续被修改
+    self.currentWritingDocParam = [writingRecord copy];
     
     [[AIUADataManager sharedManager] saveWritingToPlist:self.currentWritingDocParam];
 }
@@ -604,7 +612,28 @@
 // 智能编辑
 - (void)editButtonTapped {
     // 跳转到编辑页面
-    AIUADocDetailViewController *docDetailVC = [[AIUADocDetailViewController alloc] initWithWritingItem:self.currentWritingDocParam];
+    // 确保 currentWritingDocParam 存在，如果不存在则创建一个
+    if (!self.currentWritingDocParam) {
+        // 如果还没有保存过，先保存
+        if (self.finalTitle && self.finalContent) {
+            [self saveWritingToPlist];
+        } else {
+            // 如果内容为空，创建一个临时字典
+            NSMutableDictionary *tempDict = [NSMutableDictionary dictionary];
+            tempDict[@"id"] = self.currentWritingID ?: [[AIUADataManager sharedManager] generateUniqueID];
+            tempDict[@"title"] = self.titleLabel.text ?: @"";
+            tempDict[@"content"] = self.contentTextView.text ?: @"";
+            tempDict[@"prompt"] = self.prompt ?: @"";
+            tempDict[@"createTime"] = [[AIUADataManager sharedManager] currentTimeString];
+            tempDict[@"type"] = self.type ?: @"";
+            tempDict[@"wordCount"] = @(self.contentTextView.text.length);
+            self.currentWritingDocParam = [tempDict copy];
+        }
+    }
+    
+    // 确保传递的是不可变字典的副本，避免在流式生成过程中被修改
+    NSDictionary *safeDict = [self.currentWritingDocParam copy];
+    AIUADocDetailViewController *docDetailVC = [[AIUADocDetailViewController alloc] initWithWritingItem:safeDict];
     [self.navigationController pushViewController:docDetailVC animated:YES];
 }
 
@@ -617,7 +646,7 @@
     
     // 重置UI状态
     [self clearCurrentContent];
-    self.contentTextView.textColor = AIUAUIColorRGB(68, 68, 68);
+    self.contentTextView.textColor = AIUA_LABEL_COLOR; // 使用系统标签颜色，自动适配暗黑模式
     
     // 重新开始写作
     [self startWriting];
@@ -626,7 +655,7 @@
 #pragma mark - 工具方法
 
 - (void)showToastMessage:(NSString *)message {
-    [AIUAMBProgressManager showText:nil withText:message andSubText:nil isBottom:YES backColor:[UIColor grayColor]];
+    [AIUAMBProgressManager showText:nil withText:message andSubText:nil isBottom:NO backColor:[UIColor grayColor]];
 }
 
 #pragma mark - 内存管理

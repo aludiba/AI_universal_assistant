@@ -11,13 +11,14 @@
 #import "AIUAIAPManager.h"
 #import "AIUAMBProgressManager.h"
 #import "AIUATextViewController.h"
+#import "AIUAToolsManager.h"
 #import <Masonry/Masonry.h>
 
 typedef NS_ENUM(NSInteger, AIUASubscriptionPlan) {
-    AIUASubscriptionPlanLifetimeBenefits = 0,
-    AIUASubscriptionPlanYearly,
-    AIUASubscriptionPlanMonthly,
-    AIUASubscriptionPlanWeekly
+    AIUASubscriptionPlanLifetimeBenefits = 0, // 买断
+    AIUASubscriptionPlanYearly, // 一年
+    AIUASubscriptionPlanMonthly, // 一个月
+    AIUASubscriptionPlanWeekly // 一周
 };
 
 typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
@@ -78,6 +79,8 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
                 [self updateProductPrices:products];
             } else {
                 NSLog(@"[IAP] 获取产品失败: %@", errorMessage);
+                // 显示调试错误弹窗
+                [AIUAAlertHelper showDebugErrorAlert:errorMessage context:@"获取会员产品失败"];
                 // 在测试环境下，可能无法获取产品，这里不弹错误提示
             }
         });
@@ -125,7 +128,7 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
 - (void)setupUI {
     [super setupUI];
     
-    self.view.backgroundColor = AIUAUIColorRGB(250, 251, 252);
+    self.view.backgroundColor = AIUA_BACK_COLOR; // 使用系统背景色，自动适配暗黑模式
     
     // 导航栏
     [self setupNavigationBar];
@@ -229,7 +232,7 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
     UILabel *titleLabel = [[UILabel alloc] init];
     titleLabel.text = L(@"activate_membership");
     titleLabel.font = AIUAUIFontBold(22);
-    titleLabel.textColor = AIUAUIColorRGB(17, 24, 39);
+    titleLabel.textColor = AIUA_LABEL_COLOR; // 使用系统标签颜色，自动适配暗黑模式
     [titleContainer addSubview:titleLabel];
     
     // VIP徽章
@@ -253,7 +256,7 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
     UILabel *subtitleLabel = [[UILabel alloc] init];
     subtitleLabel.text = L(@"unlock_all_features");
     subtitleLabel.font = AIUAUIFontSystem(13);
-    subtitleLabel.textColor = AIUAUIColorRGB(107, 114, 128);
+    subtitleLabel.textColor = AIUA_SECONDARY_LABEL_COLOR; // 使用系统二级标签颜色，自动适配暗黑模式
     subtitleLabel.numberOfLines = 0;
     [headerView addSubview:subtitleLabel];
     
@@ -302,7 +305,7 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
     UILabel *titleLabel = [[UILabel alloc] init];
     titleLabel.text = L(@"member_benefits");
     titleLabel.font = AIUAUIFontBold(18);
-    titleLabel.textColor = AIUAUIColorRGB(17, 24, 39);
+    titleLabel.textColor = AIUA_LABEL_COLOR; // 使用系统标签颜色，自动适配暗黑模式
     [headerView addSubview:titleLabel];
     
     [titleLabel mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -317,13 +320,13 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
 - (UIView *)createFooterView {
     CGFloat footerHeight = 300;
     UIView *footerView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, AIUAScreenWidth, footerHeight)];
-    footerView.backgroundColor = [UIColor whiteColor];
+    footerView.backgroundColor = AIUA_BACK_COLOR; // 使用系统背景色，自动适配暗黑模式
     
     // 订阅方案标题
     UILabel *plansTitleLabel = [[UILabel alloc] init];
     plansTitleLabel.text = L(@"select_plan");
     plansTitleLabel.font = AIUAUIFontBold(18);
-    plansTitleLabel.textColor = AIUAUIColorRGB(17, 24, 39);
+    plansTitleLabel.textColor = AIUA_LABEL_COLOR; // 使用系统标签颜色，自动适配暗黑模式
     [footerView addSubview:plansTitleLabel];
     
     [plansTitleLabel mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -348,7 +351,7 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
         @{@"type": @(AIUASubscriptionPlanLifetimeBenefits), @"name": L(@"lifetime_member"), @"price": @"198", @"desc": L(@"lifetime_desc"), @"badge": L(@"recommended")},
         @{@"type": @(AIUASubscriptionPlanYearly), @"name": L(@"yearly_plan"), @"price": @"168", @"desc": L(@"yearly_desc"), @"badge": @""},
         @{@"type": @(AIUASubscriptionPlanMonthly), @"name": L(@"monthly_plan"), @"price": @"28", @"desc": L(@"monthly_desc"), @"badge": @""},
-        @{@"type": @(AIUASubscriptionPlanWeekly), @"name": L(@"weekly_plan"), @"price": @"6.88", @"desc": L(@"weekly_desc"), @"badge": @""}
+        @{@"type": @(AIUASubscriptionPlanWeekly), @"name": L(@"weekly_plan"), @"price": @"6", @"desc": L(@"weekly_desc"), @"badge": @""}
     ];
     
     self.planCards = [NSMutableArray array];
@@ -378,7 +381,7 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
     UILabel *autoRenewLabel = [[UILabel alloc] init];
     autoRenewLabel.text = L(@"auto_renew_notice");
     autoRenewLabel.font = AIUAUIFontSystem(11);
-    autoRenewLabel.textColor = AIUAUIColorRGB(156, 163, 175);
+    autoRenewLabel.textColor = AIUA_SECONDARY_LABEL_COLOR; // 使用系统二级标签颜色，自动适配暗黑模式
     autoRenewLabel.textAlignment = NSTextAlignmentCenter;
     [footerView addSubview:autoRenewLabel];
     
@@ -398,7 +401,7 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
     
     UILabel *agreementLabel = [[UILabel alloc] init];
     agreementLabel.font = AIUAUIFontSystem(11);
-    agreementLabel.textColor = AIUAUIColorRGB(107, 114, 128);
+    agreementLabel.textColor = AIUA_SECONDARY_LABEL_COLOR; // 使用系统二级标签颜色，自动适配暗黑模式
     agreementLabel.numberOfLines = 2;
     
     NSString *agreementText = L(@"agree_to_terms");
@@ -442,15 +445,16 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
         make.centerX.equalTo(footerView);
     }];
     
-    [self.agreeCheckbox mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.top.equalTo(agreementContainer);
-        make.width.height.equalTo(@18);
-    }];
-    
     [agreementLabel mas_makeConstraints:^(MASConstraintMaker *make) {
         make.left.equalTo(self.agreeCheckbox.mas_right).offset(6);
         make.top.right.bottom.equalTo(agreementContainer);
         make.width.lessThanOrEqualTo(@280);
+    }];
+    
+    [self.agreeCheckbox mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.equalTo(agreementContainer);
+        make.centerY.equalTo(agreementLabel); // 与文字垂直居中对齐
+        make.width.height.equalTo(@18);
     }];
     
     [subscribeButton mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -467,10 +471,10 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
     AIUASubscriptionPlan planType = [plan[@"type"] integerValue];
     
     UIView *card = [[UIView alloc] init];
-    card.backgroundColor = [UIColor whiteColor];
+    card.backgroundColor = AIUA_CARD_BACKGROUND_COLOR; // 使用系统卡片背景色，自动适配暗黑模式
     card.layer.cornerRadius = 16;
     card.layer.borderWidth = 2;
-    card.layer.borderColor = AIUAUIColorRGB(229, 231, 235).CGColor;
+    card.layer.borderColor = AIUA_DIVIDER_COLOR.CGColor; // 使用系统分隔线颜色，自动适配暗黑模式
     card.tag = planType;
     
     // 添加点击手势
@@ -499,26 +503,28 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
         }];
     }
     
-    // 套餐名称
+    // 套餐名称（适配暗黑模式，确保未选中时也清晰可见）
     UILabel *nameLabel = [[UILabel alloc] init];
     nameLabel.text = plan[@"name"];
     nameLabel.font = AIUAUIFontBold(18);
-    nameLabel.textColor = AIUAUIColorRGB(17, 24, 39);
+    nameLabel.textColor = AIUA_LABEL_COLOR; // 使用系统标签颜色，自动适配暗黑模式
+    nameLabel.tag = 777; // 设置tag以便后续更新选中状态时的颜色
     [card addSubview:nameLabel];
     
     // 价格
     UILabel *priceLabel = [[UILabel alloc] init];
-    priceLabel.text = [NSString stringWithFormat:@"¥%@", plan[@"price"]];
+    priceLabel.text = [NSString stringWithFormat:@"%@%@", [AIUAToolsManager currencySymbol], plan[@"price"]];
     priceLabel.font = AIUAUIFontBold(32);
     priceLabel.textColor = AIUAUIColorRGB(16, 185, 129);
     priceLabel.tag = 888; // 设置tag以便后续更新价格
     [card addSubview:priceLabel];
     
-    // 描述
+    // 描述（适配暗黑模式）
     UILabel *descLabel = [[UILabel alloc] init];
     descLabel.text = plan[@"desc"];
     descLabel.font = AIUAUIFontSystem(13);
-    descLabel.textColor = AIUAUIColorRGB(107, 114, 128);
+    descLabel.textColor = AIUA_SECONDARY_LABEL_COLOR; // 使用系统二级标签颜色，自动适配暗黑模式
+    descLabel.tag = 666; // 设置tag以便后续更新选中状态时的颜色
     [card addSubview:descLabel];
     
     // 选中图标
@@ -569,11 +575,44 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
         BOOL isSelected = (card.tag == self.selectedPlan);
         
         if (isSelected) {
+            // 选中状态：绿色边框和浅绿色背景（适配暗黑模式）
             card.layer.borderColor = AIUAUIColorRGB(16, 185, 129).CGColor;
-            card.backgroundColor = AIUAUIColorRGB(240, 253, 244);
+            card.backgroundColor = AIUA_DynamicColor(
+                AIUAUIColorRGB(240, 253, 244),  // 浅色模式：浅绿色背景
+                AIUAUIColorRGB(20, 60, 40)       // 暗黑模式：深绿色背景，确保文字清晰
+            );
+            
+            // 更新文字颜色，确保在选中背景上有足够的对比度
+            UILabel *nameLabel = [card viewWithTag:777];
+            if (nameLabel) {
+                nameLabel.textColor = AIUA_DynamicColor(
+                    AIUAUIColorRGB(16, 185, 129),  // 浅色模式：绿色文字在浅绿背景上
+                    [UIColor whiteColor]            // 暗黑模式：白色文字在深绿背景上
+                );
+            }
+            
+            UILabel *descLabel = [card viewWithTag:666];
+            if (descLabel) {
+                descLabel.textColor = AIUA_DynamicColor(
+                    AIUAUIColorRGB(16, 185, 129),  // 浅色模式：绿色文字
+                    AIUAUIColorRGB(200, 255, 200)  // 暗黑模式：浅绿色文字
+                );
+            }
         } else {
-            card.layer.borderColor = AIUAUIColorRGB(229, 231, 235).CGColor;
-            card.backgroundColor = [UIColor whiteColor];
+            // 未选中状态：使用系统颜色
+            card.layer.borderColor = AIUA_DIVIDER_COLOR.CGColor; // 使用系统分隔线颜色，自动适配暗黑模式
+            card.backgroundColor = AIUA_CARD_BACKGROUND_COLOR; // 使用系统卡片背景色，自动适配暗黑模式
+            
+            // 恢复文字颜色为系统颜色
+            UILabel *nameLabel = [card viewWithTag:777];
+            if (nameLabel) {
+                nameLabel.textColor = AIUA_LABEL_COLOR;
+            }
+            
+            UILabel *descLabel = [card viewWithTag:666];
+            if (descLabel) {
+                descLabel.textColor = AIUA_SECONDARY_LABEL_COLOR;
+            }
         }
         
         // 更新选中图标
@@ -590,11 +629,17 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
 }
 
 - (UIImage *)checkboxImageWithSelected:(BOOL)selected {
-    UIGraphicsBeginImageContextWithOptions(CGSizeMake(20, 20), NO, [UIScreen mainScreen].scale);
+    CGFloat size = 20;
+    CGFloat scale = [UIScreen mainScreen].scale;
+    UIGraphicsBeginImageContextWithOptions(CGSizeMake(size, size), NO, scale);
+    CGContextRef context = UIGraphicsGetCurrentContext();
+    
+    // 清除背景
+    CGContextClearRect(context, CGRectMake(0, 0, size, size));
     
     if (selected) {
-        // 选中状态
-        UIBezierPath *path = [UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 0, 20, 20) cornerRadius:10];
+        // 选中状态：填充绿色圆形
+        UIBezierPath *path = [UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 0, size, size) cornerRadius:size/2];
         [AIUAUIColorRGB(16, 185, 129) setFill];
         [path fill];
         
@@ -603,14 +648,24 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
         [checkPath moveToPoint:CGPointMake(6, 10)];
         [checkPath addLineToPoint:CGPointMake(9, 13)];
         [checkPath addLineToPoint:CGPointMake(14, 7)];
-        checkPath.lineWidth = 2;
+        checkPath.lineWidth = 2.5;
+        checkPath.lineCapStyle = kCGLineCapRound;
+        checkPath.lineJoinStyle = kCGLineJoinRound;
         [[UIColor whiteColor] setStroke];
         [checkPath stroke];
     } else {
-        // 未选中状态
-        UIBezierPath *path = [UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 0, 20, 20) cornerRadius:10];
-        [AIUAUIColorRGB(209, 213, 219) setStroke];
-        path.lineWidth = 1.5;
+        // 未选中状态：绘制规则圆形边框（适配暗黑模式）
+        CGRect rect = CGRectMake(1, 1, size - 2, size - 2); // 留出1点边距，确保边框完整
+        UIBezierPath *path = [UIBezierPath bezierPathWithRoundedRect:rect cornerRadius:(size - 2)/2];
+        
+        // 使用系统分隔线颜色，自动适配暗黑模式
+        UIColor *borderColor = AIUA_DynamicColor(
+            AIUAUIColorRGB(209, 213, 219),  // 浅色模式：浅灰色
+            AIUAUIColorRGB(150, 150, 150)   // 暗黑模式：更亮的灰色，确保可见
+        );
+        [borderColor setStroke];
+        path.lineWidth = 2.0; // 增加线宽，确保边框清晰
+        path.lineCapStyle = kCGLineCapRound;
         [path stroke];
     }
     
@@ -774,7 +829,7 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
         case AIUASubscriptionPlanMonthly:
             return @"28";
         case AIUASubscriptionPlanWeekly:
-            return @"6.88";
+            return @"6";
     }
 }
 

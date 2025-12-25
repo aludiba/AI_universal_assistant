@@ -21,8 +21,8 @@
 }
 
 - (void)setupUI {
-    // 创建黑色返回图标
-    UIImage *backImage = [[UIImage systemImageNamed:@"chevron.left"] imageWithTintColor:[UIColor blackColor] renderingMode:UIImageRenderingModeAlwaysOriginal];
+    // 创建返回图标（使用系统颜色，自动适配暗黑模式）
+    UIImage *backImage = [[UIImage systemImageNamed:@"chevron.left"] imageWithTintColor:[UIColor labelColor] renderingMode:UIImageRenderingModeAlwaysOriginal];
     
     // 创建UIBarButtonItem
     UIBarButtonItem *backItem = [[UIBarButtonItem alloc] initWithImage:backImage

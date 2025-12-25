@@ -6,7 +6,7 @@
 #import "AIUARewardAdManager.h"
 #import "AIUAConfigID.h"
 
-#if __has_include(<BUAdSDK/BUAdSDK.h>)
+#if AIUA_AD_ENABLED && __has_include(<BUAdSDK/BUAdSDK.h>)
 #import <BUAdSDK/BUAdSDK.h>
 #endif
 
@@ -18,7 +18,7 @@
 @property (nonatomic, copy) AIUARewardAdClosed onClosed;
 @property (nonatomic, copy) AIUARewardAdFailed onFailed;
 
-#if __has_include(<BUAdSDK/BUAdSDK.h>)
+#if AIUA_AD_ENABLED && __has_include(<BUAdSDK/BUAdSDK.h>)
 @property (nonatomic, strong) BUNativeExpressRewardedVideoAd *rewardAd;
 #endif
 
@@ -36,7 +36,7 @@
 }
 
 - (void)cleanup {
-#if __has_include(<BUAdSDK/BUAdSDK.h>)
+#if AIUA_AD_ENABLED && __has_include(<BUAdSDK/BUAdSDK.h>)
     self.rewardAd.delegate = nil;
     self.rewardAd = nil;
 #endif
@@ -67,7 +67,7 @@
     return;
 #endif
 
-#if __has_include(<BUAdSDK/BUAdSDK.h>)
+#if AIUA_AD_ENABLED && __has_include(<BUAdSDK/BUAdSDK.h>)
     if (AIUA_APPID.length == 0) {
         if (self.onFailed) {
             NSError *e = [NSError errorWithDomain:@"AIUAReward" code:-2 userInfo:@{NSLocalizedDescriptionKey: @"未配置穿山甲AppID"}];
@@ -100,7 +100,7 @@
 #endif
 }
 
-#if __has_include(<BUAdSDK/BUAdSDK.h>)
+#if AIUA_AD_ENABLED && __has_include(<BUAdSDK/BUAdSDK.h>)
 #pragma mark - BUNativeExpressRewardedVideoAdDelegate
 
 - (void)nativeExpressRewardedVideoAdDidLoad:(BUNativeExpressRewardedVideoAd *)rewardedVideoAd {

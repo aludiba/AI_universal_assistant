@@ -22,7 +22,7 @@
 - (void)setupUI {
     [super setupUI];
     
-    self.view.backgroundColor = [UIColor whiteColor];
+    self.view.backgroundColor = AIUA_BACK_COLOR;
     
     self.title = L(@"contact_us");
     
@@ -64,20 +64,20 @@
     self.qrCodeImageView = [[UIImageView alloc] init];
     self.qrCodeImageView.contentMode = UIViewContentModeScaleAspectFit;
     self.qrCodeImageView.image = [UIImage imageNamed:@"contactUs"];
-    self.qrCodeImageView.backgroundColor = [UIColor whiteColor];
+    self.qrCodeImageView.backgroundColor = [UIColor clearColor];
     self.qrCodeImageView.layer.cornerRadius = 16;
     self.qrCodeImageView.layer.masksToBounds = YES;
     [self.contentView addSubview:self.qrCodeImageView];
     
-    // 如果图片不存在，显示占位符
+    // 如果图片不存在，显示占位符（适配暗黑模式）
     if (!self.qrCodeImageView.image) {
-        self.qrCodeImageView.backgroundColor = AIUAUIColorRGB(240, 242, 245);
+        self.qrCodeImageView.backgroundColor = AIUA_TERTIARY_BACK_COLOR;
         
         UILabel *placeholderLabel = [[UILabel alloc] init];
         placeholderLabel.text = @"请添加二维码图片\n(contactUs)";
         placeholderLabel.numberOfLines = 0;
         placeholderLabel.font = AIUAUIFontSystem(14);
-        placeholderLabel.textColor = AIUAUIColorRGB(156, 163, 175);
+        placeholderLabel.textColor = AIUA_SECONDARY_LABEL_COLOR;
         placeholderLabel.textAlignment = NSTextAlignmentCenter;
         [self.qrCodeImageView addSubview:placeholderLabel];
         
@@ -174,8 +174,12 @@
     UILabel *toast = [[UILabel alloc] init];
     toast.text = message;
     toast.font = AIUAUIFontSystem(14);
-    toast.textColor = [UIColor whiteColor];
-    toast.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.7];
+    // 使用动态颜色，适配暗黑模式
+    toast.textColor = [UIColor systemBackgroundColor]; // 白色文字在暗黑模式下会自动变为深色背景上的浅色文字
+    toast.backgroundColor = AIUA_DynamicColor(
+        [[UIColor blackColor] colorWithAlphaComponent:0.7],  // 浅色模式：黑色半透明
+        [[UIColor whiteColor] colorWithAlphaComponent:0.9]    // 暗黑模式：白色半透明
+    );
     toast.textAlignment = NSTextAlignmentCenter;
     toast.layer.cornerRadius = 8;
     toast.layer.masksToBounds = YES;

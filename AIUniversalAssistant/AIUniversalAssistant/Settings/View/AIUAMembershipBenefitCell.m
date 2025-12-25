@@ -23,30 +23,37 @@
     [super setupUI];
     
     self.backgroundColor = [UIColor clearColor];
-    self.contentView.backgroundColor = [UIColor whiteColor];
+    self.contentView.backgroundColor = [UIColor clearColor];
     
-    // 图标背景
+    // 图标背景（适配暗黑模式）
     self.iconBgView = [[UIView alloc] init];
-    self.iconBgView.backgroundColor = AIUAUIColorRGB(219, 234, 254);
+    // 使用动态颜色，适配暗黑模式
+    self.iconBgView.backgroundColor = AIUA_DynamicColor(
+        AIUAUIColorRGB(219, 234, 254),  // 浅色模式：浅蓝色
+        AIUAUIColorRGB(30, 58, 138)      // 暗黑模式：深蓝色
+    );
     self.iconBgView.layer.cornerRadius = 20;
     self.iconBgView.layer.masksToBounds = YES;
     [self.contentView addSubview:self.iconBgView];
     
-    // 图标
+    // 图标（适配暗黑模式）
     self.iconView = [[UIImageView alloc] init];
-    self.iconView.tintColor = AIUAUIColorRGB(59, 130, 246);
+    self.iconView.tintColor = AIUA_DynamicColor(
+        AIUAUIColorRGB(59, 130, 246),   // 浅色模式：蓝色
+        AIUAUIColorRGB(147, 197, 253)   // 暗黑模式：浅蓝色
+    );
     [self.iconBgView addSubview:self.iconView];
     
-    // 标题
+    // 标题（适配暗黑模式）
     self.titleLabel = [[UILabel alloc] init];
     self.titleLabel.font = AIUAUIFontBold(16);
-    self.titleLabel.textColor = AIUAUIColorRGB(17, 24, 39);
+    self.titleLabel.textColor = AIUA_LABEL_COLOR; // 使用系统标签颜色，自动适配暗黑模式
     [self.contentView addSubview:self.titleLabel];
     
-    // 描述
+    // 描述（适配暗黑模式）
     self.descLabel = [[UILabel alloc] init];
     self.descLabel.font = AIUAUIFontSystem(13);
-    self.descLabel.textColor = AIUAUIColorRGB(107, 114, 128);
+    self.descLabel.textColor = AIUA_SECONDARY_LABEL_COLOR; // 使用系统二级标签颜色，自动适配暗黑模式
     self.descLabel.numberOfLines = 0;
     [self.contentView addSubview:self.descLabel];
     

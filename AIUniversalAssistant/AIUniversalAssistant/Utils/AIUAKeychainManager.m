@@ -190,5 +190,27 @@ static NSString * const kAIUAKeychainService = @"com.yourcompany.aiassistant.key
     return [self dataForKey:key] != nil;
 }
 
+- (BOOL)removeAllObjects {
+    // 构建查询字典，只包含服务标识，不包含具体的账户（key）
+    // 这样可以匹配所有使用该服务的钥匙串项
+    NSMutableDictionary *query = [NSMutableDictionary dictionary];
+    query[(__bridge id)kSecClass] = (__bridge id)kSecClassGenericPassword;
+    query[(__bridge id)kSecAttrService] = kAIUAKeychainService;
+    
+    // 删除所有匹配的项
+    OSStatus status = SecItemDelete((__bridge CFDictionaryRef)query);
+    
+    if (status == errSecSuccess) {
+        NSLog(@"[Keychain] 成功删除所有钥匙串数据");
+        return YES;
+    } else if (status == errSecItemNotFound) {
+        NSLog(@"[Keychain] 钥匙串中没有数据需要删除");
+        return YES; // 没有数据也算成功
+    } else {
+        NSLog(@"[Keychain] 删除所有钥匙串数据失败，错误码: %d", (int)status);
+        return NO;
+    }
+}
+
 @end
 

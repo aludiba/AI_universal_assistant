@@ -81,6 +81,12 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (BOOL)hasObjectForKey:(NSString *)key;
 
+/**
+ * 删除所有该App存储在钥匙串中的数据
+ * @return YES表示成功，NO表示失败
+ */
+- (BOOL)removeAllObjects;
+
 @end
 
 NS_ASSUME_NONNULL_END

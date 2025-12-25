@@ -5,10 +5,10 @@
 - (void)setupUI {
     self.contentView.backgroundColor = [UIColor clearColor];
     
-    // 卡片视图
+    // 卡片视图（适配暗黑模式）
     self.cardView = [[UIView alloc] init];
     self.cardView.translatesAutoresizingMaskIntoConstraints = NO;
-    self.cardView.backgroundColor = [UIColor whiteColor];
+    self.cardView.backgroundColor = AIUA_CARD_BACKGROUND_COLOR;
     self.cardView.layer.cornerRadius = 16;
     self.cardView.layer.shadowColor = AIUAUIColorSimplifyRGBA(0.0, 0.0, 0.0, 0.1).CGColor;
     self.cardView.layer.shadowOffset = CGSizeMake(0, 2);
@@ -31,27 +31,27 @@
     self.iconView.tintColor = [UIColor whiteColor];
     [self.gradientView addSubview:self.iconView];
     
-    // 标题
+    // 标题（适配暗黑模式）
     self.titleLabel = [[UILabel alloc] init];
     self.titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
     self.titleLabel.font = AIUAUIFontSemibold(16);
-    self.titleLabel.textColor = AIUAUIColorSimplifyRGB(0.2, 0.2, 0.2);
+    self.titleLabel.textColor = AIUA_LABEL_COLOR;
     self.titleLabel.numberOfLines = 2;
     [self.cardView addSubview:self.titleLabel];
     
-    // 副标题
+    // 副标题（适配暗黑模式）
     self.subtitleLabel = [[UILabel alloc] init];
     self.subtitleLabel.translatesAutoresizingMaskIntoConstraints = NO;
     self.subtitleLabel.font = AIUAUIFontSystem(12);
-    self.subtitleLabel.textColor = AIUAUIColorSimplifyRGB(0.6, 0.6, 0.6);
+    self.subtitleLabel.textColor = AIUA_SECONDARY_LABEL_COLOR;
     self.subtitleLabel.numberOfLines = 3;
     [self.cardView addSubview:self.subtitleLabel];
     
-    // 收藏按钮
+    // 收藏按钮（适配暗黑模式）
     self.favoriteButton = [UIButton buttonWithType:UIButtonTypeCustom];
     self.favoriteButton.translatesAutoresizingMaskIntoConstraints = NO;
     [self.favoriteButton addTarget:self action:@selector(favoriteButtonTapped) forControlEvents:UIControlEventTouchUpInside];
-    self.favoriteButton.backgroundColor = [UIColor whiteColor];
+    self.favoriteButton.backgroundColor = AIUA_CARD_BACKGROUND_COLOR;
     self.favoriteButton.layer.cornerRadius = 12;
     self.favoriteButton.layer.shadowColor = AIUAUIColorSimplifyRGBA(0.0, 0.0, 0.0, 0.1).CGColor;
     self.favoriteButton.layer.shadowOffset = CGSizeMake(0, 1);

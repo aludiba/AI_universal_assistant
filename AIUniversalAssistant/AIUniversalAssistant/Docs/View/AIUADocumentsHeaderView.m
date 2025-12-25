@@ -16,7 +16,7 @@
     
     self.titleLabel = [[UILabel alloc] init];
     self.titleLabel.font = AIUAUIFontBold(20);
-    self.titleLabel.textColor = AIUAUIColorRGB(34, 34, 34);
+    self.titleLabel.textColor = AIUA_LABEL_COLOR; // 使用系统标签颜色，自动适配暗黑模式
     [self.contentView addSubview:self.titleLabel];
     
     [self setupConstraints];

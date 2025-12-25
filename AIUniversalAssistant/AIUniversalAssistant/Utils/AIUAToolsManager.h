@@ -43,6 +43,11 @@ NS_ASSUME_NONNULL_BEGIN
 // 记录用户拒绝评分
 + (void)userDeclinedRating;
 
+#pragma mark - 货币相关
+
+// 根据系统语言返回对应的货币符号
++ (NSString *)currencySymbol;
+
 @end
 
 NS_ASSUME_NONNULL_END

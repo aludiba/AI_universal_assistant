@@ -8,6 +8,7 @@
 #import "AIUAWordPackViewController.h"
 #import "AIUAWordPackManager.h"
 #import "AIUAIAPManager.h"
+#import "AIUAAlertHelper.h"
 #import "AIUAMembershipViewController.h"
 #import "AIUAMacros.h"
 #import <Masonry/Masonry.h>
@@ -111,6 +112,8 @@
                 [self updateWordPackProductPrices:products];
             } else {
                 NSLog(@"[WordPack] 获取字数包产品失败: %@", errorMessage);
+                // 显示调试错误弹窗
+                [AIUAAlertHelper showDebugErrorAlert:errorMessage context:@"获取字数包产品失败"];
                 // 在测试环境下，可能无法获取产品，这里使用默认价格
             }
         });
@@ -159,7 +162,7 @@
 
 - (void)setupScrollView {
     self.scrollView = [[UIScrollView alloc] init];
-    self.scrollView.backgroundColor = [UIColor whiteColor];
+    self.scrollView.backgroundColor = AIUA_BACK_COLOR;
     self.scrollView.showsVerticalScrollIndicator = YES;
     [self.view addSubview:self.scrollView];
     
@@ -312,10 +315,10 @@
 - (void)setupPurchaseOptions {
     NSLog(@"[WordPack] setupPurchaseOptions 开始");
     
-    // 标题
+    // 标题（适配暗黑模式）
     UILabel *titleLabel = [[UILabel alloc] init];
     titleLabel.font = AIUAUIFontBold(16);
-    titleLabel.textColor = [UIColor blackColor];
+    titleLabel.textColor = AIUA_LABEL_COLOR; // 使用系统标签颜色，自动适配暗黑模式
     titleLabel.text = [NSString stringWithFormat:@"💰 %@", L(@"purchase_word_pack")];
     [self.contentView addSubview:titleLabel];
     
@@ -358,10 +361,10 @@
 
 - (UIView *)createPackOptionView:(NSDictionary *)option {
     UIView *containerView = [[UIView alloc] init];
-    containerView.backgroundColor = [UIColor whiteColor];
+    containerView.backgroundColor = AIUA_CARD_BACKGROUND_COLOR;
     containerView.layer.cornerRadius = 8;
     containerView.layer.borderWidth = 1;
-    containerView.layer.borderColor = [UIColor colorWithRed:0.9 green:0.9 blue:0.9 alpha:1.0].CGColor;
+    containerView.layer.borderColor = AIUA_DIVIDER_COLOR.CGColor;
     containerView.tag = [option[@"type"] integerValue];
     
     UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(packOptionTapped:)];
@@ -380,10 +383,10 @@
         make.width.height.equalTo(@24);
     }];
     
-    // 字数标签
+    // 字数标签（适配暗黑模式）
     UILabel *wordsLabel = [[UILabel alloc] init];
     wordsLabel.font = AIUAUIFontSystem(16);
-    wordsLabel.textColor = [UIColor blackColor];
+    wordsLabel.textColor = AIUA_LABEL_COLOR;
     wordsLabel.text = [NSString stringWithFormat:@"%@%@", [self formatNumber:[option[@"words"] integerValue]], L(@"words")];
     [containerView addSubview:wordsLabel];
     
@@ -396,7 +399,7 @@
     UILabel *priceLabel = [[UILabel alloc] init];
     priceLabel.font = AIUAUIFontBold(16);
     priceLabel.textColor = [UIColor systemGreenColor];
-    priceLabel.text = [NSString stringWithFormat:@"¥%@", option[@"price"]];
+    priceLabel.text = [NSString stringWithFormat:@"%@%@", @"¥", option[@"price"]];
     priceLabel.tag = 200; // 设置tag以便后续更新价格
     [containerView addSubview:priceLabel];
     
@@ -445,10 +448,10 @@
 }
 
 - (void)setupPurchaseNotes {
-    // 标题
+    // 标题（适配暗黑模式）
     UILabel *titleLabel = [[UILabel alloc] init];
     titleLabel.font = AIUAUIFontBold(16);
-    titleLabel.textColor = [UIColor blackColor];
+    titleLabel.textColor = AIUA_LABEL_COLOR; // 使用系统标签颜色，自动适配暗黑模式
     titleLabel.text = [NSString stringWithFormat:@"💰 %@", L(@"purchase_notes")];
     [self.contentView addSubview:titleLabel];
     

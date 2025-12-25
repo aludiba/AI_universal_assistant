@@ -98,14 +98,14 @@ static NSString * const kEmptyCellId = @"EmptyCell";
 - (void)setupSearchBar {
     UIButton *searchButton = [UIButton buttonWithType:UIButtonTypeCustom];
     searchButton.frame = CGRectMake(0, 0, self.view.bounds.size.width - 32, 36);
-    searchButton.tintColor = [UIColor lightGrayColor];
+    searchButton.tintColor = AIUA_SECONDARY_LABEL_COLOR; // 使用系统二级标签颜色，自动适配暗黑模式
 
     // 创建配置
     UIButtonConfiguration *config = [UIButtonConfiguration plainButtonConfiguration];
     
-    // 设置标题
+    // 设置标题（适配暗黑模式）
     NSDictionary *attributes = @{
-        NSForegroundColorAttributeName: [UIColor lightGrayColor],
+        NSForegroundColorAttributeName: AIUA_SECONDARY_LABEL_COLOR, // 使用系统二级标签颜色，自动适配暗黑模式
         NSFontAttributeName: AIUAUIFontSystem(16)
     };
     config.attributedTitle = [[NSAttributedString alloc] initWithString:L(@"enter_keywords_to_search_templates") attributes:attributes];
@@ -119,11 +119,14 @@ static NSString * const kEmptyCellId = @"EmptyCell";
     // 设置内容对齐方式为靠左
     config.contentInsets = NSDirectionalEdgeInsetsMake(0, 16, 0, 0);
     
-    // 设置背景
-    config.background.backgroundColor = AIUAUIColorSimplifyRGB(0.98, 0.98, 0.98);
+    // 设置背景（适配暗黑模式）
+    config.background.backgroundColor = AIUA_DynamicColor(
+        AIUAUIColorSimplifyRGB(0.98, 0.98, 0.98),  // 浅色模式：浅灰色
+        AIUAUIColorSimplifyRGB(0.2, 0.2, 0.2)       // 暗黑模式：深灰色
+    );
     config.background.cornerRadius = 18;
     
-    config.baseForegroundColor = [UIColor lightGrayColor];
+    config.baseForegroundColor = AIUA_SECONDARY_LABEL_COLOR; // 使用系统二级标签颜色，自动适配暗黑模式
 
     // 应用配置
     searchButton.configuration = config;
@@ -545,7 +548,7 @@ static NSString * const kEmptyCellId = @"EmptyCell";
             // 添加收藏
             [[AIUADataManager sharedManager] addFavorite:item];
             [cell setFavorite:YES];
-            [AIUAMBProgressManager showText:nil withText:L(@"favorited") andSubText:nil isBottom:YES];
+            [AIUAMBProgressManager showText:nil withText:L(@"favorited") andSubText:nil isBottom:NO];
             // 刷新收藏数据
             [self refreshFavoritesData];
         }

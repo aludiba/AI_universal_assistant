@@ -42,13 +42,51 @@
                                                      blue:(b)/255.0 \
                                                     alpha:(a)]
 #define AIUAUIColorRGB(r, g, b) AIUAUIColorRGBA(r, g, b, 1.0)
-#define AIUA_BACK_COLOR  [UIColor colorWithWhite:0.95 alpha:1]
-#define AIUA_GRAY_COLOR  [UIColor colorWithRed:0.6 green:0.6 blue:0.6 alpha:1.0]
-#define AIUA_DIVIDER_COLOR  [UIColor colorWithWhite:0.9 alpha:1.0]
+
+// ========== 暗黑模式适配的颜色宏定义 ==========
+
+// 背景颜色（适配暗黑模式）
+#define AIUA_BACK_COLOR  [UIColor systemBackgroundColor]
+#define AIUA_SECONDARY_BACK_COLOR  [UIColor secondarySystemBackgroundColor]
+#define AIUA_TERTIARY_BACK_COLOR  [UIColor tertiarySystemBackgroundColor]
+
+// 文本颜色（适配暗黑模式）
+#define AIUA_LABEL_COLOR  [UIColor labelColor]
+#define AIUA_SECONDARY_LABEL_COLOR  [UIColor secondaryLabelColor]
+#define AIUA_TERTIARY_LABEL_COLOR  [UIColor tertiaryLabelColor]
+
+// 分隔线和边框颜色（适配暗黑模式）
+#define AIUA_DIVIDER_COLOR  [UIColor separatorColor]
+#define AIUA_GRAY_COLOR  [UIColor secondaryLabelColor]
+
+// 卡片背景颜色（适配暗黑模式）
+#define AIUA_CARD_BACKGROUND_COLOR  [UIColor secondarySystemBackgroundColor]
+
+// 系统颜色（适配暗黑模式）
+#define AIUA_WHITE_COLOR  [UIColor systemBackgroundColor]
+#define AIUA_BLACK_COLOR  [UIColor labelColor]
+
+// 动态颜色辅助宏：根据模式返回不同颜色
+#define AIUA_DynamicColor(lightColor, darkColor) \
+    ([UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) { \
+        if (traitCollection.userInterfaceStyle == UIUserInterfaceStyleDark) { \
+            return darkColor; \
+        } else { \
+            return lightColor; \
+        } \
+    }])
+
+// 常用动态颜色组合
+#define AIUA_GroupedBackgroundColor  [UIColor systemGroupedBackgroundColor]
+#define AIUA_SecondaryGroupedBackgroundColor  [UIColor secondarySystemGroupedBackgroundColor]
+#define AIUA_TertiaryGroupedBackgroundColor  [UIColor tertiarySystemGroupedBackgroundColor]
+
+// 蓝色（保持固定，但可以添加暗黑模式变体）
 #define AIUA_BLUE_COLOR  AIUAUIColorSimplifyRGB(0.2, 0.4, 0.8)
 #define L(key) NSLocalizedString((key), nil)
 #define WeakType(type)  __weak typeof(type) weak##type = type
 #define StrongType(type)  __strong typeof(type) strong##type = weak##type
+
 
 extern BOOL AIUA_isNotchScreen(void);
 

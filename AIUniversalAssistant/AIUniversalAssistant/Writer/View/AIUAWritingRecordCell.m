@@ -27,33 +27,34 @@
     self.backgroundColor = [UIColor clearColor];
     self.contentView.backgroundColor = [UIColor clearColor];
     
-    // 容器视图
+    // 容器视图（适配暗黑模式）
     self.containerView = [[UIView alloc] init];
-    self.containerView.backgroundColor = [UIColor whiteColor];
+    self.containerView.backgroundColor = AIUA_CARD_BACKGROUND_COLOR;
     self.containerView.layer.cornerRadius = 12;
     self.containerView.layer.masksToBounds = YES;
     self.containerView.layer.borderWidth = 1;
-    self.containerView.layer.borderColor = AIUAUIColorRGB(229, 231, 235).CGColor;
+    // 边框颜色使用动态颜色，适配暗黑模式
+    self.containerView.layer.borderColor = AIUA_DIVIDER_COLOR.CGColor;
     [self.contentView addSubview:self.containerView];
     
-    // 标题标签
+    // 标题标签（适配暗黑模式）
     self.titleLabel = [[UILabel alloc] init];
     self.titleLabel.font = AIUAUIFontBold(18);
-    self.titleLabel.textColor = AIUAUIColorRGB(34, 34, 34);
+    self.titleLabel.textColor = AIUA_LABEL_COLOR;
     self.titleLabel.numberOfLines = 1;
     [self.containerView addSubview:self.titleLabel];
     
-    // 提示词标签
+    // 提示词标签（适配暗黑模式）
     self.promptLabel = [[UILabel alloc] init];
     self.promptLabel.font = AIUAUIFontSystem(14);
-    self.promptLabel.textColor = AIUAUIColorRGB(107, 114, 128);
+    self.promptLabel.textColor = AIUA_SECONDARY_LABEL_COLOR;
     self.promptLabel.numberOfLines = 2;
     [self.containerView addSubview:self.promptLabel];
     
-    // 内容标签
+    // 内容标签（适配暗黑模式）
     self.contentLabel = [[UILabel alloc] init];
     self.contentLabel.font = AIUAUIFontSystem(15);
-    self.contentLabel.textColor = AIUAUIColorRGB(68, 68, 68);
+    self.contentLabel.textColor = AIUA_LABEL_COLOR;
     self.contentLabel.numberOfLines = 3;
     [self.containerView addSubview:self.contentLabel];
     

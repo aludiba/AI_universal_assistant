@@ -196,7 +196,7 @@
     if (!_webView) {
         WKWebViewConfiguration *config = [[WKWebViewConfiguration alloc] init];
         WKWebView *webView = [[WKWebView alloc] initWithFrame:CGRectZero configuration:config];
-        webView.backgroundColor = [UIColor whiteColor];
+        webView.backgroundColor = AIUA_BACK_COLOR; // 使用系统背景色，自动适配暗黑模式
         webView.opaque = NO;
         [self.view addSubview:webView];
         

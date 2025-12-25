@@ -8,12 +8,19 @@
 #import "AIUASplashViewController.h"
 #import "AppDelegate.h"
 #import "AIUAConfigID.h"
+#if AIUA_AD_ENABLED && __has_include(<BUAdSDK/BUAdSDK.h>)
 #import <BUAdSDK/BUAdSDK.h>
+#endif
 #import <Network/Network.h>
 
-@interface AIUASplashViewController () <BUSplashAdDelegate>
+@interface AIUASplashViewController ()
+#if AIUA_AD_ENABLED && __has_include(<BUAdSDK/BUAdSDK.h>)
+<BUSplashAdDelegate>
+#endif
 
+#if AIUA_AD_ENABLED && __has_include(<BUAdSDK/BUAdSDK.h>)
 @property (nonatomic, strong) BUSplashAd *splashAd;
+#endif
 @property (nonatomic, strong) nw_path_monitor_t monitor;
 @property (nonatomic, assign) BOOL hasLoaded;
 
@@ -70,6 +77,7 @@
 
 // 创建广告对象
 - (void)buildAd {
+#if AIUA_AD_ENABLED && __has_include(<BUAdSDK/BUAdSDK.h>)
     NSString *slotID = AIUA_SPLASH_AD_SLOT_ID;
     if (!slotID || slotID.length == 0) {
         [self enterMainUI];
@@ -79,11 +87,18 @@
     self.splashAd = [[BUSplashAd alloc] initWithSlotID:slotID adSize:[UIScreen mainScreen].bounds.size];
     self.splashAd.delegate = self;
     self.splashAd.tolerateTimeout = 10.0;
+#else
+    [self enterMainUI];
+#endif
 }
 
 // 触发广告加载
 - (void)loadAdData {
+#if AIUA_AD_ENABLED && __has_include(<BUAdSDK/BUAdSDK.h>)
     [self.splashAd loadAdData];
+#else
+    [self enterMainUI];
+#endif
 }
 
 - (void)enterMainUI {
@@ -95,6 +110,7 @@
 
 #pragma mark - BUSplashAdDelegate
 
+#if AIUA_AD_ENABLED && __has_include(<BUAdSDK/BUAdSDK.h>)
 - (void)splashAdLoadSuccess:(nonnull BUSplashAd *)splashAd {
     NSLog(@"[穿山甲] 开屏广告加载成功");
     // 在当前VC上显示
@@ -126,6 +142,7 @@
     NSLog(@"[穿山甲] 开屏广告倒计时结束");
     // 通常倒计时结束会自动关闭或用户手动关闭
 }
+#endif
 
 @end
 

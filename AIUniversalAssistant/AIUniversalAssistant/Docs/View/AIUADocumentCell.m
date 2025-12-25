@@ -18,47 +18,47 @@
 - (void)setupUI {
     [super setupUI];
         
-    // 容器视图
+    // 容器视图（适配暗黑模式）
     self.containerView = [[UIView alloc] init];
-    self.containerView.backgroundColor = [UIColor whiteColor];
+    self.containerView.backgroundColor = [UIColor clearColor];
     [self.contentView addSubview:self.containerView];
     
-    // 文档图标
+    // 文档图标（适配暗黑模式）
     self.documentIcon = [[UIImageView alloc] init];
     self.documentIcon.image = [UIImage systemImageNamed:@"doc.text"];
-    self.documentIcon.tintColor = AIUAUIColorRGB(239, 239, 239);
+    self.documentIcon.tintColor = AIUA_SECONDARY_LABEL_COLOR; // 使用系统二级标签颜色，自动适配暗黑模式
     self.documentIcon.contentMode = UIViewContentModeScaleAspectFit;
     [self.containerView addSubview:self.documentIcon];
     
-    // 标题标签
+    // 标题标签（适配暗黑模式）
     self.titleLabel = [[UILabel alloc] init];
     self.titleLabel.font = AIUAUIFontSystem(16);
-    self.titleLabel.textColor = AIUAUIColorRGB(34, 34, 34);
+    self.titleLabel.textColor = AIUA_LABEL_COLOR; // 使用系统标签颜色，自动适配暗黑模式
     self.titleLabel.numberOfLines = 1;
     [self.containerView addSubview:self.titleLabel];
     
-    // 时间标签
+    // 时间标签（适配暗黑模式）
     self.timeLabel = [[UILabel alloc] init];
     self.timeLabel.font = AIUAUIFontSystem(13);
-    self.timeLabel.textColor = AIUAUIColorRGB(156, 163, 175);
+    self.timeLabel.textColor = AIUA_SECONDARY_LABEL_COLOR; // 使用系统二级标签颜色，自动适配暗黑模式
     [self.containerView addSubview:self.timeLabel];
     
-    // 字数标签
+    // 字数标签（适配暗黑模式）
     self.wordCountLabel = [[UILabel alloc] init];
     self.wordCountLabel.font = AIUAUIFontSystem(13);
-    self.wordCountLabel.textColor = AIUAUIColorRGB(156, 163, 175);
+    self.wordCountLabel.textColor = AIUA_SECONDARY_LABEL_COLOR; // 使用系统二级标签颜色，自动适配暗黑模式
     [self.containerView addSubview:self.wordCountLabel];
     
-    // 更多按钮
+    // 更多按钮（适配暗黑模式）
     self.moreButton = [UIButton buttonWithType:UIButtonTypeSystem];
     [self.moreButton setImage:[UIImage systemImageNamed:@"ellipsis"] forState:UIControlStateNormal];
-    self.moreButton.tintColor = AIUAUIColorRGB(156, 163, 175);
+    self.moreButton.tintColor = AIUA_SECONDARY_LABEL_COLOR; // 使用系统二级标签颜色，自动适配暗黑模式
     [self.moreButton addTarget:self action:@selector(moreButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
     [self.containerView addSubview:self.moreButton];
     
-    // 分隔线
+    // 分隔线（适配暗黑模式）
     self.separatorView = [[UIView alloc] init];
-    self.separatorView.backgroundColor = AIUAUIColorRGB(243, 244, 246);
+    self.separatorView.backgroundColor = AIUA_DIVIDER_COLOR; // 使用系统分隔线颜色，自动适配暗黑模式
     [self.containerView addSubview:self.separatorView];
     
     [self setupConstraints];

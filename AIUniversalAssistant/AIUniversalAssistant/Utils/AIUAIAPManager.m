@@ -8,6 +8,7 @@
 #import "AIUAIAPManager.h"
 #import "AIUAWordPackManager.h"
 #import "AIUAConfigID.h"
+#import "AIUAAlertHelper.h"
 #import <sys/stat.h>
 #import <mach-o/dyld.h>
 
@@ -25,6 +26,7 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
 @property (nonatomic, copy) AIUAIAPPurchaseCompletion purchaseCompletion;
 @property (nonatomic, copy) AIUAIAPRestoreCompletion restoreCompletion;
 @property (nonatomic, assign) NSInteger restoredPurchasesCount;
+@property (nonatomic, strong, nullable) NSString *pendingPurchaseProductID; // 待购买的产品ID（用于异步获取产品后继续购买）
 
 @property (nonatomic, assign, readwrite) BOOL isVIPMember;
 @property (nonatomic, assign, readwrite) AIUASubscriptionProductType currentSubscriptionType;
@@ -213,6 +215,9 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
     if (!product) {
         NSLog(@"[IAP] 消耗型产品未在缓存中，先获取产品信息: %@", productID);
         
+        // 保存待购买的产品ID
+        self.pendingPurchaseProductID = productID;
+        
         // 获取产品信息
         SKProductsRequest *request = [[SKProductsRequest alloc] initWithProductIdentifiers:[NSSet setWithObject:productID]];
         request.delegate = self;
@@ -297,7 +302,7 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
 
 - (NSString *)productIdentifierForType:(AIUASubscriptionProductType)type {
     // 注意：这些Product ID需要在App Store Connect中创建
-    // 格式建议: com.writingCat.cn
+    // 格式建议: com.writingCat.cn（测试）/com.hujiaofen.writingCat(生产)
     NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
     
     switch (type) {
@@ -342,79 +347,162 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
         NSLog(@"[IAP] 产品: %@ - %@ - %@", product.localizedTitle, product.price, product.priceLocale);
     }
     
-    if (self.productsCompletion) {
-        if (response.products.count > 0) {
-            self.productsCompletion(response.products, nil);
-        } else {
-            self.productsCompletion(nil, L(@"no_products_available"));
+    // 确保在主线程执行所有UI相关操作和回调
+    dispatch_async(dispatch_get_main_queue(), ^{
+        // 优先处理购买请求（如果有待购买的产品ID）
+        if (self.pendingPurchaseProductID) {
+            NSString *productID = self.pendingPurchaseProductID;
+            self.pendingPurchaseProductID = nil; // 清除待购买的产品ID
+            
+            // 查找对应的产品
+            SKProduct *targetProduct = nil;
+            for (SKProduct *product in response.products) {
+                if ([product.productIdentifier isEqualToString:productID]) {
+                    targetProduct = product;
+                    break;
+                }
+            }
+            
+            if (targetProduct) {
+                // 找到产品，继续购买流程
+                NSLog(@"[IAP] 找到待购买产品，继续购买流程: %@", productID);
+                [self addPaymentForProduct:targetProduct];
+            } else {
+                // 未找到产品，调用购买失败回调
+                NSLog(@"[IAP] 未找到待购买产品: %@", productID);
+                if (self.purchaseCompletion) {
+                    self.purchaseCompletion(NO, L(@"product_not_found"));
+                    self.purchaseCompletion = nil;
+                }
+            }
+            
+            // 如果有productsCompletion，也需要处理（可能是同时触发的）
+            if (self.productsCompletion) {
+                if (response.products.count > 0) {
+                    self.productsCompletion(response.products, nil);
+                } else {
+                    self.productsCompletion(nil, L(@"no_products_available"));
+                }
+                self.productsCompletion = nil;
+            }
+        } else if (self.productsCompletion) {
+            // 没有待购买的产品，正常处理产品获取回调
+            if (response.products.count > 0) {
+                self.productsCompletion(response.products, nil);
+            } else {
+                self.productsCompletion(nil, L(@"no_products_available"));
+            }
+            self.productsCompletion = nil;
         }
-        self.productsCompletion = nil;
-    }
+    });
 }
 
 - (void)request:(SKRequest *)request didFailWithError:(NSError *)error {
-    NSLog(@"[IAP] 产品请求失败: %@", error.localizedDescription);
+    NSString *errorMessage = error.localizedDescription;
+    NSLog(@"[IAP] 产品请求失败: %@", errorMessage);
     
-    if (self.productsCompletion) {
-        self.productsCompletion(nil, error.localizedDescription);
-        self.productsCompletion = nil;
-    }
+    // 确保在主线程执行所有UI相关操作和回调
+    dispatch_async(dispatch_get_main_queue(), ^{
+        // 显示调试错误弹窗
+        [AIUAAlertHelper showDebugErrorAlert:errorMessage context:@"获取产品失败"];
+        
+        // 如果有待购买的产品ID，说明是购买触发的产品请求失败
+        if (self.pendingPurchaseProductID) {
+            NSString *productID = self.pendingPurchaseProductID;
+            self.pendingPurchaseProductID = nil; // 清除待购买的产品ID
+            
+            // 调用购买失败回调
+            if (self.purchaseCompletion) {
+                self.purchaseCompletion(NO, errorMessage ?: L(@"failed_to_fetch_products"));
+                self.purchaseCompletion = nil;
+            }
+        }
+        
+        // 处理产品获取回调
+        if (self.productsCompletion) {
+            self.productsCompletion(nil, errorMessage);
+            self.productsCompletion = nil;
+        }
+    });
 }
 
 #pragma mark - SKPaymentTransactionObserver
 
 - (void)paymentQueue:(SKPaymentQueue *)queue updatedTransactions:(NSArray<SKPaymentTransaction *> *)transactions {
-    for (SKPaymentTransaction *transaction in transactions) {
-        switch (transaction.transactionState) {
-            case SKPaymentTransactionStatePurchasing:
-                NSLog(@"[IAP] 正在购买: %@", transaction.payment.productIdentifier);
-                break;
-                
-            case SKPaymentTransactionStatePurchased:
-                NSLog(@"[IAP] 购买成功: %@", transaction.payment.productIdentifier);
-                [self completeTransaction:transaction];
-                break;
-                
-            case SKPaymentTransactionStateFailed:
-                NSLog(@"[IAP] 购买失败: %@ - %@", transaction.payment.productIdentifier, transaction.error.localizedDescription);
-                [self failedTransaction:transaction];
-                break;
-                
-            case SKPaymentTransactionStateRestored:
-                NSLog(@"[IAP] 恢复购买: %@", transaction.payment.productIdentifier);
-                [self restoreTransaction:transaction];
-                break;
-                
-            case SKPaymentTransactionStateDeferred:
-                NSLog(@"[IAP] 购买延迟: %@", transaction.payment.productIdentifier);
-                break;
-                
-            default:
-                break;
+    // 确保在主线程执行所有UI相关操作和回调
+    dispatch_async(dispatch_get_main_queue(), ^{
+        for (SKPaymentTransaction *transaction in transactions) {
+            switch (transaction.transactionState) {
+                case SKPaymentTransactionStatePurchasing:
+                    NSLog(@"[IAP] 正在购买: %@", transaction.payment.productIdentifier);
+                    break;
+                    
+                case SKPaymentTransactionStatePurchased:
+                    NSLog(@"[IAP] 购买成功: %@", transaction.payment.productIdentifier);
+                    [self completeTransaction:transaction];
+                    break;
+                    
+                case SKPaymentTransactionStateFailed:
+                {
+                    NSString *errorMessage = transaction.error.localizedDescription;
+                    NSLog(@"[IAP] 购买失败: %@ - %@", transaction.payment.productIdentifier, errorMessage);
+                    
+                    // 显示调试错误弹窗（用户取消购买时不显示）
+                    if (transaction.error.code != SKErrorPaymentCancelled) {
+                        NSString *context = [NSString stringWithFormat:@"购买失败 (%@)", transaction.payment.productIdentifier];
+                        [AIUAAlertHelper showDebugErrorAlert:errorMessage context:context];
+                    }
+                    
+                    [self failedTransaction:transaction];
+                    break;
+                }
+                    
+                case SKPaymentTransactionStateRestored:
+                    NSLog(@"[IAP] 恢复购买: %@", transaction.payment.productIdentifier);
+                    [self restoreTransaction:transaction];
+                    break;
+                    
+                case SKPaymentTransactionStateDeferred:
+                    NSLog(@"[IAP] 购买延迟: %@", transaction.payment.productIdentifier);
+                    break;
+                    
+                default:
+                    break;
+            }
         }
-    }
+    });
 }
 
 - (void)paymentQueueRestoreCompletedTransactionsFinished:(SKPaymentQueue *)queue {
     NSLog(@"[IAP] 恢复购买完成，共恢复 %ld 个", (long)self.restoredPurchasesCount);
     
-    if (self.restoreCompletion) {
-        if (self.restoredPurchasesCount > 0) {
-            self.restoreCompletion(YES, self.restoredPurchasesCount, nil);
-        } else {
-            self.restoreCompletion(NO, 0, L(@"no_subscription_found"));
+    // 确保在主线程执行回调
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (self.restoreCompletion) {
+            if (self.restoredPurchasesCount > 0) {
+                self.restoreCompletion(YES, self.restoredPurchasesCount, nil);
+            } else {
+                self.restoreCompletion(NO, 0, L(@"no_subscription_found"));
+            }
+            self.restoreCompletion = nil;
         }
-        self.restoreCompletion = nil;
-    }
+    });
 }
 
 - (void)paymentQueue:(SKPaymentQueue *)queue restoreCompletedTransactionsFailedWithError:(NSError *)error {
-    NSLog(@"[IAP] 恢复购买失败: %@", error.localizedDescription);
+    NSString *errorMessage = error.localizedDescription;
+    NSLog(@"[IAP] 恢复购买失败: %@", errorMessage);
     
-    if (self.restoreCompletion) {
-        self.restoreCompletion(NO, 0, error.localizedDescription);
-        self.restoreCompletion = nil;
-    }
+    // 确保在主线程执行所有UI相关操作和回调
+    dispatch_async(dispatch_get_main_queue(), ^{
+        // 显示调试错误弹窗
+        [AIUAAlertHelper showDebugErrorAlert:errorMessage context:@"恢复购买失败"];
+        
+        if (self.restoreCompletion) {
+            self.restoreCompletion(NO, 0, errorMessage);
+            self.restoreCompletion = nil;
+        }
+    });
 }
 
 #pragma mark - Transaction Processing

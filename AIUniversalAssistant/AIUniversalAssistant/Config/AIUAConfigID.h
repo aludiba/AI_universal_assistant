@@ -35,13 +35,18 @@
 #define AIUA_APPName             @"AI Universal Assistant"  // 应用名称
 #define AIUA_BU_APP_KEY          @""  // 穿山甲AppKey（已废弃，使用AIUA_APPID）
 
-// 广告开关（如果不想展示广告，设置为0）
-#define AIUA_AD_ENABLED          1    // 1: 开启广告  0: 关闭广告
+// 广告开关（同时控制是否编译穿山甲SDK）
+// 设置为0时：关闭广告功能，不编译穿山甲SDK（模拟器开发时建议设为0以避免链接错误）
+// 设置为1时：开启广告功能，编译穿山甲SDK（真机测试或发布时使用）
+#define AIUA_AD_ENABLED          1    // 1: 开启广告并编译SDK  0: 关闭广告且不编译SDK
 
 // 会员订阅检测开关（如果不想进行会员订阅检测，设置为0，所有用户将被视为VIP）
 #define AIUA_VIP_CHECK_ENABLED   1    // 1: 开启会员检测  0: 关闭会员检测（所有用户视为VIP）
 
 // 过期字数包提醒测试开关（用于测试过期提醒功能）
 #define AIUA_EXPIRING_WORDS_TEST_ENABLED   0    // 1: 开启测试数据  0: 关闭测试数据（使用真实数据）
+
+// 调试错误日志弹窗开关（开发/测试时设为1，发布时设为0）
+#define AIUA_SHOW_DEBUG_ERROR_ALERTS 1
 
 #endif /* AIUAConfigID_h */

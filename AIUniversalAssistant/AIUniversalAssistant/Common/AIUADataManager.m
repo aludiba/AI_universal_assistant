@@ -507,20 +507,40 @@ NSString * const AIUACacheClearedNotification = @"AIUACacheClearedNotification";
 - (void)exportDocument:(NSString *)title withContent:(NSString *)content {
     NSString *fullText = [NSString stringWithFormat:@"%@\n\n%@", title, content];
     
-    // 创建临时文件
-    NSString *fileName = [NSString stringWithFormat:@"%@_%@.doc", L(@"creation_content"), [[AIUADataManager sharedManager] currentDateString]];
-    NSURL *tempFileURL = [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:fileName]];
+    // 创建临时文件，使用.txt格式以确保兼容性（微信、QQ等都能打开）
+    NSString *fileName = [NSString stringWithFormat:@"%@_%@.txt", L(@"creation_content"), [[AIUADataManager sharedManager] currentDateString]];
+    NSString *tempFilePath = [NSTemporaryDirectory() stringByAppendingPathComponent:fileName];
+    NSURL *tempFileURL = [NSURL fileURLWithPath:tempFilePath];
     
     NSError *error;
-    [fullText writeToURL:tempFileURL atomically:YES encoding:NSUTF8StringEncoding error:&error];
+    BOOL success = [fullText writeToURL:tempFileURL atomically:YES encoding:NSUTF8StringEncoding error:&error];
     
-    if (error) {
+    if (!success || error) {
+        NSLog(@"❌ 导出文档失败: %@", error.localizedDescription);
         [AIUAMBProgressManager showTextHUD:nil withText:L(@"export_failed") andSubText:nil];
         return;
     }
     
-    // 调用系统分享
+    // 确保文件存在且可读
+    if (![[NSFileManager defaultManager] fileExistsAtPath:tempFilePath]) {
+        NSLog(@"❌ 导出文档失败: 文件创建失败");
+        [AIUAMBProgressManager showTextHUD:nil withText:L(@"export_failed") andSubText:nil];
+        return;
+    }
+    
+    // 调用系统分享，使用文件URL和文件名
     UIActivityViewController *activityVC = [[UIActivityViewController alloc] initWithActivityItems:@[tempFileURL] applicationActivities:nil];
+    
+    // 对于iPad，需要设置popover的锚点
+    if ([activityVC respondsToSelector:@selector(popoverPresentationController)]) {
+        UIPopoverPresentationController *popover = activityVC.popoverPresentationController;
+        if (popover) {
+            UIViewController *topVC = [AIUAToolsManager topViewController];
+            popover.sourceView = topVC.view;
+            popover.sourceRect = CGRectMake(topVC.view.bounds.size.width / 2, topVC.view.bounds.size.height / 2, 0, 0);
+            popover.permittedArrowDirections = 0;
+        }
+    }
     
     [[AIUAToolsManager topViewController] presentViewController:activityVC animated:YES completion:nil];
 }

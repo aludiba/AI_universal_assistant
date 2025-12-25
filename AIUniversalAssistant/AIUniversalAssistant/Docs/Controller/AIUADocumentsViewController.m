@@ -41,10 +41,10 @@
     [self.tableView registerClass:[AIUADocumentsHeaderView class] forHeaderFooterViewReuseIdentifier:@"AIUADocumentsHeaderView"];
     [self.view addSubview:self.tableView];
     
-    // 空状态提示
+    // 空状态提示（适配暗黑模式）
     self.emptyLabel = [[UILabel alloc] init];
     self.emptyLabel.text = L(@"no_documents");
-    self.emptyLabel.textColor = AIUAUIColorRGB(156, 163, 175);
+    self.emptyLabel.textColor = AIUA_SECONDARY_LABEL_COLOR; // 使用系统二级标签颜色，自动适配暗黑模式
     self.emptyLabel.font = AIUAUIFontSystem(16);
     self.emptyLabel.textAlignment = NSTextAlignmentCenter;
     self.emptyLabel.hidden = YES;
@@ -216,9 +216,9 @@
     NSString *content = document[@"content"] ?: @"";
     if (content.length > 0) {
         [UIPasteboard generalPasteboard].string = [NSString stringWithFormat:@"%@\n%@", document[@"title"] ?: @"", content];
-        [AIUAMBProgressManager showText:nil withText:L(@"copied_to_clipboard") andSubText:nil isBottom:YES];
+        [AIUAMBProgressManager showText:nil withText:L(@"copied_to_clipboard") andSubText:nil isBottom:NO];
     } else {
-        [AIUAMBProgressManager showText:nil withText:L(@"empty_document") andSubText:nil isBottom:YES];
+        [AIUAMBProgressManager showText:nil withText:L(@"empty_document") andSubText:nil isBottom:NO];
     }
 }
 
@@ -252,9 +252,9 @@
             [strongself.tableView reloadSections:[NSIndexSet indexSetWithIndex:indexPath.section] withRowAnimation:UITableViewRowAnimationAutomatic];
             strongself.emptyLabel.hidden = strongself.documents.count > 0;
             
-            [AIUAMBProgressManager showText:nil withText:L(@"deleted_success") andSubText:nil isBottom:YES];
+            [AIUAMBProgressManager showText:nil withText:L(@"deleted_success") andSubText:nil isBottom:NO];
         } else {
-            [AIUAMBProgressManager showText:nil withText:L(@"delete_failed") andSubText:nil isBottom:YES];
+            [AIUAMBProgressManager showText:nil withText:L(@"delete_failed") andSubText:nil isBottom:NO];
         }
     }];
 }

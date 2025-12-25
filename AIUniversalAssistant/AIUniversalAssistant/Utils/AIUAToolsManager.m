@@ -282,4 +282,33 @@ static NSString * const kUserDeclinedRatingKey = @"AIUAUserDeclinedRating";
     NSLog(@"[评分] 用户拒绝评分");
 }
 
+#pragma mark - 货币相关
+
+/**
+ * 根据系统语言返回对应的货币符号
+ * 简体中文：¥（人民币）
+ * 英文：$（美元）
+ * 日文：¥（日元）
+ * 其他：默认使用¥（人民币）
+ */
++ (NSString *)currencySymbol {
+    // 获取系统首选语言
+    NSString *preferredLanguage = [NSLocale preferredLanguages].firstObject;
+    
+    // 根据语言返回对应的货币符号
+    if ([preferredLanguage hasPrefix:@"zh-Hans"]) {
+        // 简体中文：人民币
+        return @"¥";
+    } else if ([preferredLanguage hasPrefix:@"en"]) {
+        // 英文：美元
+        return @"$";
+    } else if ([preferredLanguage hasPrefix:@"ja"]) {
+        // 日文：日元
+        return @"¥";
+    } else {
+        // 默认使用人民币
+        return @"¥";
+    }
+}
+
 @end
