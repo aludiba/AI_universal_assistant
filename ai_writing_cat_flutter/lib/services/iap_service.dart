@@ -1,0 +1,240 @@
+import 'dart:async';
+import 'package:in_app_purchase/in_app_purchase.dart';
+import '../config/app_config.dart';
+import '../models/subscription_model.dart';
+import 'storage_service.dart';
+
+/// 内购服务
+class IAPService {
+  static final IAPService _instance = IAPService._internal();
+  factory IAPService() => _instance;
+  IAPService._internal();
+  
+  final InAppPurchase _iap = InAppPurchase.instance;
+  StreamSubscription<List<PurchaseDetails>>? _subscription;
+  
+  final _storageService = StorageService();
+  
+  // 产品ID列表
+  final Set<String> _productIds = {
+    AppConfig.iapProductLifetime,
+    AppConfig.iapProductYearly,
+    AppConfig.iapProductMonthly,
+    AppConfig.iapProductWeekly,
+    AppConfig.iapWordPack500k,
+    AppConfig.iapWordPack2m,
+    AppConfig.iapWordPack6m,
+  };
+  
+  List<ProductDetails> _products = [];
+  bool _isAvailable = false;
+  
+  /// 初始化IAP
+  Future<void> init() async {
+    _isAvailable = await _iap.isAvailable();
+    if (!_isAvailable) {
+      return;
+    }
+    
+    // 监听购买更新
+    _subscription = _iap.purchaseStream.listen(
+      _onPurchaseUpdate,
+      onError: (error) {
+        // 处理错误
+      },
+    );
+    
+    // 加载产品信息
+    await loadProducts();
+    
+    // 恢复未完成的购买
+    await _iap.restorePurchases();
+  }
+  
+  /// 加载产品信息
+  Future<void> loadProducts() async {
+    if (!_isAvailable) return;
+    
+    try {
+      final ProductDetailsResponse response = await _iap.queryProductDetails(_productIds);
+      
+      if (response.error != null) {
+        throw Exception('加载产品失败: ${response.error!.message}');
+      }
+      
+      _products = response.productDetails;
+    } catch (e) {
+      throw Exception('加载产品失败: $e');
+    }
+  }
+  
+  /// 获取所有产品
+  List<ProductDetails> get products => _products;
+  
+  /// 根据ID获取产品
+  ProductDetails? getProductById(String productId) {
+    try {
+      return _products.firstWhere((p) => p.id == productId);
+    } catch (e) {
+      return null;
+    }
+  }
+  
+  /// 购买产品
+  Future<bool> purchaseProduct(String productId) async {
+    if (!_isAvailable) {
+      throw Exception('应用内购买不可用');
+    }
+    
+    final product = getProductById(productId);
+    if (product == null) {
+      throw Exception('产品不存在');
+    }
+    
+    final PurchaseParam purchaseParam = PurchaseParam(productDetails: product);
+    
+    try {
+      return await _iap.buyNonConsumable(purchaseParam: purchaseParam);
+    } catch (e) {
+      throw Exception('购买失败: $e');
+    }
+  }
+  
+  /// 恢复购买
+  Future<void> restorePurchases() async {
+    if (!_isAvailable) {
+      throw Exception('应用内购买不可用');
+    }
+    
+    try {
+      await _iap.restorePurchases();
+    } catch (e) {
+      throw Exception('恢复购买失败: $e');
+    }
+  }
+  
+  /// 处理购买更新
+  void _onPurchaseUpdate(List<PurchaseDetails> purchaseDetailsList) {
+    for (var purchaseDetails in purchaseDetailsList) {
+      if (purchaseDetails.status == PurchaseStatus.pending) {
+        // 购买待处理
+      } else if (purchaseDetails.status == PurchaseStatus.error) {
+        // 购买失败
+        _handleError(purchaseDetails.error!);
+      } else if (purchaseDetails.status == PurchaseStatus.purchased ||
+          purchaseDetails.status == PurchaseStatus.restored) {
+        // 购买成功或恢复成功
+        _handlePurchaseSuccess(purchaseDetails);
+      }
+      
+      // 完成购买
+      if (purchaseDetails.pendingCompletePurchase) {
+        _iap.completePurchase(purchaseDetails);
+      }
+    }
+  }
+  
+  /// 处理购买成功
+  void _handlePurchaseSuccess(PurchaseDetails details) {
+    final productId = details.productID;
+    
+    // 判断是订阅还是字数包
+    if (_isSubscriptionProduct(productId)) {
+      _handleSubscriptionPurchase(productId);
+    } else if (_isWordPackProduct(productId)) {
+      _handleWordPackPurchase(productId);
+    }
+  }
+  
+  /// 处理订阅购买
+  void _handleSubscriptionPurchase(String productId) {
+    SubscriptionType type;
+    bool isLifetime = false;
+    
+    if (productId == AppConfig.iapProductLifetime) {
+      type = SubscriptionType.lifetime;
+      isLifetime = true;
+    } else if (productId == AppConfig.iapProductYearly) {
+      type = SubscriptionType.yearly;
+    } else if (productId == AppConfig.iapProductMonthly) {
+      type = SubscriptionType.monthly;
+    } else if (productId == AppConfig.iapProductWeekly) {
+      type = SubscriptionType.weekly;
+    } else {
+      return;
+    }
+    
+    // 保存订阅信息
+    final subscription = SubscriptionModel(
+      productId: productId,
+      type: type,
+      purchaseDate: DateTime.now(),
+      expiryDate: isLifetime ? null : _calculateExpiryDate(type),
+      isActive: true,
+      isLifetime: isLifetime,
+    );
+    
+    _storageService.saveSubscription(subscription);
+    
+    // 赠送字数
+    _storageService.addWords(vipGift: AppConfig.subscriptionGiftWords);
+  }
+  
+  /// 处理字数包购买
+  void _handleWordPackPurchase(String productId) {
+    int words = 0;
+    
+    if (productId == AppConfig.iapWordPack500k) {
+      words = 500000;
+    } else if (productId == AppConfig.iapWordPack2m) {
+      words = 2000000;
+    } else if (productId == AppConfig.iapWordPack6m) {
+      words = 6000000;
+    }
+    
+    if (words > 0) {
+      _storageService.addWords(purchased: words);
+    }
+  }
+  
+  /// 处理错误
+  void _handleError(IAPError error) {
+    // 可以在这里添加错误处理逻辑
+  }
+  
+  /// 判断是否为订阅产品
+  bool _isSubscriptionProduct(String productId) {
+    return productId == AppConfig.iapProductLifetime ||
+        productId == AppConfig.iapProductYearly ||
+        productId == AppConfig.iapProductMonthly ||
+        productId == AppConfig.iapProductWeekly;
+  }
+  
+  /// 判断是否为字数包产品
+  bool _isWordPackProduct(String productId) {
+    return productId == AppConfig.iapWordPack500k ||
+        productId == AppConfig.iapWordPack2m ||
+        productId == AppConfig.iapWordPack6m;
+  }
+  
+  /// 计算过期时间
+  DateTime _calculateExpiryDate(SubscriptionType type) {
+    final now = DateTime.now();
+    switch (type) {
+      case SubscriptionType.weekly:
+        return now.add(const Duration(days: 7));
+      case SubscriptionType.monthly:
+        return now.add(const Duration(days: 30));
+      case SubscriptionType.yearly:
+        return now.add(const Duration(days: 365));
+      default:
+        return now;
+    }
+  }
+  
+  /// 销毁
+  void dispose() {
+    _subscription?.cancel();
+  }
+}
+
