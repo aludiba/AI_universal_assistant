@@ -12,6 +12,7 @@ class HotProvider with ChangeNotifier {
   List<HotItemModel> _favoriteItems = [];
   List<HotItemModel> _recentUsedItems = [];
   bool _isLoading = false;
+  Locale? _currentLocale;
   
   List<HotCategoryModel> get categories => _categories;
   int get selectedCategoryIndex => _selectedCategoryIndex;
@@ -32,21 +33,31 @@ class HotProvider with ChangeNotifier {
   }
   
   /// 初始化数据
-  Future<void> init() async {
+  Future<void> init({Locale? locale}) async {
     _isLoading = true;
     notifyListeners();
     
     try {
-      _categories = await _hotService.loadHotCategories();
+      _currentLocale = locale;
+      _categories = await _hotService.loadHotCategories(localeOverride: locale);
       await refreshFavorites();
       await refreshRecentUsed();
       await updateContentForSelectedCategory();
     } catch (e) {
-      print('Error initializing hot provider: $e');
+      debugPrint('Error initializing hot provider: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  /// 当系统/应用语言变化时，重新加载本地 JSON（用于让本地模板随语言切换）
+  Future<void> ensureLocale(Locale locale) async {
+    if (_currentLocale?.languageCode == locale.languageCode) return;
+    _currentLocale = locale;
+    _categories = await _hotService.loadHotCategories(localeOverride: locale);
+    // 语言切换后，保持索引不变，但需要刷新当前内容
+    await updateContentForSelectedCategory();
   }
   
   /// 切换分类

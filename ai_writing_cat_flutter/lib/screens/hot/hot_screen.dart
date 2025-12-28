@@ -6,6 +6,7 @@ import '../../models/hot_item_model.dart';
 import '../../widgets/hot_card_widget.dart';
 import '../../constants/app_styles.dart';
 import '../../constants/app_colors.dart';
+import '../../l10n/app_localizations.dart';
 import 'hot_search_screen.dart';
 import 'hot_writing_input_screen.dart';
 
@@ -42,6 +43,12 @@ class _HotScreenState extends State<HotScreen> with AutomaticKeepAliveClientMixi
   Widget build(BuildContext context) {
     super.build(context);
     
+    // 跟随系统/应用语言切换：语言变化时重新加载本地 JSON
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<HotProvider>().ensureLocale(Localizations.localeOf(context));
+    });
+    
     return Scaffold(
       body: Column(
         children: [
@@ -60,6 +67,7 @@ class _HotScreenState extends State<HotScreen> with AutomaticKeepAliveClientMixi
   
   /// 构建导航栏（包含假搜索框）
   Widget _buildAppBar() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top,
@@ -95,7 +103,7 @@ class _HotScreenState extends State<HotScreen> with AutomaticKeepAliveClientMixi
               ),
               const SizedBox(width: 8),
               Text(
-                '输入关键字搜索模板',
+                l10n.searchPlaceholder,
                 style: AppStyles.bodyMedium.copyWith(
                   color: AppColors.getTextSecondary(context),
                 ),
@@ -350,33 +358,34 @@ class _HotScreenState extends State<HotScreen> with AutomaticKeepAliveClientMixi
   
   /// 构建收藏页面内容
   Widget _buildFavoriteContent(HotProvider provider) {
+    final l10n = AppLocalizations.of(context)!;
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         // 我的关注section
         Text(
-          '我的关注',
+          l10n.myFollowing,
           style: AppStyles.titleMedium.copyWith(
             fontWeight: FontWeight.bold,
           ),
         ),
         const SizedBox(height: 16),
         provider.favoriteItems.isEmpty
-            ? const EmptyStateCard(message: '暂无收藏内容')
+            ? EmptyStateCard(message: l10n.noFavoriteContentYet)
             : _buildGridView(provider.favoriteItems, false),
         
         const SizedBox(height: 32),
         
         // 最近使用section
         Text(
-          '最近使用',
+          l10n.recentlyUsed,
           style: AppStyles.titleMedium.copyWith(
             fontWeight: FontWeight.bold,
           ),
         ),
         const SizedBox(height: 16),
         provider.recentUsedItems.isEmpty
-            ? const EmptyStateCard(message: '暂无最近使用')
+            ? EmptyStateCard(message: l10n.noRecentItems)
             : _buildGridView(provider.recentUsedItems, false),
       ],
     );
@@ -384,13 +393,14 @@ class _HotScreenState extends State<HotScreen> with AutomaticKeepAliveClientMixi
   
   /// 构建指定分类的内容（用于PageView）
   Widget _buildNormalContentForCategory(HotProvider provider, String categoryId) {
+    final l10n = AppLocalizations.of(context)!;
     final items = provider.categories
         .firstWhere((c) => c.id == categoryId)
         .items;
     
     if (items.isEmpty) {
-      return const Center(
-        child: Text('暂无内容'),
+      return Center(
+        child: Text(l10n.noContent),
       );
     }
     
@@ -474,21 +484,22 @@ class _HotScreenState extends State<HotScreen> with AutomaticKeepAliveClientMixi
   /// 处理收藏点击
   void _handleFavoriteTap(HotItemModel item, bool currentFavorite) async {
     final provider = context.read<HotProvider>();
+    final l10n = AppLocalizations.of(context)!;
     
     if (currentFavorite) {
       // 取消收藏 - 显示确认对话框
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('确认取消收藏吗？'),
+          title: Text(l10n.confirmUnfavorite),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('再想想'),
+              child: Text(l10n.thinkAgain),
             ),
             TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('确认'),
+              child: Text(l10n.confirm),
             ),
           ],
         ),
@@ -505,9 +516,9 @@ class _HotScreenState extends State<HotScreen> with AutomaticKeepAliveClientMixi
       await provider.toggleFavorite(item);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('已收藏'),
-            duration: Duration(seconds: 1),
+          SnackBar(
+            content: Text(l10n.favorited),
+            duration: const Duration(seconds: 1),
           ),
         );
         setState(() {});

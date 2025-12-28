@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../constants/app_styles.dart';
+import '../../l10n/app_localizations.dart';
 import 'ai_writing_screen.dart';
 
 /// 写作页面
@@ -8,17 +9,18 @@ class WriterScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('AI写作'),
+        title: Text(l10n.writerTitle),
       ),
       body: ListView(
         padding: const EdgeInsets.all(AppStyles.paddingMedium),
         children: [
           _buildWritingTypeCard(
             context,
-            title: '自由创作',
-            description: '根据您的主题和要求，AI帮您创作内容',
+            title: l10n.writingFreeTitle,
+            description: l10n.writingFreeDesc,
             icon: Icons.edit,
             color: Colors.blue,
             onTap: () {
@@ -32,8 +34,8 @@ class WriterScreen extends StatelessWidget {
           ),
           _buildWritingTypeCard(
             context,
-            title: '续写',
-            description: '基于您的内容，AI帮您继续写作',
+            title: l10n.continueWriting,
+            description: l10n.writingContinueDesc,
             icon: Icons.navigate_next,
             color: Colors.green,
             onTap: () {
@@ -47,8 +49,8 @@ class WriterScreen extends StatelessWidget {
           ),
           _buildWritingTypeCard(
             context,
-            title: '改写',
-            description: 'AI帮您优化表达，改写您的内容',
+            title: l10n.rewrite,
+            description: l10n.writingRewriteDesc,
             icon: Icons.refresh,
             color: Colors.orange,
             onTap: () {
@@ -62,8 +64,8 @@ class WriterScreen extends StatelessWidget {
           ),
           _buildWritingTypeCard(
             context,
-            title: '扩写',
-            description: 'AI帮您丰富内容，增加细节',
+            title: l10n.expandWriting,
+            description: l10n.writingExpandDesc,
             icon: Icons.expand,
             color: Colors.purple,
             onTap: () {
@@ -77,8 +79,8 @@ class WriterScreen extends StatelessWidget {
           ),
           _buildWritingTypeCard(
             context,
-            title: '翻译',
-            description: 'AI帮您翻译成多种语言',
+            title: l10n.translate,
+            description: l10n.writingTranslateDesc,
             icon: Icons.translate,
             color: Colors.teal,
             onTap: () {

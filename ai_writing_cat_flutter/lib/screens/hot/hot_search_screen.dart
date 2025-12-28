@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/hot_provider.dart';
 import '../../models/hot_item_model.dart';
-import '../../constants/app_styles.dart';
+import '../../l10n/app_localizations.dart';
 import 'hot_writing_input_screen.dart';
 
 /// 热门搜索页面
@@ -25,21 +25,22 @@ class _HotSearchScreenState extends State<HotSearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         title: TextField(
           controller: _searchController,
           autofocus: true,
-          decoration: const InputDecoration(
-            hintText: '搜索模板',
+          decoration: InputDecoration(
+            hintText: l10n.searchPlaceholder,
             border: InputBorder.none,
           ),
           onChanged: _performSearch,
         ),
       ),
       body: _searchResults.isEmpty
-          ? const Center(
-              child: Text('请输入关键字搜索'),
+          ? Center(
+              child: Text(l10n.searchEnterKeyword),
             )
           : ListView.builder(
               itemCount: _searchResults.length,

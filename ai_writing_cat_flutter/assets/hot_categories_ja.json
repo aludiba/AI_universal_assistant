@@ -1,0 +1,294 @@
+[
+  {
+    "id": "hot",
+    "title": "人気",
+    "items": [
+      {
+        "title": "スピーチ",
+        "subtitle": "しっかり準備して、すべてのチャンスを掴もう",
+        "icon": "mic",
+        "type": "speech",
+        "categoryId": "hot",
+        "categoryTitle": "人気"
+      },
+      {
+        "title": "キャンパスの気づき",
+        "subtitle": "学生生活の本音と成長を記録する",
+        "icon": "heart",
+        "type": "experience",
+        "categoryId": "hot",
+        "categoryTitle": "人気"
+      },
+      {
+        "title": "反省・自己評価",
+        "subtitle": "間違いを認め、直すことが一番の成長",
+        "icon": "edit",
+        "type": "self_criticism",
+        "categoryId": "hot",
+        "categoryTitle": "人気"
+      },
+      {
+        "title": "インターンまとめ",
+        "subtitle": "一夜漬けは不要。今から準備しよう",
+        "icon": "school",
+        "type": "internship",
+        "categoryId": "hot",
+        "categoryTitle": "人気"
+      },
+      {
+        "title": "小紅書（RED）投稿",
+        "subtitle": "タイトル・本文・ハッシュタグを一括生成",
+        "icon": "article",
+        "type": "xiaohongshu",
+        "categoryId": "hot",
+        "categoryTitle": "人気"
+      },
+      {
+        "title": "詩の創作",
+        "subtitle": "テーマを入力すると、AIが一首作ります",
+        "icon": "book",
+        "type": "poetry",
+        "categoryId": "hot",
+        "categoryTitle": "人気"
+      }
+    ]
+  },
+  {
+    "id": "favorites",
+    "title": "お気に入り",
+    "isFavoriteCategory": true,
+    "items": []
+  },
+  {
+    "id": "social",
+    "title": "SNS",
+    "items": [
+      {
+        "title": "Toutiao記事",
+        "subtitle": "新機能が登場。試してみよう",
+        "icon": "newspaper",
+        "type": "toutiao",
+        "categoryId": "social",
+        "categoryTitle": "SNS"
+      },
+      {
+        "title": "WeChat投稿",
+        "subtitle": "モーメンツでバズる記事を作る",
+        "icon": "article",
+        "type": "wechat",
+        "categoryId": "social",
+        "categoryTitle": "SNS"
+      },
+      {
+        "title": "Zhihu回答",
+        "subtitle": "招待ありがとう。現場にいます（冗談です）",
+        "icon": "help",
+        "type": "zhihu",
+        "categoryId": "social",
+        "categoryTitle": "SNS"
+      },
+      {
+        "title": "モーメンツ投稿",
+        "subtitle": "あなたの多彩なスタイルはきっと評価される",
+        "icon": "people",
+        "type": "moments",
+        "categoryId": "social",
+        "categoryTitle": "SNS"
+      },
+      {
+        "title": "動画台本",
+        "subtitle": "一秒ごとに計画して、プロ級の動画へ",
+        "icon": "play_circle",
+        "type": "video_script",
+        "categoryId": "social",
+        "categoryTitle": "SNS"
+      }
+    ]
+  },
+  {
+    "id": "campus",
+    "title": "キャンパス",
+    "items": [
+      {
+        "title": "お題作文",
+        "subtitle": "記述文・随筆など多様なお題作文",
+        "icon": "edit",
+        "type": "composition",
+        "categoryId": "campus",
+        "categoryTitle": "キャンパス"
+      },
+      {
+        "title": "読書ノート",
+        "subtitle": "読後感を書きやすくする",
+        "icon": "menu_book",
+        "type": "book_review",
+        "categoryId": "campus",
+        "categoryTitle": "キャンパス"
+      },
+      {
+        "title": "学術論文",
+        "subtitle": "参考文を生成。テーマが具体的ほど詳しく",
+        "icon": "description",
+        "type": "research",
+        "categoryId": "campus",
+        "categoryTitle": "キャンパス"
+      },
+      {
+        "title": "英語ライティング",
+        "subtitle": "文法ミス・スペルミスとさよなら",
+        "icon": "language",
+        "type": "english",
+        "categoryId": "campus",
+        "categoryTitle": "キャンパス"
+      },
+      {
+        "title": "高考作文",
+        "subtitle": "発想を刺激し、試験で差をつける",
+        "icon": "lightbulb",
+        "type": "gaokao",
+        "categoryId": "campus",
+        "categoryTitle": "キャンパス"
+      }
+    ]
+  },
+  {
+    "id": "workplace",
+    "title": "職場",
+    "items": [
+      {
+        "title": "業務報告",
+        "subtitle": "優秀な社員は報告書に埋もれない（冗談）",
+        "icon": "calendar_today",
+        "type": "report",
+        "categoryId": "workplace",
+        "categoryTitle": "職場"
+      },
+      {
+        "title": "年間まとめ",
+        "subtitle": "AIで一年の仕事を振り返ろう",
+        "icon": "bar_chart",
+        "type": "year_summary",
+        "categoryId": "workplace",
+        "categoryTitle": "職場"
+      },
+      {
+        "title": "PPT構成",
+        "subtitle": "PPTのアウトライン生成で効率UP",
+        "icon": "layers",
+        "type": "ppt",
+        "categoryId": "workplace",
+        "categoryTitle": "職場"
+      },
+      {
+        "title": "目標管理",
+        "subtitle": "Markdown形式のOKRで目標達成を支援",
+        "icon": "track_changes",
+        "type": "okr",
+        "categoryId": "workplace",
+        "categoryTitle": "職場"
+      },
+      {
+        "title": "ビジネスメール",
+        "subtitle": "件名を入れるだけでプロ文面を生成",
+        "icon": "email",
+        "type": "email",
+        "categoryId": "workplace",
+        "categoryTitle": "職場"
+      }
+    ]
+  },
+  {
+    "id": "marketing",
+    "title": "マーケ",
+    "items": [
+      {
+        "title": "モーメンツ販促",
+        "subtitle": "目を引くモーメンツ広告の書き方",
+        "icon": "chat_bubble",
+        "type": "moments_ads",
+        "categoryId": "marketing",
+        "categoryTitle": "マーケ"
+      },
+      {
+        "title": "バズるタイトル",
+        "subtitle": "キャッチーなタイトルを複数提案",
+        "icon": "local_fire_department",
+        "type": "hot_title",
+        "categoryId": "marketing",
+        "categoryTitle": "マーケ"
+      },
+      {
+        "title": "ライブコマース台本",
+        "subtitle": "魅力的な商品紹介文を作成",
+        "icon": "campaign",
+        "type": "live_commerce",
+        "categoryId": "marketing",
+        "categoryTitle": "マーケ"
+      },
+      {
+        "title": "ブランドスローガン",
+        "subtitle": "短く力強く、忘れられない一言",
+        "icon": "label",
+        "type": "slogan",
+        "categoryId": "marketing",
+        "categoryTitle": "マーケ"
+      },
+      {
+        "title": "施策プラン",
+        "subtitle": "オンライン/オフラインの施策案を作成",
+        "icon": "celebration",
+        "type": "campaign",
+        "categoryId": "marketing",
+        "categoryTitle": "マーケ"
+      }
+    ]
+  },
+  {
+    "id": "life",
+    "title": "生活",
+    "items": [
+      {
+        "title": "レシピ",
+        "subtitle": "どんな料理でも作り方を教えます",
+        "icon": "restaurant",
+        "type": "recipe",
+        "categoryId": "life",
+        "categoryTitle": "生活"
+      },
+      {
+        "title": "旅行ガイド",
+        "subtitle": "しっかり計画して、無理な旅は卒業",
+        "icon": "flight",
+        "type": "travel",
+        "categoryId": "life",
+        "categoryTitle": "生活"
+      },
+      {
+        "title": "彼女への返信",
+        "subtitle": "難問を加点ポイントに変える",
+        "icon": "favorite",
+        "type": "girlfriend_reply",
+        "categoryId": "life",
+        "categoryTitle": "生活"
+      },
+      {
+        "title": "謝罪ジェネレーター",
+        "subtitle": "ワンクリックで長文の謝罪文を生成",
+        "icon": "pan_tool",
+        "type": "apology",
+        "categoryId": "life",
+        "categoryTitle": "生活"
+      },
+      {
+        "title": "占い",
+        "subtitle": "AI Alex が運勢を読み解く",
+        "icon": "auto_awesome",
+        "type": "horoscope",
+        "categoryId": "life",
+        "categoryTitle": "生活"
+      }
+    ]
+  }
+]
+
+

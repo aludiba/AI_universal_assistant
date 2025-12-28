@@ -1,0 +1,294 @@
+[
+  {
+    "id": "hot",
+    "title": "Hot",
+    "items": [
+      {
+        "title": "Speech",
+        "subtitle": "Be well-prepared and seize every opportunity",
+        "icon": "mic",
+        "type": "speech",
+        "categoryId": "hot",
+        "categoryTitle": "Hot"
+      },
+      {
+        "title": "Campus reflections",
+        "subtitle": "Capture true feelings and growth in campus life",
+        "icon": "heart",
+        "type": "experience",
+        "categoryId": "hot",
+        "categoryTitle": "Hot"
+      },
+      {
+        "title": "Self-review",
+        "subtitle": "Admit mistakes; fixing them is progress",
+        "icon": "edit",
+        "type": "self_criticism",
+        "categoryId": "hot",
+        "categoryTitle": "Hot"
+      },
+      {
+        "title": "Internship summary",
+        "subtitle": "No cramming—start preparing now",
+        "icon": "school",
+        "type": "internship",
+        "categoryId": "hot",
+        "categoryTitle": "Hot"
+      },
+      {
+        "title": "Xiaohongshu post",
+        "subtitle": "Title, body, hashtags—all in one",
+        "icon": "article",
+        "type": "xiaohongshu",
+        "categoryId": "hot",
+        "categoryTitle": "Hot"
+      },
+      {
+        "title": "Poetry writing",
+        "subtitle": "Give a topic and I'll compose a poem",
+        "icon": "book",
+        "type": "poetry",
+        "categoryId": "hot",
+        "categoryTitle": "Hot"
+      }
+    ]
+  },
+  {
+    "id": "favorites",
+    "title": "Favorites",
+    "isFavoriteCategory": true,
+    "items": []
+  },
+  {
+    "id": "social",
+    "title": "Social",
+    "items": [
+      {
+        "title": "Toutiao article",
+        "subtitle": "New features are out—give it a try",
+        "icon": "newspaper",
+        "type": "toutiao",
+        "categoryId": "social",
+        "categoryTitle": "Social"
+      },
+      {
+        "title": "WeChat post",
+        "subtitle": "Create viral articles for Moments",
+        "icon": "article",
+        "type": "wechat",
+        "categoryId": "social",
+        "categoryTitle": "Social"
+      },
+      {
+        "title": "Zhihu answer",
+        "subtitle": "Thanks for the invite, I'm on site (just kidding)",
+        "icon": "help",
+        "type": "zhihu",
+        "categoryId": "social",
+        "categoryTitle": "Social"
+      },
+      {
+        "title": "Moments update",
+        "subtitle": "Your style will be appreciated",
+        "icon": "people",
+        "type": "moments",
+        "categoryId": "social",
+        "categoryTitle": "Social"
+      },
+      {
+        "title": "Video script",
+        "subtitle": "Plan every second for a pro video",
+        "icon": "play_circle",
+        "type": "video_script",
+        "categoryId": "social",
+        "categoryTitle": "Social"
+      }
+    ]
+  },
+  {
+    "id": "campus",
+    "title": "Campus",
+    "items": [
+      {
+        "title": "Essay topic",
+        "subtitle": "Topic-based writing: narrative, prose, etc.",
+        "icon": "edit",
+        "type": "composition",
+        "categoryId": "campus",
+        "categoryTitle": "Campus"
+      },
+      {
+        "title": "Reading notes",
+        "subtitle": "Write a book review efficiently",
+        "icon": "menu_book",
+        "type": "book_review",
+        "categoryId": "campus",
+        "categoryTitle": "Campus"
+      },
+      {
+        "title": "Academic paper",
+        "subtitle": "Generate sample text; more specific topic, more detail",
+        "icon": "description",
+        "type": "research",
+        "categoryId": "campus",
+        "categoryTitle": "Campus"
+      },
+      {
+        "title": "English writing",
+        "subtitle": "Say goodbye to grammar and spelling mistakes",
+        "icon": "language",
+        "type": "english",
+        "categoryId": "campus",
+        "categoryTitle": "Campus"
+      },
+      {
+        "title": "Gaokao essay",
+        "subtitle": "Spark ideas and stand out in the exam",
+        "icon": "lightbulb",
+        "type": "gaokao",
+        "categoryId": "campus",
+        "categoryTitle": "Campus"
+      }
+    ]
+  },
+  {
+    "id": "workplace",
+    "title": "Workplace",
+    "items": [
+      {
+        "title": "Work report",
+        "subtitle": "Great employees aren't buried in reports (just kidding)",
+        "icon": "calendar_today",
+        "type": "report",
+        "categoryId": "workplace",
+        "categoryTitle": "Workplace"
+      },
+      {
+        "title": "Annual summary",
+        "subtitle": "Let AI review your year at work",
+        "icon": "bar_chart",
+        "type": "year_summary",
+        "categoryId": "workplace",
+        "categoryTitle": "Workplace"
+      },
+      {
+        "title": "PPT outline",
+        "subtitle": "Generate PPT structure to boost efficiency",
+        "icon": "layers",
+        "type": "ppt",
+        "categoryId": "workplace",
+        "categoryTitle": "Workplace"
+      },
+      {
+        "title": "Goal management",
+        "subtitle": "OKR in Markdown to help achieve goals",
+        "icon": "track_changes",
+        "type": "okr",
+        "categoryId": "workplace",
+        "categoryTitle": "Workplace"
+      },
+      {
+        "title": "Business email",
+        "subtitle": "Provide a subject; AI writes a professional email",
+        "icon": "email",
+        "type": "email",
+        "categoryId": "workplace",
+        "categoryTitle": "Workplace"
+      }
+    ]
+  },
+  {
+    "id": "marketing",
+    "title": "Marketing",
+    "items": [
+      {
+        "title": "Moments marketing",
+        "subtitle": "How to post ads in Moments more attractively",
+        "icon": "chat_bubble",
+        "type": "moments_ads",
+        "categoryId": "marketing",
+        "categoryTitle": "Marketing"
+      },
+      {
+        "title": "Trending titles",
+        "subtitle": "Generate multiple catchy titles quickly",
+        "icon": "local_fire_department",
+        "type": "hot_title",
+        "categoryId": "marketing",
+        "categoryTitle": "Marketing"
+      },
+      {
+        "title": "Live commerce script",
+        "subtitle": "Create compelling product copy",
+        "icon": "campaign",
+        "type": "live_commerce",
+        "categoryId": "marketing",
+        "categoryTitle": "Marketing"
+      },
+      {
+        "title": "Brand slogan",
+        "subtitle": "Short, powerful, unforgettable",
+        "icon": "label",
+        "type": "slogan",
+        "categoryId": "marketing",
+        "categoryTitle": "Marketing"
+      },
+      {
+        "title": "Campaign plan",
+        "subtitle": "Online/offline marketing campaign plan",
+        "icon": "celebration",
+        "type": "campaign",
+        "categoryId": "marketing",
+        "categoryTitle": "Marketing"
+      }
+    ]
+  },
+  {
+    "id": "life",
+    "title": "Life",
+    "items": [
+      {
+        "title": "Recipes",
+        "subtitle": "Any dish I can teach you how to make",
+        "icon": "restaurant",
+        "type": "recipe",
+        "categoryId": "life",
+        "categoryTitle": "Life"
+      },
+      {
+        "title": "Travel guide",
+        "subtitle": "Plan well—no more extreme travel",
+        "icon": "flight",
+        "type": "travel",
+        "categoryId": "life",
+        "categoryTitle": "Life"
+      },
+      {
+        "title": "Girlfriend replies",
+        "subtitle": "Turn tough questions into bonus points",
+        "icon": "favorite",
+        "type": "girlfriend_reply",
+        "categoryId": "life",
+        "categoryTitle": "Life"
+      },
+      {
+        "title": "Apology helper",
+        "subtitle": "One click to generate a long apology letter",
+        "icon": "pan_tool",
+        "type": "apology",
+        "categoryId": "life",
+        "categoryTitle": "Life"
+      },
+      {
+        "title": "Horoscope",
+        "subtitle": "AI Alex reads your fortune",
+        "icon": "auto_awesome",
+        "type": "horoscope",
+        "categoryId": "life",
+        "categoryTitle": "Life"
+      }
+    ]
+  }
+]
+
+

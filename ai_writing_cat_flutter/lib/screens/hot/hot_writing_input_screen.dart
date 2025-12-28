@@ -5,6 +5,7 @@ import '../../models/hot_item_model.dart';
 import '../../providers/app_provider.dart';
 import '../../services/deepseek_service.dart';
 import '../../constants/app_styles.dart';
+import '../../l10n/app_localizations.dart';
 
 /// 热门模板写作输入页面
 class HotWritingInputScreen extends StatefulWidget {
@@ -35,6 +36,7 @@ class _HotWritingInputScreenState extends State<HotWritingInputScreen> {
   
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.item.title),
@@ -65,12 +67,12 @@ class _HotWritingInputScreenState extends State<HotWritingInputScreen> {
           const SizedBox(height: AppStyles.paddingLarge),
           
           // 输入区域
-          const Text('请输入创作内容', style: AppStyles.titleMedium),
+          Text(l10n.hotWritingInputTitle, style: AppStyles.titleMedium),
           const SizedBox(height: AppStyles.paddingMedium),
           TextField(
             controller: _promptController,
-            decoration: const InputDecoration(
-              hintText: '输入您的创作主题或要求...',
+            decoration: InputDecoration(
+              hintText: l10n.hotWritingInputHint,
             ),
             maxLines: 5,
           ),
@@ -83,10 +85,10 @@ class _HotWritingInputScreenState extends State<HotWritingInputScreen> {
             child: ElevatedButton(
               onPressed: _isGenerating ? null : _generate,
               child: _isGenerating
-                  ? const Row(
+                  ? Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        SizedBox(
+                        const SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
@@ -94,11 +96,11 @@ class _HotWritingInputScreenState extends State<HotWritingInputScreen> {
                             color: Colors.white,
                           ),
                         ),
-                        SizedBox(width: 8),
-                        Text('生成中...'),
+                        const SizedBox(width: 8),
+                        Text(l10n.generatingShort),
                       ],
                     )
-                  : const Text('开始生成'),
+                  : Text(l10n.generate),
             ),
           ),
           
@@ -109,7 +111,7 @@ class _HotWritingInputScreenState extends State<HotWritingInputScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('生成结果', style: AppStyles.titleMedium),
+                Text(l10n.hotWritingResultTitle, style: AppStyles.titleMedium),
                 const SizedBox(height: AppStyles.paddingMedium),
                 Container(
                   padding: const EdgeInsets.all(AppStyles.paddingMedium),
@@ -119,9 +121,9 @@ class _HotWritingInputScreenState extends State<HotWritingInputScreen> {
                   ),
                   child: TextField(
                     controller: _resultController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: InputBorder.none,
-                      hintText: '生成的内容将显示在这里...',
+                      hintText: l10n.hotWritingResultHint,
                     ),
                     maxLines: null,
                     readOnly: _isGenerating,
@@ -135,9 +137,10 @@ class _HotWritingInputScreenState extends State<HotWritingInputScreen> {
   }
   
   Future<void> _generate() async {
+    final l10n = AppLocalizations.of(context)!;
     if (_promptController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('请输入创作内容')),
+        SnackBar(content: Text(l10n.hotWritingInputTitle)),
       );
       return;
     }
@@ -174,7 +177,7 @@ class _HotWritingInputScreenState extends State<HotWritingInputScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('生成失败: $e')),
+          SnackBar(content: Text('${l10n.creationFailed}: $e')),
         );
       }
     } finally {
@@ -185,29 +188,31 @@ class _HotWritingInputScreenState extends State<HotWritingInputScreen> {
   }
   
   void _copyResult() {
+    final l10n = AppLocalizations.of(context)!;
     Clipboard.setData(ClipboardData(text: _resultController.text));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('已复制到剪贴板')),
+      SnackBar(content: Text(l10n.copiedToClipboard)),
     );
   }
   
   void _showInsufficientWordsDialog() {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('字数不足'),
-        content: const Text('您的剩余字数不足，请购买字数包或开通会员。'),
+        title: Text(l10n.insufficientWords),
+        content: Text(l10n.insufficientWordsDialogContent),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               // TODO: 跳转到字数包购买页面
             },
-            child: const Text('购买'),
+            child: Text(l10n.purchaseWordPack),
           ),
         ],
       ),

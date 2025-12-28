@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
 import 'l10n/app_localizations.dart';
@@ -23,7 +22,7 @@ void main() async {
         ChangeNotifierProvider.value(value: appProvider),
         ChangeNotifierProvider(create: (_) => DocumentProvider()),
         ChangeNotifierProvider(create: (_) => TemplateProvider()..init()),
-        ChangeNotifierProvider(create: (_) => HotProvider()..init()),
+        ChangeNotifierProvider(create: (_) => HotProvider()..init(locale: appProvider.locale)),
       ],
       child: const MyApp(),
     ),
@@ -38,7 +37,7 @@ class MyApp extends StatelessWidget {
     return Consumer<AppProvider>(
       builder: (context, appProvider, _) {
         return MaterialApp(
-          title: 'AI创作喵',
+          onGenerateTitle: (context) => AppLocalizations.of(context)!.appName,
           debugShowCheckedModeBanner: false,
           
           // 主题配置
@@ -47,17 +46,8 @@ class MyApp extends StatelessWidget {
           themeMode: appProvider.themeMode,
           
           // 国际化配置
-          localizationsDelegates: [
-            AppLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: [
-            Locale('zh', ''),
-            Locale('en', ''),
-            Locale('ja', ''),
-          ],
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           locale: appProvider.locale,
           
           // 首页

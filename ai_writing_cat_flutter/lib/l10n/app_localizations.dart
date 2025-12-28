@@ -6,6 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
 import 'app_localizations_en.dart';
+import 'app_localizations_ja.dart';
 import 'app_localizations_zh.dart';
 
 // ignore_for_file: type=lint
@@ -95,6 +96,7 @@ abstract class AppLocalizations {
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
+    Locale('ja'),
     Locale('zh'),
   ];
 
@@ -116,6 +118,48 @@ abstract class AppLocalizations {
   /// **'写作'**
   String get tabWriter;
 
+  /// No description provided for @writerTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'AI写作'**
+  String get writerTitle;
+
+  /// No description provided for @writingFreeTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'自由创作'**
+  String get writingFreeTitle;
+
+  /// No description provided for @writingFreeDesc.
+  ///
+  /// In zh, this message translates to:
+  /// **'根据您的主题和要求，AI帮您创作内容'**
+  String get writingFreeDesc;
+
+  /// No description provided for @writingContinueDesc.
+  ///
+  /// In zh, this message translates to:
+  /// **'基于您的内容，AI帮您继续写作'**
+  String get writingContinueDesc;
+
+  /// No description provided for @writingRewriteDesc.
+  ///
+  /// In zh, this message translates to:
+  /// **'AI帮您优化表达，改写您的内容'**
+  String get writingRewriteDesc;
+
+  /// No description provided for @writingExpandDesc.
+  ///
+  /// In zh, this message translates to:
+  /// **'AI帮您丰富内容，增加细节'**
+  String get writingExpandDesc;
+
+  /// No description provided for @writingTranslateDesc.
+  ///
+  /// In zh, this message translates to:
+  /// **'AI帮您翻译成多种语言'**
+  String get writingTranslateDesc;
+
   /// No description provided for @tabDocs.
   ///
   /// In zh, this message translates to:
@@ -131,8 +175,14 @@ abstract class AppLocalizations {
   /// No description provided for @searchPlaceholder.
   ///
   /// In zh, this message translates to:
-  /// **'输入关键字搜索模版'**
+  /// **'输入关键字搜索模板'**
   String get searchPlaceholder;
+
+  /// No description provided for @searchEnterKeyword.
+  ///
+  /// In zh, this message translates to:
+  /// **'请输入关键字搜索'**
+  String get searchEnterKeyword;
 
   /// No description provided for @startCreating.
   ///
@@ -169,6 +219,12 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'暂无最近使用'**
   String get noRecentItems;
+
+  /// No description provided for @noContent.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂无内容'**
+  String get noContent;
 
   /// No description provided for @success.
   ///
@@ -224,6 +280,12 @@ abstract class AppLocalizations {
   /// **'生成'**
   String get generate;
 
+  /// No description provided for @generatingShort.
+  ///
+  /// In zh, this message translates to:
+  /// **'生成中...'**
+  String get generatingShort;
+
   /// No description provided for @regenerate.
   ///
   /// In zh, this message translates to:
@@ -253,6 +315,48 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'已复制到剪贴板'**
   String get copiedToClipboard;
+
+  /// No description provided for @confirmUnfavorite.
+  ///
+  /// In zh, this message translates to:
+  /// **'确认取消收藏吗？'**
+  String get confirmUnfavorite;
+
+  /// No description provided for @thinkAgain.
+  ///
+  /// In zh, this message translates to:
+  /// **'再想想'**
+  String get thinkAgain;
+
+  /// No description provided for @favorited.
+  ///
+  /// In zh, this message translates to:
+  /// **'已收藏'**
+  String get favorited;
+
+  /// No description provided for @hotWritingInputTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'请输入创作内容'**
+  String get hotWritingInputTitle;
+
+  /// No description provided for @hotWritingInputHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'输入您的创作主题或要求...'**
+  String get hotWritingInputHint;
+
+  /// No description provided for @hotWritingResultTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'生成结果'**
+  String get hotWritingResultTitle;
+
+  /// No description provided for @hotWritingResultHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'生成的内容将显示在这里...'**
+  String get hotWritingResultHint;
 
   /// No description provided for @enterTheme.
   ///
@@ -302,6 +406,30 @@ abstract class AppLocalizations {
   /// **'文档详情'**
   String get documentDetails;
 
+  /// No description provided for @documentNotFound.
+  ///
+  /// In zh, this message translates to:
+  /// **'文档不存在'**
+  String get documentNotFound;
+
+  /// No description provided for @editDocument.
+  ///
+  /// In zh, this message translates to:
+  /// **'编辑文档'**
+  String get editDocument;
+
+  /// No description provided for @savedSuccess.
+  ///
+  /// In zh, this message translates to:
+  /// **'保存成功'**
+  String get savedSuccess;
+
+  /// No description provided for @shareComingSoon.
+  ///
+  /// In zh, this message translates to:
+  /// **'分享功能开发中'**
+  String get shareComingSoon;
+
   /// No description provided for @writingRecords.
   ///
   /// In zh, this message translates to:
@@ -332,6 +460,18 @@ abstract class AppLocalizations {
   /// **'新建文档'**
   String get newDocument;
 
+  /// No description provided for @untitledDocument.
+  ///
+  /// In zh, this message translates to:
+  /// **'未命名文档'**
+  String get untitledDocument;
+
+  /// No description provided for @deleteDocumentPrompt.
+  ///
+  /// In zh, this message translates to:
+  /// **'确定要删除「{title}」吗？'**
+  String deleteDocumentPrompt(Object title);
+
   /// No description provided for @deleteConfirm.
   ///
   /// In zh, this message translates to:
@@ -350,11 +490,143 @@ abstract class AppLocalizations {
   /// **'会员特权'**
   String get memberPrivileges;
 
+  /// No description provided for @membershipAndWords.
+  ///
+  /// In zh, this message translates to:
+  /// **'会员与字数'**
+  String get membershipAndWords;
+
   /// No description provided for @writingWordPacks.
   ///
   /// In zh, this message translates to:
   /// **'创作字数包'**
   String get writingWordPacks;
+
+  /// No description provided for @appSettings.
+  ///
+  /// In zh, this message translates to:
+  /// **'应用设置'**
+  String get appSettings;
+
+  /// No description provided for @aboutSection.
+  ///
+  /// In zh, this message translates to:
+  /// **'关于'**
+  String get aboutSection;
+
+  /// No description provided for @thanksForSupport.
+  ///
+  /// In zh, this message translates to:
+  /// **'感谢您的支持！'**
+  String get thanksForSupport;
+
+  /// No description provided for @vipMember.
+  ///
+  /// In zh, this message translates to:
+  /// **'VIP会员'**
+  String get vipMember;
+
+  /// No description provided for @normalUser.
+  ///
+  /// In zh, this message translates to:
+  /// **'普通用户'**
+  String get normalUser;
+
+  /// No description provided for @permanentValid.
+  ///
+  /// In zh, this message translates to:
+  /// **'永久有效'**
+  String get permanentValid;
+
+  /// No description provided for @remainingDays.
+  ///
+  /// In zh, this message translates to:
+  /// **'剩余{days}天'**
+  String remainingDays(Object days);
+
+  /// No description provided for @vipBenefitsHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'开通会员享受更多特权'**
+  String get vipBenefitsHint;
+
+  /// No description provided for @openMembership.
+  ///
+  /// In zh, this message translates to:
+  /// **'开通'**
+  String get openMembership;
+
+  /// No description provided for @themeMode.
+  ///
+  /// In zh, this message translates to:
+  /// **'主题模式'**
+  String get themeMode;
+
+  /// No description provided for @language.
+  ///
+  /// In zh, this message translates to:
+  /// **'语言'**
+  String get language;
+
+  /// No description provided for @selectTheme.
+  ///
+  /// In zh, this message translates to:
+  /// **'选择主题'**
+  String get selectTheme;
+
+  /// No description provided for @themeSystem.
+  ///
+  /// In zh, this message translates to:
+  /// **'跟随系统'**
+  String get themeSystem;
+
+  /// No description provided for @themeLight.
+  ///
+  /// In zh, this message translates to:
+  /// **'浅色'**
+  String get themeLight;
+
+  /// No description provided for @themeDark.
+  ///
+  /// In zh, this message translates to:
+  /// **'深色'**
+  String get themeDark;
+
+  /// No description provided for @selectLanguage.
+  ///
+  /// In zh, this message translates to:
+  /// **'选择语言'**
+  String get selectLanguage;
+
+  /// No description provided for @simplifiedChinese.
+  ///
+  /// In zh, this message translates to:
+  /// **'简体中文'**
+  String get simplifiedChinese;
+
+  /// No description provided for @clearCacheConfirm.
+  ///
+  /// In zh, this message translates to:
+  /// **'确定要清理缓存吗？将清除搜索历史和临时数据。'**
+  String get clearCacheConfirm;
+
+  /// No description provided for @contactDialogContent.
+  ///
+  /// In zh, this message translates to:
+  /// **'如有任何问题或建议，请发送邮件至：\\nsupport@aiwritingcat.com'**
+  String get contactDialogContent;
+
+  /// No description provided for @aboutDescription.
+  ///
+  /// In zh, this message translates to:
+  /// **'{appName}是一款基于AI技术的智能写作助手。'**
+  String aboutDescription(Object appName);
+
+  /// No description provided for @copyright.
+  ///
+  /// In zh, this message translates to:
+  /// **'© {year} {appName} 保留所有权利'**
+  String copyright(Object appName, Object year);
 
   /// No description provided for @contactUs.
   ///
@@ -398,6 +670,12 @@ abstract class AppLocalizations {
   /// **'字数不足'**
   String get insufficientWords;
 
+  /// No description provided for @insufficientWordsDialogContent.
+  ///
+  /// In zh, this message translates to:
+  /// **'您的剩余字数不足，请购买字数包或开通会员。'**
+  String get insufficientWordsDialogContent;
+
   /// No description provided for @purchaseWordPack.
   ///
   /// In zh, this message translates to:
@@ -409,6 +687,30 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'确认购买'**
   String get confirmPurchase;
+
+  /// No description provided for @wordPackPurchasePrompt.
+  ///
+  /// In zh, this message translates to:
+  /// **'确定要购买 {words} 字数包，需支付 ¥{price}？'**
+  String wordPackPurchasePrompt(Object price, Object words);
+
+  /// No description provided for @purchaseSuccessGainedWords.
+  ///
+  /// In zh, this message translates to:
+  /// **'购买成功！已获得 {words} 字'**
+  String purchaseSuccessGainedWords(Object words);
+
+  /// No description provided for @restoreSuccessMsg.
+  ///
+  /// In zh, this message translates to:
+  /// **'恢复成功'**
+  String get restoreSuccessMsg;
+
+  /// No description provided for @restoreFailedMsg.
+  ///
+  /// In zh, this message translates to:
+  /// **'恢复失败: {error}'**
+  String restoreFailedMsg(Object error);
 
   /// No description provided for @purchaseSuccess.
   ///
@@ -548,7 +850,7 @@ class _AppLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) =>
-      <String>['en', 'zh'].contains(locale.languageCode);
+      <String>['en', 'ja', 'zh'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -559,6 +861,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   switch (locale.languageCode) {
     case 'en':
       return AppLocalizationsEn();
+    case 'ja':
+      return AppLocalizationsJa();
     case 'zh':
       return AppLocalizationsZh();
   }

@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:ui' show Locale, PlatformDispatcher;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import '../models/hot_item_model.dart';
 import 'storage_service.dart';
@@ -12,23 +14,42 @@ class HotService {
   final _storageService = StorageService();
   
   List<HotCategoryModel>? _categories;
+  String? _loadedLanguageCode;
   
   /// 加载热门分类数据
-  Future<List<HotCategoryModel>> loadHotCategories() async {
-    if (_categories != null) {
+  Future<List<HotCategoryModel>> loadHotCategories({Locale? localeOverride}) async {
+    final locale = localeOverride ?? PlatformDispatcher.instance.locale;
+    final languageCode = locale.languageCode.toLowerCase();
+    if (_categories != null && _loadedLanguageCode == languageCode) {
       return _categories!;
     }
     
     try {
-      final String jsonString = await rootBundle.loadString('assets/hot_categories.json');
+      final assetPath = _assetPathForLanguage(languageCode);
+      final String jsonString = await rootBundle.loadString(assetPath);
       final List<dynamic> jsonList = jsonDecode(jsonString) as List;
       _categories = jsonList
           .map((json) => HotCategoryModel.fromJson(json as Map<String, dynamic>))
           .toList();
+      _loadedLanguageCode = languageCode;
       return _categories!;
     } catch (e) {
-      print('Error loading hot categories: $e');
+      debugPrint('Error loading hot categories: $e');
       return [];
+    }
+  }
+
+  String _assetPathForLanguage(String languageCode) {
+    switch (languageCode) {
+      case 'ja':
+        return 'assets/hot_categories_ja.json';
+      case 'en':
+        return 'assets/hot_categories_en.json';
+      case 'zh':
+      case 'zh_hans':
+      case 'zh_hant':
+      default:
+        return 'assets/hot_categories.json';
     }
   }
   

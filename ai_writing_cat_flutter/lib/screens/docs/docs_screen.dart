@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../providers/document_provider.dart';
 import '../../models/document_model.dart';
 import '../../constants/app_styles.dart';
+import '../../l10n/app_localizations.dart';
 import 'document_detail_screen.dart';
 
 /// 文档页面
@@ -26,9 +27,10 @@ class _DocsScreenState extends State<DocsScreen> {
   
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('我的文档'),
+        title: Text(l10n.myDocuments),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
@@ -56,7 +58,7 @@ class _DocsScreenState extends State<DocsScreen> {
                   ),
                   const SizedBox(height: AppStyles.paddingMedium),
                   Text(
-                    '暂无文档',
+                    l10n.noDocuments,
                     style: AppStyles.bodyLarge.copyWith(
                       color: Colors.grey[600],
                     ),
@@ -65,7 +67,7 @@ class _DocsScreenState extends State<DocsScreen> {
                   ElevatedButton.icon(
                     onPressed: _createNewDocument,
                     icon: const Icon(Icons.add),
-                    label: const Text('创建新文档'),
+                    label: Text(l10n.newDocument),
                   ),
                 ],
               ),
@@ -90,6 +92,8 @@ class _DocsScreenState extends State<DocsScreen> {
   }
   
   Widget _buildDocumentCard(DocumentModel doc, DocumentProvider provider) {
+    final l10n = AppLocalizations.of(context)!;
+    final docTitle = doc.title.isEmpty ? l10n.untitledDocument : doc.title;
     return Card(
       margin: const EdgeInsets.only(bottom: AppStyles.paddingMedium),
       child: InkWell(
@@ -114,7 +118,7 @@ class _DocsScreenState extends State<DocsScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      doc.title.isEmpty ? '未命名文档' : doc.title,
+                      docTitle,
                       style: AppStyles.titleMedium,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -141,7 +145,7 @@ class _DocsScreenState extends State<DocsScreen> {
               Row(
                 children: [
                   Text(
-                    '${doc.wordCount} 字',
+                    '${doc.wordCount} ${l10n.words}',
                     style: AppStyles.bodySmall.copyWith(
                       color: Colors.grey[500],
                     ),
@@ -164,7 +168,8 @@ class _DocsScreenState extends State<DocsScreen> {
   
   void _createNewDocument() async {
     final provider = context.read<DocumentProvider>();
-    final doc = await provider.createDocument(title: '新文档');
+    final l10n = AppLocalizations.of(context)!;
+    final doc = await provider.createDocument(title: l10n.newDocument);
     
     if (mounted) {
       Navigator.push(
@@ -179,25 +184,27 @@ class _DocsScreenState extends State<DocsScreen> {
   }
   
   void _deleteDocument(DocumentModel doc, DocumentProvider provider) {
+    final l10n = AppLocalizations.of(context)!;
+    final docTitle = doc.title.isEmpty ? l10n.untitledDocument : doc.title;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('确认删除'),
-        content: Text('确定要删除「${doc.title.isEmpty ? "未命名文档" : doc.title}」吗？'),
+        title: Text(l10n.deleteConfirm),
+        content: Text(l10n.deleteDocumentPrompt(docTitle)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () {
               provider.deleteDocument(doc.id);
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('删除成功')),
+                SnackBar(content: Text(l10n.deletedSuccess)),
               );
             },
-            child: const Text('删除', style: TextStyle(color: Colors.red)),
+            child: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -205,17 +212,19 @@ class _DocsScreenState extends State<DocsScreen> {
   }
   
   String _formatDate(DateTime date) {
+    final l10n = AppLocalizations.of(context)!;
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final yesterday = today.subtract(const Duration(days: 1));
     final docDate = DateTime(date.year, date.month, date.day);
     
+    final timeStr = DateFormat('HH:mm', l10n.localeName).format(date);
     if (docDate == today) {
-      return '今天 ${DateFormat('HH:mm').format(date)}';
+      return '${l10n.today} $timeStr';
     } else if (docDate == yesterday) {
-      return '昨天 ${DateFormat('HH:mm').format(date)}';
+      return '${l10n.yesterday} $timeStr';
     } else {
-      return DateFormat('MM-dd HH:mm').format(date);
+      return DateFormat('MM-dd HH:mm', l10n.localeName).format(date);
     }
   }
 }

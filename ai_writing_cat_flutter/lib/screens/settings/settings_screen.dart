@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../providers/app_provider.dart';
 import '../../constants/app_styles.dart';
+import '../../l10n/app_localizations.dart';
 import 'membership_screen.dart';
 import 'word_pack_screen.dart';
 
@@ -12,9 +13,10 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('设置'),
+        title: Text(l10n.tabSettings),
       ),
       body: ListView(
         children: [
@@ -26,12 +28,12 @@ class SettingsScreen extends StatelessWidget {
           // 功能列表
           _buildSection(
             context,
-            title: '会员与字数',
+            title: l10n.membershipAndWords,
             children: [
               _buildListTile(
                 context,
                 icon: Icons.card_membership,
-                title: '会员特权',
+                title: l10n.memberPrivileges,
                 onTap: () {
                   Navigator.push(
                     context,
@@ -44,7 +46,7 @@ class SettingsScreen extends StatelessWidget {
               _buildListTile(
                 context,
                 icon: Icons.auto_awesome,
-                title: '创作字数包',
+                title: l10n.writingWordPacks,
                 onTap: () {
                   Navigator.push(
                     context,
@@ -59,14 +61,14 @@ class SettingsScreen extends StatelessWidget {
           
           _buildSection(
             context,
-            title: '应用设置',
+            title: l10n.appSettings,
             children: [
               _buildThemeTile(context),
               _buildLanguageTile(context),
               _buildListTile(
                 context,
                 icon: Icons.cleaning_services,
-                title: '清理缓存',
+                title: l10n.clearCache,
                 onTap: () => _clearCache(context),
               ),
             ],
@@ -74,23 +76,23 @@ class SettingsScreen extends StatelessWidget {
           
           _buildSection(
             context,
-            title: '关于',
+            title: l10n.aboutSection,
             children: [
               _buildListTile(
                 context,
                 icon: Icons.star_outline,
-                title: '前往评分',
+                title: l10n.rateApp,
                 onTap: () {
                   // TODO: 打开应用商店评分
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('感谢您的支持！')),
+                    SnackBar(content: Text(l10n.thanksForSupport)),
                   );
                 },
               ),
               _buildListTile(
                 context,
                 icon: Icons.share,
-                title: '分享应用',
+                title: l10n.shareApp,
                 onTap: () {
                   // TODO: 分享应用
                 },
@@ -98,7 +100,7 @@ class SettingsScreen extends StatelessWidget {
               _buildListTile(
                 context,
                 icon: Icons.contact_support,
-                title: '联系我们',
+                title: l10n.contactUs,
                 onTap: () {
                   _showContactDialog(context);
                 },
@@ -106,13 +108,13 @@ class SettingsScreen extends StatelessWidget {
               _buildListTile(
                 context,
                 icon: Icons.info_outline,
-                title: '关于我们',
+                title: l10n.aboutUs,
                 onTap: () => _showAboutDialog(context),
               ),
               _buildListTile(
                 context,
                 icon: Icons.article,
-                title: '用户协议',
+                title: l10n.userAgreement,
                 onTap: () {
                   // TODO: 显示用户协议
                 },
@@ -120,7 +122,7 @@ class SettingsScreen extends StatelessWidget {
               _buildListTile(
                 context,
                 icon: Icons.privacy_tip,
-                title: '隐私政策',
+                title: l10n.privacyPolicy,
                 onTap: () {
                   // TODO: 显示隐私政策
                 },
@@ -154,6 +156,7 @@ class SettingsScreen extends StatelessWidget {
   Widget _buildVIPCard(BuildContext context) {
     return Consumer<AppProvider>(
       builder: (context, provider, _) {
+        final l10n = AppLocalizations.of(context)!;
         final isVip = provider.isVip;
         final subscription = provider.subscription;
         
@@ -181,7 +184,7 @@ class SettingsScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isVip ? 'VIP会员' : '普通用户',
+                      isVip ? l10n.vipMember : l10n.normalUser,
                       style: AppStyles.titleMedium.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -191,11 +194,11 @@ class SettingsScreen extends StatelessWidget {
                     Text(
                       isVip && subscription != null
                           ? subscription.isLifetime
-                              ? '永久有效'
-                              : '剩余${subscription.remainingDays}天'
-                          : '开通会员享受更多特权',
+                              ? l10n.permanentValid
+                              : l10n.remainingDays(subscription.remainingDays)
+                          : l10n.vipBenefitsHint,
                       style: AppStyles.bodyMedium.copyWith(
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                       ),
                     ),
                   ],
@@ -215,7 +218,7 @@ class SettingsScreen extends StatelessWidget {
                     backgroundColor: Colors.white,
                     foregroundColor: Colors.amber[700],
                   ),
-                  child: const Text('开通'),
+                  child: Text(l10n.openMembership),
                 ),
             ],
           ),
@@ -283,21 +286,22 @@ class SettingsScreen extends StatelessWidget {
   Widget _buildThemeTile(BuildContext context) {
     return Consumer<AppProvider>(
       builder: (context, provider, _) {
-        String themeName = '跟随系统';
+        final l10n = AppLocalizations.of(context)!;
+        String themeName = l10n.themeSystem;
         switch (provider.themeMode) {
           case ThemeMode.light:
-            themeName = '浅色';
+            themeName = l10n.themeLight;
             break;
           case ThemeMode.dark:
-            themeName = '深色';
+            themeName = l10n.themeDark;
             break;
           default:
-            themeName = '跟随系统';
+            themeName = l10n.themeSystem;
         }
         
         return ListTile(
           leading: const Icon(Icons.brightness_6),
-          title: const Text('主题模式'),
+          title: Text(l10n.themeMode),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -320,16 +324,17 @@ class SettingsScreen extends StatelessWidget {
   Widget _buildLanguageTile(BuildContext context) {
     return Consumer<AppProvider>(
       builder: (context, provider, _) {
-        String languageName = '简体中文';
+        final l10n = AppLocalizations.of(context)!;
+        String languageName = l10n.simplifiedChinese;
         if (provider.locale?.languageCode == 'en') {
-          languageName = 'English';
+          languageName = l10n.english;
         } else if (provider.locale?.languageCode == 'ja') {
-          languageName = '日本語';
+          languageName = l10n.japanese;
         }
         
         return ListTile(
           leading: const Icon(Icons.language),
-          title: const Text('语言'),
+          title: Text(l10n.language),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -350,15 +355,16 @@ class SettingsScreen extends StatelessWidget {
   }
   
   void _showThemeDialog(BuildContext context, AppProvider provider) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('选择主题'),
+        title: Text(l10n.selectTheme),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             RadioListTile<ThemeMode>(
-              title: const Text('跟随系统'),
+              title: Text(l10n.themeSystem),
               value: ThemeMode.system,
               groupValue: provider.themeMode,
               onChanged: (value) {
@@ -369,7 +375,7 @@ class SettingsScreen extends StatelessWidget {
               },
             ),
             RadioListTile<ThemeMode>(
-              title: const Text('浅色'),
+              title: Text(l10n.themeLight),
               value: ThemeMode.light,
               groupValue: provider.themeMode,
               onChanged: (value) {
@@ -380,7 +386,7 @@ class SettingsScreen extends StatelessWidget {
               },
             ),
             RadioListTile<ThemeMode>(
-              title: const Text('深色'),
+              title: Text(l10n.themeDark),
               value: ThemeMode.dark,
               groupValue: provider.themeMode,
               onChanged: (value) {
@@ -397,29 +403,30 @@ class SettingsScreen extends StatelessWidget {
   }
   
   void _showLanguageDialog(BuildContext context, AppProvider provider) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('选择语言'),
+        title: Text(l10n.selectLanguage),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              title: const Text('简体中文'),
+              title: Text(l10n.simplifiedChinese),
               onTap: () {
                 provider.setLocale(const Locale('zh'));
                 Navigator.pop(context);
               },
             ),
             ListTile(
-              title: const Text('English'),
+              title: Text(l10n.english),
               onTap: () {
                 provider.setLocale(const Locale('en'));
                 Navigator.pop(context);
               },
             ),
             ListTile(
-              title: const Text('日本語'),
+              title: Text(l10n.japanese),
               onTap: () {
                 provider.setLocale(const Locale('ja'));
                 Navigator.pop(context);
@@ -432,25 +439,26 @@ class SettingsScreen extends StatelessWidget {
   }
   
   void _clearCache(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('清理缓存'),
-        content: const Text('确定要清理缓存吗？将清除搜索历史和临时数据。'),
+        title: Text(l10n.clearCache),
+        content: Text(l10n.clearCacheConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () {
               // TODO: 清理缓存
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('缓存清理成功')),
+                SnackBar(content: Text(l10n.cacheCleared)),
               );
             },
-            child: const Text('确定'),
+            child: Text(l10n.confirm),
           ),
         ],
       ),
@@ -458,15 +466,16 @@ class SettingsScreen extends StatelessWidget {
   }
   
   void _showContactDialog(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('联系我们'),
-        content: const Text('如有任何问题或建议，请发送邮件至：\nsupport@aiwritingcat.com'),
+        title: Text(l10n.contactUs),
+        content: Text(l10n.contactDialogContent),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('确定'),
+            child: Text(l10n.confirm),
           ),
         ],
       ),
@@ -477,15 +486,17 @@ class SettingsScreen extends StatelessWidget {
     final packageInfo = await PackageInfo.fromPlatform();
     
     if (context.mounted) {
+      final l10n = AppLocalizations.of(context)!;
+      final year = DateTime.now().year.toString();
       showAboutDialog(
         context: context,
-        applicationName: 'AI创作喵',
+        applicationName: l10n.appName,
         applicationVersion: packageInfo.version,
         applicationIcon: const FlutterLogo(size: 48),
         children: [
-          const Text('AI创作喵是一款基于AI技术的智能写作助手。'),
+          Text(l10n.aboutDescription(l10n.appName)),
           const SizedBox(height: 8),
-          const Text('© 2025 AI创作喵 保留所有权利'),
+          Text(l10n.copyright(year, l10n.appName)),
         ],
       );
     }

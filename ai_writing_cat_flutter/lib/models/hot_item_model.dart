@@ -39,7 +39,7 @@ class HotItemModel {
   }
   
   // 生成唯一ID
-  String get id => '$categoryId\_$type';
+  String get id => '${categoryId}_$type';
 }
 
 /// 热门分类模型
