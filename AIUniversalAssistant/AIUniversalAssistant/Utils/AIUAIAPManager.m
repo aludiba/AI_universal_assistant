@@ -99,7 +99,8 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
     self.productsRequest.delegate = self;
     [self.productsRequest start];
     
-    NSLog(@"[IAP] 开始请求产品信息: %@", productIdentifiers);
+    NSLog(@"[IAP] 开始请求产品信息，Bundle ID: %@", [[NSBundle mainBundle] bundleIdentifier]);
+    NSLog(@"[IAP] 请求的产品ID列表: %@", productIdentifiers);
 }
 
 - (void)fetchWordPackProductsWithCompletion:(AIUAIAPProductsCompletion)completion {
@@ -150,7 +151,8 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
     self.productsRequest.delegate = self;
     [self.productsRequest start];
     
-    NSLog(@"[IAP] 开始请求字数包产品信息: %@", productIdentifiers);
+    NSLog(@"[IAP] 开始请求字数包产品信息，Bundle ID: %@", [[NSBundle mainBundle] bundleIdentifier]);
+    NSLog(@"[IAP] 请求的字数包产品ID列表: %@", productIdentifiers);
 }
 
 - (void)purchaseProduct:(AIUASubscriptionProductType)productType completion:(AIUAIAPPurchaseCompletion)completion {
@@ -301,22 +303,56 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
 #pragma mark - Product ID Management
 
 - (NSString *)productIdentifierForType:(AIUASubscriptionProductType)type {
-    // 注意：这些Product ID需要在App Store Connect中创建
-    // 格式建议: com.writingCat.cn（测试）/com.hujiaofen.writingCat(生产)
-    NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
+    // 优先使用配置文件中定义的产品ID，如果没有定义则自动生成
+    NSString *productID = nil;
     
     switch (type) {
         case AIUASubscriptionProductTypeLifetimeBenefits:
-            return [NSString stringWithFormat:@"%@.lifetimeBenefits", bundleID];
+#ifdef AIUA_IAP_PRODUCT_LIFETIME
+            productID = AIUA_IAP_PRODUCT_LIFETIME;
+#else
+            {
+                NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
+                productID = [NSString stringWithFormat:@"%@.lifetimeBenefits", bundleID];
+            }
+#endif
+            break;
         case AIUASubscriptionProductTypeYearly:
-            return [NSString stringWithFormat:@"%@.yearly", bundleID];
+#ifdef AIUA_IAP_PRODUCT_YEARLY
+            productID = AIUA_IAP_PRODUCT_YEARLY;
+#else
+            {
+                NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
+                productID = [NSString stringWithFormat:@"%@.yearly", bundleID];
+            }
+#endif
+            break;
         case AIUASubscriptionProductTypeMonthly:
-            return [NSString stringWithFormat:@"%@.monthly", bundleID];
+#ifdef AIUA_IAP_PRODUCT_MONTHLY
+            productID = AIUA_IAP_PRODUCT_MONTHLY;
+#else
+            {
+                NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
+                productID = [NSString stringWithFormat:@"%@.monthly", bundleID];
+            }
+#endif
+            break;
         case AIUASubscriptionProductTypeWeekly:
-            return [NSString stringWithFormat:@"%@.weekly", bundleID];
+#ifdef AIUA_IAP_PRODUCT_WEEKLY
+            productID = AIUA_IAP_PRODUCT_WEEKLY;
+#else
+            {
+                NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
+                productID = [NSString stringWithFormat:@"%@.weekly", bundleID];
+            }
+#endif
+            break;
         default:
             return @"";
     }
+    
+    NSLog(@"[IAP] 产品类型 %ld 的产品ID: %@", (long)type, productID);
+    return productID;
 }
 
 - (NSString *)productNameForType:(AIUASubscriptionProductType)type {
@@ -339,7 +375,13 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
 - (void)productsRequest:(SKProductsRequest *)request didReceiveResponse:(SKProductsResponse *)response {
     NSLog(@"[IAP] 收到产品信息响应");
     NSLog(@"[IAP] 可用产品数量: %lu", (unsigned long)response.products.count);
-    NSLog(@"[IAP] 无效产品ID: %@", response.invalidProductIdentifiers);
+    
+    if (response.invalidProductIdentifiers.count > 0) {
+        NSLog(@"[IAP] ⚠️ 无效产品ID（请检查App Store Connect中的产品ID是否与代码中一致）: %@", response.invalidProductIdentifiers);
+        NSLog(@"[IAP] 当前Bundle ID: %@", [[NSBundle mainBundle] bundleIdentifier]);
+    } else {
+        NSLog(@"[IAP] ✅ 所有产品ID都有效");
+    }
     
     // 缓存产品信息
     for (SKProduct *product in response.products) {

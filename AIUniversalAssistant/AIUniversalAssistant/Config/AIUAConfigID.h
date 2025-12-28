@@ -49,4 +49,22 @@
 // 调试错误日志弹窗开关（开发/测试时设为1，发布时设为0）
 #define AIUA_SHOW_DEBUG_ERROR_ALERTS 1
 
+// ========== IAP产品ID配置 ==========
+// 说明：
+// 1. 如果定义了自定义产品ID，则使用自定义的（确保与App Store Connect中的完全一致）
+// 2. 如果未定义，则自动基于Bundle ID生成（格式: {BundleID}.lifetimeBenefits等）
+// 3. 产品ID必须与App Store Connect后台创建的产品ID完全一致（区分大小写）
+// 4. 如果产品正在审核，需要等待审核完成后才能在沙盒环境测试
+
+// 订阅产品ID配置（可选，如果定义了则使用，否则自动生成）
+ #define AIUA_IAP_PRODUCT_LIFETIME    @"com.hujiaofen.writingCat.lifetimeBenefits"
+ #define AIUA_IAP_PRODUCT_YEARLY      @"com.hujiaofen.writingCat.yearly"
+ #define AIUA_IAP_PRODUCT_MONTHLY     @"com.hujiaofen.writingCat.monthly"
+ #define AIUA_IAP_PRODUCT_WEEKLY      @"com.hujiaofen.writingCat.weekly"
+
+// 字数包产品ID配置（可选，如果定义了则使用，否则自动生成）
+ #define AIUA_IAP_WORDPACK_500K       @"com.yourcompany.aiassistant.wordpack.500k"
+ #define AIUA_IAP_WORDPACK_2M         @"com.yourcompany.aiassistant.wordpack.2m "
+ #define AIUA_IAP_WORDPACK_6M         @"com.yourcompany.aiassistant.wordpack.6m"
+
 #endif /* AIUAConfigID_h */

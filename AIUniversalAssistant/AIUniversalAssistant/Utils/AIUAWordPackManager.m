@@ -33,10 +33,10 @@ static NSString * const kAIUAiCloudWordPackData = @"AIUAWordPackData";
 // VIP赠送字数常量
 static const NSInteger kVIPOneTimeGiftWords = 500000; // 订阅后一次性赠送50万字
 
-// 字数包产品ID
-static NSString * const kProductIDWordPack500K = @"com.yourcompany.aiassistant.wordpack.500k";
-static NSString * const kProductIDWordPack2M = @"com.yourcompany.aiassistant.wordpack.2m";
-static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wordpack.6m";
+// 字数包产品ID（如果配置文件中定义了则使用配置的，否则基于Bundle ID生成）
+static NSString * kProductIDWordPack500K = nil;
+static NSString * kProductIDWordPack2M = nil;
+static NSString * kProductIDWordPack6M = nil;
 
 @interface AIUAWordPackManager ()
 
@@ -421,6 +421,34 @@ static NSString * const kProductIDWordPack6M = @"com.yourcompany.aiassistant.wor
 }
 
 - (NSString *)productIDForPackType:(AIUAWordPackType)type {
+    // 初始化产品ID（如果还未初始化）
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
+        
+#ifdef AIUA_IAP_WORDPACK_500K
+        kProductIDWordPack500K = AIUA_IAP_WORDPACK_500K;
+#else
+        kProductIDWordPack500K = [NSString stringWithFormat:@"%@.wordpack.500k", bundleID];
+#endif
+        
+#ifdef AIUA_IAP_WORDPACK_2M
+        kProductIDWordPack2M = AIUA_IAP_WORDPACK_2M;
+#else
+        kProductIDWordPack2M = [NSString stringWithFormat:@"%@.wordpack.2m", bundleID];
+#endif
+        
+#ifdef AIUA_IAP_WORDPACK_6M
+        kProductIDWordPack6M = AIUA_IAP_WORDPACK_6M;
+#else
+        kProductIDWordPack6M = [NSString stringWithFormat:@"%@.wordpack.6m", bundleID];
+#endif
+        
+        NSLog(@"[WordPack] 字数包产品ID初始化 - Bundle ID: %@", bundleID);
+        NSLog(@"[WordPack] 字数包产品ID - 500K: %@, 2M: %@, 6M: %@", 
+              kProductIDWordPack500K, kProductIDWordPack2M, kProductIDWordPack6M);
+    });
+    
     switch (type) {
         case AIUAWordPackType500K:
             return kProductIDWordPack500K;
