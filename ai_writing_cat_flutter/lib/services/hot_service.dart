@@ -1,7 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:ui' show Locale, PlatformDispatcher;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import '../models/hot_item_model.dart';
 import 'storage_service.dart';
 
@@ -15,6 +18,10 @@ class HotService {
   
   List<HotCategoryModel>? _categories;
   String? _loadedLanguageCode;
+
+  String? _sandboxDirPath;
+  File? _favoritesFile;
+  File? _recentUsedFile;
   
   /// 加载热门分类数据
   Future<List<HotCategoryModel>> loadHotCategories({Locale? localeOverride}) async {
@@ -99,23 +106,19 @@ class HotService {
   
   /// 获取所有收藏
   Future<List<HotItemModel>> getFavorites() async {
-    final data = _storageService.prefs.getString('hot_favorites');
-    if (data == null) return [];
-    
-    try {
-      final List<dynamic> jsonList = jsonDecode(data) as List;
-      return jsonList
-          .map((json) => HotItemModel.fromJson(json as Map<String, dynamic>))
-          .toList();
-    } catch (e) {
-      return [];
-    }
+    return _readListFromSandbox(
+      file: await _favoritesJsonFile(),
+      legacyPrefsKey: 'hot_favorites',
+    );
   }
   
   /// 保存收藏列表
   Future<void> _saveFavorites(List<HotItemModel> favorites) async {
-    final jsonString = jsonEncode(favorites.map((e) => e.toJson()).toList());
-    await _storageService.prefs.setString('hot_favorites', jsonString);
+    await _writeListToSandbox(
+      file: await _favoritesJsonFile(),
+      legacyPrefsKey: 'hot_favorites',
+      items: favorites,
+    );
   }
   
   /// 添加最近使用
@@ -139,28 +142,116 @@ class HotService {
   
   /// 获取最近使用
   Future<List<HotItemModel>> getRecentUsed() async {
-    final data = _storageService.prefs.getString('hot_recent_used');
-    if (data == null) return [];
-    
-    try {
-      final List<dynamic> jsonList = jsonDecode(data) as List;
-      return jsonList
-          .map((json) => HotItemModel.fromJson(json as Map<String, dynamic>))
-          .toList();
-    } catch (e) {
-      return [];
-    }
+    return _readListFromSandbox(
+      file: await _recentUsedJsonFile(),
+      legacyPrefsKey: 'hot_recent_used',
+    );
   }
   
   /// 保存最近使用列表
   Future<void> _saveRecentUsed(List<HotItemModel> recentUsed) async {
-    final jsonString = jsonEncode(recentUsed.map((e) => e.toJson()).toList());
-    await _storageService.prefs.setString('hot_recent_used', jsonString);
+    await _writeListToSandbox(
+      file: await _recentUsedJsonFile(),
+      legacyPrefsKey: 'hot_recent_used',
+      items: recentUsed,
+    );
   }
   
   /// 清空最近使用
   Future<void> clearRecentUsed() async {
-    await _storageService.prefs.remove('hot_recent_used');
+    final file = await _recentUsedJsonFile();
+    if (await file.exists()) {
+      try {
+        await file.delete();
+      } catch (e) {
+        debugPrint('Error deleting recent used file: $e');
+      }
+    }
+    // 兼容旧版本 prefs
+    try {
+      await _storageService.prefs.remove('hot_recent_used');
+    } catch (_) {}
+  }
+
+  Future<String> _getSandboxDirPath() async {
+    if (_sandboxDirPath != null) return _sandboxDirPath!;
+    final dir = await getApplicationDocumentsDirectory();
+    _sandboxDirPath = dir.path;
+    return _sandboxDirPath!;
+  }
+
+  Future<File> _favoritesJsonFile() async {
+    if (_favoritesFile != null) return _favoritesFile!;
+    final dir = await _getSandboxDirPath();
+    _favoritesFile = File(p.join(dir, 'hot_favorites.json'));
+    return _favoritesFile!;
+  }
+
+  Future<File> _recentUsedJsonFile() async {
+    if (_recentUsedFile != null) return _recentUsedFile!;
+    final dir = await _getSandboxDirPath();
+    _recentUsedFile = File(p.join(dir, 'hot_recent_used.json'));
+    return _recentUsedFile!;
+  }
+
+  Future<List<HotItemModel>> _readListFromSandbox({
+    required File file,
+    required String legacyPrefsKey,
+  }) async {
+    // 1) 优先读沙盒文件
+    try {
+      if (await file.exists()) {
+        final content = await file.readAsString();
+        if (content.trim().isEmpty) return [];
+        final list = jsonDecode(content);
+        if (list is! List) return [];
+        return list
+            .whereType<Map<String, dynamic>>()
+            .map((json) => HotItemModel.fromJson(json))
+            .toList();
+      }
+    } catch (e) {
+      debugPrint('Error reading ${file.path}: $e');
+    }
+
+    // 2) 兼容旧版本：从 SharedPreferences 迁移一次
+    try {
+      final legacy = _storageService.prefs.getString(legacyPrefsKey);
+      if (legacy == null || legacy.trim().isEmpty) return [];
+      final list = jsonDecode(legacy);
+      if (list is! List) return [];
+      final items = list
+          .whereType<Map<String, dynamic>>()
+          .map((json) => HotItemModel.fromJson(json))
+          .toList();
+      await _writeListToSandbox(file: file, legacyPrefsKey: legacyPrefsKey, items: items);
+      await _storageService.prefs.remove(legacyPrefsKey);
+      return items;
+    } catch (e) {
+      debugPrint('Error migrating legacy $legacyPrefsKey: $e');
+      return [];
+    }
+  }
+
+  Future<void> _writeListToSandbox({
+    required File file,
+    required String legacyPrefsKey,
+    required List<HotItemModel> items,
+  }) async {
+    try {
+      final jsonString = jsonEncode(items.map((e) => e.toJson()).toList());
+      // 原子写：写 tmp 后 replace
+      final tmp = File('${file.path}.tmp');
+      await tmp.writeAsString(jsonString, flush: true);
+      if (await file.exists()) {
+        await file.delete();
+      }
+      await tmp.rename(file.path);
+    } catch (e) {
+      debugPrint('Error writing ${file.path}: $e');
+      // 兜底：写入失败时，尽量不影响旧数据（不覆盖 legacy）
+      rethrow;
+    }
   }
 }
 
