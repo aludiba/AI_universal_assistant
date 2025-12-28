@@ -131,6 +131,45 @@ class _HotScreenState extends State<HotScreen> with AutomaticKeepAliveClientMixi
     return textPainter.size.width;
   }
 
+  // --------- Responsive layout helpers (iOS/Android phones/tablets) ---------
+  double _clamp(double v, double min, double max) => v < min ? min : (v > max ? max : v);
+
+  double _contentMaxWidth(BuildContext context) {
+    final w = MediaQuery.sizeOf(context).width;
+    // phone: full width; tablet: keep content readable
+    return w >= 700 ? 640 : double.infinity;
+  }
+
+  EdgeInsets _pagePadding(BuildContext context) {
+    final w = MediaQuery.sizeOf(context).width;
+    final h = _clamp(w * 0.04, 14, 20);
+    final v = _clamp(w * 0.03, 12, 18);
+    return EdgeInsets.symmetric(horizontal: h, vertical: v);
+  }
+
+  double _sectionGap(BuildContext context) {
+    final w = MediaQuery.sizeOf(context).width;
+    return _clamp(w * 0.05, 18, 28);
+  }
+
+  double _titleToGridGap(BuildContext context) {
+    final w = MediaQuery.sizeOf(context).width;
+    return _clamp(w * 0.03, 10, 16);
+  }
+
+  SliverGridDelegate _gridDelegateForWidth(double width) {
+    final crossAxisCount = width >= 700 ? 3 : 2;
+    final spacing = width >= 700 ? 18.0 : 14.0;
+    // 稍微提高比例：减少卡片高度，避免 iOS 上显得“空”
+    final aspect = width >= 700 ? 1.25 : 1.18;
+    return SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisCount: crossAxisCount,
+      crossAxisSpacing: spacing,
+      mainAxisSpacing: spacing,
+      childAspectRatio: aspect,
+    );
+  }
+
   ({List<String> titles, List<double> buttonLefts, List<double> buttonWidths, double contentWidth})
       _calcCategoryLayout(HotProvider provider) {
     final titles = provider.categories.map((e) => e.title).toList(growable: false);
@@ -359,35 +398,51 @@ class _HotScreenState extends State<HotScreen> with AutomaticKeepAliveClientMixi
   /// 构建收藏页面内容
   Widget _buildFavoriteContent(HotProvider provider) {
     final l10n = AppLocalizations.of(context)!;
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        // 我的关注section
-        Text(
-          l10n.myFollowing,
-          style: AppStyles.titleMedium.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+    final padding = _pagePadding(context);
+    final sectionGap = _sectionGap(context);
+    final titleGap = _titleToGridGap(context);
+
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: _contentMaxWidth(context)),
+        child: ListView(
+          padding: padding,
+          children: [
+            // 我的关注section
+            Text(
+              l10n.myFollowing,
+              style: AppStyles.titleMedium.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: titleGap),
+            provider.favoriteItems.isEmpty
+                ? EmptyStateCard(message: l10n.noFavoriteContentYet)
+                : LayoutBuilder(
+                    builder: (context, constraints) =>
+                        _buildGridView(provider.favoriteItems, false, constraints.maxWidth),
+                  ),
+
+            SizedBox(height: sectionGap),
+
+            // 最近使用section
+            Text(
+              l10n.recentlyUsed,
+              style: AppStyles.titleMedium.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: titleGap),
+            provider.recentUsedItems.isEmpty
+                ? EmptyStateCard(message: l10n.noRecentItems)
+                : LayoutBuilder(
+                    builder: (context, constraints) =>
+                        _buildGridView(provider.recentUsedItems, false, constraints.maxWidth),
+                  ),
+          ],
         ),
-        const SizedBox(height: 16),
-        provider.favoriteItems.isEmpty
-            ? EmptyStateCard(message: l10n.noFavoriteContentYet)
-            : _buildGridView(provider.favoriteItems, false),
-        
-        const SizedBox(height: 32),
-        
-        // 最近使用section
-        Text(
-          l10n.recentlyUsed,
-          style: AppStyles.titleMedium.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 16),
-        provider.recentUsedItems.isEmpty
-            ? EmptyStateCard(message: l10n.noRecentItems)
-            : _buildGridView(provider.recentUsedItems, false),
-      ],
+      ),
     );
   }
   
@@ -404,32 +459,35 @@ class _HotScreenState extends State<HotScreen> with AutomaticKeepAliveClientMixi
       );
     }
     
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 1.15, // 调整比例，让卡片高度更合适
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: _contentMaxWidth(context)),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final padding = _pagePadding(context);
+            return GridView.builder(
+              padding: padding,
+              gridDelegate: _gridDelegateForWidth(constraints.maxWidth),
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                return _buildHotCard(items[index], true);
+              },
+            );
+          },
+        ),
       ),
-      itemCount: items.length,
-      itemBuilder: (context, index) {
-        return _buildHotCard(items[index], true);
-      },
     );
   }
   
   /// 构建网格视图
-  Widget _buildGridView(List<HotItemModel> items, bool showFavoriteButton) {
+  Widget _buildGridView(List<HotItemModel> items, bool showFavoriteButton, double width) {
     return GridView.builder(
+      primary: false,
+      padding: EdgeInsets.zero,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 1.15, // 调整比例，让卡片高度更合适
-      ),
+      gridDelegate: _gridDelegateForWidth(width),
       itemCount: items.length,
       itemBuilder: (context, index) {
         return _buildHotCard(items[index], showFavoriteButton);

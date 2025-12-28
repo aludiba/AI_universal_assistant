@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:flutter/foundation.dart';
 import '../config/app_config.dart';
 import '../models/subscription_model.dart';
 import 'storage_service.dart';
@@ -31,16 +32,21 @@ class IAPService {
   
   /// 初始化IAP
   Future<void> init() async {
-    _isAvailable = await _iap.isAvailable();
-    if (!_isAvailable) {
+    try {
+      _isAvailable = await _iap.isAvailable();
+    } catch (e) {
+      _isAvailable = false;
+      debugPrint('IAP isAvailable failed: $e');
       return;
     }
+    if (!_isAvailable) return;
     
     // 监听购买更新
     _subscription = _iap.purchaseStream.listen(
       _onPurchaseUpdate,
       onError: (error) {
         // 处理错误
+        debugPrint('IAP purchaseStream error: $error');
       },
     );
     
@@ -48,7 +54,12 @@ class IAPService {
     await loadProducts();
     
     // 恢复未完成的购买
-    await _iap.restorePurchases();
+    try {
+      await _iap.restorePurchases();
+    } catch (e) {
+      // iOS 模拟器未登录 App Store 时会报 "No active account"
+      debugPrint('IAP restorePurchases failed (ignored): $e');
+    }
   }
   
   /// 加载产品信息
@@ -59,12 +70,17 @@ class IAPService {
       final ProductDetailsResponse response = await _iap.queryProductDetails(_productIds);
       
       if (response.error != null) {
-        throw Exception('加载产品失败: ${response.error!.message}');
+        // iOS 模拟器未登录 App Store 时可能会失败：不影响启动，直接降级为空列表
+        debugPrint('IAP queryProductDetails error (ignored): ${response.error!.message}');
+        _products = [];
+        return;
       }
       
       _products = response.productDetails;
     } catch (e) {
-      throw Exception('加载产品失败: $e');
+      // 不要抛出，避免阻塞 App 启动
+      debugPrint('IAP loadProducts failed (ignored): $e');
+      _products = [];
     }
   }
   
@@ -109,6 +125,7 @@ class IAPService {
     try {
       await _iap.restorePurchases();
     } catch (e) {
+      // 主动恢复购买：这里仍然抛出，便于 UI 提示
       throw Exception('恢复购买失败: $e');
     }
   }

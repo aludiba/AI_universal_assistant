@@ -28,7 +28,6 @@ class AppProvider with ChangeNotifier {
   /// 初始化
   Future<void> init() async {
     await _storageService.init();
-    await _iapService.init();
     
     // 加载主题模式
     final themeModeStr = _storageService.getThemeMode();
@@ -45,6 +44,14 @@ class AppProvider with ChangeNotifier {
     
     // 加载字数包统计
     _wordPackStats = _storageService.getWordPackStats();
+    
+    // 先把 UI 起起来，再尝试初始化 IAP（失败不阻塞启动）
+    try {
+      await _iapService.init();
+    } catch (e) {
+      // ignore: avoid_print
+      print('IAP init failed (ignored): $e');
+    }
     
     notifyListeners();
   }
