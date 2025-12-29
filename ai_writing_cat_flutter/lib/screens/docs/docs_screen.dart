@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../providers/document_provider.dart';
 import '../../models/document_model.dart';
 import '../../constants/app_styles.dart';
 import '../../l10n/app_localizations.dart';
-import 'document_detail_screen.dart';
+import '../../router/app_router.dart';
 
 /// 文档页面
 class DocsScreen extends StatefulWidget {
@@ -98,12 +99,9 @@ class _DocsScreenState extends State<DocsScreen> {
       margin: const EdgeInsets.only(bottom: AppStyles.paddingMedium),
       child: InkWell(
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => DocumentDetailScreen(documentId: doc.id),
-            ),
-          ).then((_) {
+          context
+              .pushNamed(AppRoute.docDetail.name, pathParameters: {'id': doc.id})
+              .then((_) {
             // 返回时刷新列表
             provider.loadDocuments();
           });
@@ -172,12 +170,9 @@ class _DocsScreenState extends State<DocsScreen> {
     final doc = await provider.createDocument(title: l10n.newDocument);
     
     if (mounted) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => DocumentDetailScreen(documentId: doc.id),
-        ),
-      ).then((_) {
+      context
+          .pushNamed(AppRoute.docDetail.name, pathParameters: {'id': doc.id})
+          .then((_) {
         provider.loadDocuments();
       });
     }

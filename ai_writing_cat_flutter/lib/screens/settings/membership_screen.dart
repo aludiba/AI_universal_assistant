@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
 import '../../config/app_config.dart';
@@ -259,32 +260,33 @@ class MembershipScreen extends StatelessWidget {
   
   void _purchase(BuildContext context) {
     final appProvider = context.read<AppProvider>();
+    final rootContext = context;
     
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('确认购买'),
         content: const Text('确定要购买会员吗？'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('取消'),
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
               try {
                 // TODO: 实现实际的购买逻辑
                 await appProvider.purchaseProduct(AppConfig.iapProductLifetime);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                if (rootContext.mounted) {
+                  ScaffoldMessenger.of(rootContext).showSnackBar(
                     const SnackBar(content: Text('购买成功！')),
                   );
-                  Navigator.pop(context);
+                  rootContext.pop();
                 }
               } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                if (rootContext.mounted) {
+                  ScaffoldMessenger.of(rootContext).showSnackBar(
                     SnackBar(content: Text('购买失败: $e')),
                   );
                 }

@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../models/hot_item_model.dart';
 import '../../providers/app_provider.dart';
+import '../../providers/hot_writing_provider.dart';
 import '../../services/deepseek_service.dart';
 import '../../constants/app_styles.dart';
 import '../../l10n/app_localizations.dart';
+import '../../router/app_router.dart';
 
 /// 热门模板写作输入页面
-class HotWritingInputScreen extends StatefulWidget {
+class HotWritingInputScreen extends StatelessWidget {
   final HotItemModel item;
   
   const HotWritingInputScreen({
@@ -17,34 +20,25 @@ class HotWritingInputScreen extends StatefulWidget {
   });
 
   @override
-  State<HotWritingInputScreen> createState() => _HotWritingInputScreenState();
-}
-
-class _HotWritingInputScreenState extends State<HotWritingInputScreen> {
-  final _deepseekService = DeepSeekService();
-  final _promptController = TextEditingController();
-  final _resultController = TextEditingController();
-  
-  bool _isGenerating = false;
-  
-  @override
-  void dispose() {
-    _promptController.dispose();
-    _resultController.dispose();
-    super.dispose();
-  }
-  
-  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final writingProvider = context.watch<HotWritingProvider>();
+    
+    // 初始化（如果还未初始化）
+    if (writingProvider.item?.id != item.id) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        writingProvider.initWriting(item);
+      });
+    }
+    
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.item.title),
+        title: Text(item.title),
         actions: [
-          if (_resultController.text.isNotEmpty)
+          if (writingProvider.hasResult)
             IconButton(
               icon: const Icon(Icons.copy),
-              onPressed: _copyResult,
+              onPressed: () => _copyResult(context, writingProvider),
             ),
         ],
       ),
@@ -59,7 +53,7 @@ class _HotWritingInputScreenState extends State<HotWritingInputScreen> {
               borderRadius: BorderRadius.circular(AppStyles.radiusMedium),
             ),
             child: Text(
-              widget.item.subtitle,
+              item.subtitle,
               style: AppStyles.bodyMedium,
             ),
           ),
@@ -70,7 +64,7 @@ class _HotWritingInputScreenState extends State<HotWritingInputScreen> {
           Text(l10n.hotWritingInputTitle, style: AppStyles.titleMedium),
           const SizedBox(height: AppStyles.paddingMedium),
           TextField(
-            controller: _promptController,
+            controller: writingProvider.promptController,
             decoration: InputDecoration(
               hintText: l10n.hotWritingInputHint,
             ),
@@ -83,8 +77,8 @@ class _HotWritingInputScreenState extends State<HotWritingInputScreen> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: _isGenerating ? null : _generate,
-              child: _isGenerating
+              onPressed: writingProvider.isGenerating ? null : () => _generate(context, writingProvider),
+              child: writingProvider.isGenerating
                   ? Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -107,7 +101,7 @@ class _HotWritingInputScreenState extends State<HotWritingInputScreen> {
           const SizedBox(height: AppStyles.paddingLarge),
           
           // 结果区域
-          if (_resultController.text.isNotEmpty || _isGenerating)
+          if (writingProvider.hasResult || writingProvider.isGenerating)
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -120,13 +114,13 @@ class _HotWritingInputScreenState extends State<HotWritingInputScreen> {
                     borderRadius: BorderRadius.circular(AppStyles.radiusMedium),
                   ),
                   child: TextField(
-                    controller: _resultController,
+                    controller: writingProvider.resultController,
                     decoration: InputDecoration(
                       border: InputBorder.none,
                       hintText: l10n.hotWritingResultHint,
                     ),
                     maxLines: null,
-                    readOnly: _isGenerating,
+                    readOnly: writingProvider.isGenerating,
                   ),
                 ),
               ],
@@ -136,9 +130,9 @@ class _HotWritingInputScreenState extends State<HotWritingInputScreen> {
     );
   }
   
-  Future<void> _generate() async {
+  Future<void> _generate(BuildContext context, HotWritingProvider writingProvider) async {
     final l10n = AppLocalizations.of(context)!;
-    if (_promptController.text.trim().isEmpty) {
+    if (writingProvider.promptController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.hotWritingInputTitle)),
       );
@@ -146,56 +140,50 @@ class _HotWritingInputScreenState extends State<HotWritingInputScreen> {
     }
     
     final appProvider = context.read<AppProvider>();
+    final deepseekService = DeepSeekService();
     
     // 检查字数
     if (!appProvider.hasEnoughWords(500)) {
-      _showInsufficientWordsDialog();
+      _showInsufficientWordsDialog(context);
       return;
     }
     
-    setState(() {
-      _isGenerating = true;
-      _resultController.clear();
-    });
+    writingProvider.startGenerating();
     
     try {
       // 构建提示词
-      final prompt = '${widget.item.subtitle}\n\n${_promptController.text}';
+      final prompt = '${item.subtitle}\n\n${writingProvider.promptController.text}';
       
-      final result = await _deepseekService.generateText(
+      final result = await deepseekService.generateText(
         prompt: prompt,
       );
       
-      setState(() {
-        _resultController.text = result;
-      });
+      writingProvider.setResult(result);
       
       // 消耗字数
-      final totalWords = _promptController.text.length + result.length;
+      final totalWords = writingProvider.promptController.text.length + result.length;
       await appProvider.consumeWords(totalWords);
       
     } catch (e) {
-      if (mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('${l10n.creationFailed}: $e')),
         );
       }
     } finally {
-      setState(() {
-        _isGenerating = false;
-      });
+      writingProvider.finishGenerating();
     }
   }
   
-  void _copyResult() {
+  void _copyResult(BuildContext context, HotWritingProvider writingProvider) {
     final l10n = AppLocalizations.of(context)!;
-    Clipboard.setData(ClipboardData(text: _resultController.text));
+    Clipboard.setData(ClipboardData(text: writingProvider.resultText));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(l10n.copiedToClipboard)),
     );
   }
   
-  void _showInsufficientWordsDialog() {
+  void _showInsufficientWordsDialog(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
@@ -210,7 +198,7 @@ class _HotWritingInputScreenState extends State<HotWritingInputScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              // TODO: 跳转到字数包购买页面
+              context.pushNamed(AppRoute.wordPack.name);
             },
             child: Text(l10n.purchaseWordPack),
           ),
@@ -219,4 +207,3 @@ class _HotWritingInputScreenState extends State<HotWritingInputScreen> {
     );
   }
 }
-

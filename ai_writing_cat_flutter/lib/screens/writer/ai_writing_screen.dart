@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
+import '../../providers/writing_provider.dart';
 import '../../services/deepseek_service.dart';
 import '../../constants/app_styles.dart';
 import 'writer_screen.dart';
+import '../../router/app_router.dart';
 
 /// AI写作页面
-class AIWritingScreen extends StatefulWidget {
+class AIWritingScreen extends StatelessWidget {
   final WritingType type;
   final String? initialContent;
   
@@ -18,48 +21,24 @@ class AIWritingScreen extends StatefulWidget {
   });
 
   @override
-  State<AIWritingScreen> createState() => _AIWritingScreenState();
-}
-
-class _AIWritingScreenState extends State<AIWritingScreen> {
-  final _deepseekService = DeepSeekService();
-  final _promptController = TextEditingController();
-  final _contentController = TextEditingController();
-  final _resultController = TextEditingController();
-  
-  bool _isGenerating = false;
-  String _selectedStyle = '通用';
-  String _selectedLanguage = '中文';
-  
-  final List<String> _styles = ['通用', '新闻', '学术', '公务', '小说', '作文'];
-  final List<String> _languages = ['中文', '英文', '日文'];
-  
-  @override
-  void initState() {
-    super.initState();
-    if (widget.initialContent != null) {
-      _contentController.text = widget.initialContent!;
-    }
-  }
-  
-  @override
-  void dispose() {
-    _promptController.dispose();
-    _contentController.dispose();
-    _resultController.dispose();
-    super.dispose();
-  }
-  
-  @override
   Widget build(BuildContext context) {
+    final writingProvider = context.watch<WritingProvider>();
+    
+    // 初始化（如果还未初始化或类型变化）
+    if (writingProvider.type != type) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        writingProvider.initWriting(type, initialContent: initialContent);
+      });
+    }
+    
     return Scaffold(
       appBar: AppBar(
         title: Text(_getTitle()),
         actions: [
-          if (_resultController.text.isNotEmpty)
+          if (writingProvider.hasResult)
             IconButton(
               icon: const Icon(Icons.copy),
-              onPressed: _copyResult,
+              onPressed: () => _copyResult(context, writingProvider),
             ),
         ],
       ),
@@ -67,134 +46,134 @@ class _AIWritingScreenState extends State<AIWritingScreen> {
         padding: const EdgeInsets.all(AppStyles.paddingMedium),
         children: [
           // 输入区域
-          _buildInputSection(),
+          _buildInputSection(context, writingProvider),
           
           const SizedBox(height: AppStyles.paddingLarge),
           
           // 生成按钮
-          _buildGenerateButton(),
+          _buildGenerateButton(context, writingProvider),
           
           const SizedBox(height: AppStyles.paddingLarge),
           
           // 结果区域
-          if (_resultController.text.isNotEmpty || _isGenerating)
-            _buildResultSection(),
+          if (writingProvider.hasResult || writingProvider.isGenerating)
+            _buildResultSection(context, writingProvider),
         ],
       ),
     );
   }
   
-  Widget _buildInputSection() {
-    switch (widget.type) {
+  Widget _buildInputSection(BuildContext context, WritingProvider writingProvider) {
+    switch (type) {
       case WritingType.free:
-        return _buildFreeWritingInput();
+        return _buildFreeWritingInput(context, writingProvider);
       case WritingType.continue_:
-        return _buildContinueInput();
+        return _buildContinueInput(context, writingProvider);
       case WritingType.rewrite:
-        return _buildRewriteInput();
+        return _buildRewriteInput(context, writingProvider);
       case WritingType.expand:
-        return _buildExpandInput();
+        return _buildExpandInput(context, writingProvider);
       case WritingType.translate:
-        return _buildTranslateInput();
+        return _buildTranslateInput(context, writingProvider);
     }
   }
   
-  Widget _buildFreeWritingInput() {
+  Widget _buildFreeWritingInput(BuildContext context, WritingProvider writingProvider) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('请输入创作主题', style: AppStyles.titleMedium),
         const SizedBox(height: AppStyles.paddingMedium),
         TextField(
-          controller: _promptController,
+          controller: writingProvider.promptController,
           decoration: const InputDecoration(
             hintText: '例如：写一篇关于春天的散文',
           ),
           maxLines: 3,
         ),
         const SizedBox(height: AppStyles.paddingMedium),
-        _buildStyleSelector(),
+        _buildStyleSelector(context, writingProvider),
       ],
     );
   }
   
-  Widget _buildContinueInput() {
+  Widget _buildContinueInput(BuildContext context, WritingProvider writingProvider) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('请输入需要续写的内容', style: AppStyles.titleMedium),
         const SizedBox(height: AppStyles.paddingMedium),
         TextField(
-          controller: _contentController,
+          controller: writingProvider.contentController,
           decoration: const InputDecoration(
             hintText: '输入您的内容，AI将帮您继续写作...',
           ),
           maxLines: 8,
         ),
         const SizedBox(height: AppStyles.paddingMedium),
-        _buildStyleSelector(),
+        _buildStyleSelector(context, writingProvider),
       ],
     );
   }
   
-  Widget _buildRewriteInput() {
+  Widget _buildRewriteInput(BuildContext context, WritingProvider writingProvider) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('请输入需要改写的内容', style: AppStyles.titleMedium),
         const SizedBox(height: AppStyles.paddingMedium),
         TextField(
-          controller: _contentController,
+          controller: writingProvider.contentController,
           decoration: const InputDecoration(
             hintText: '输入需要改写的内容...',
           ),
           maxLines: 8,
         ),
         const SizedBox(height: AppStyles.paddingMedium),
-        _buildStyleSelector(),
+        _buildStyleSelector(context, writingProvider),
       ],
     );
   }
   
-  Widget _buildExpandInput() {
+  Widget _buildExpandInput(BuildContext context, WritingProvider writingProvider) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('请输入需要扩写的内容', style: AppStyles.titleMedium),
         const SizedBox(height: AppStyles.paddingMedium),
         TextField(
-          controller: _contentController,
+          controller: writingProvider.contentController,
           decoration: const InputDecoration(
             hintText: '输入需要扩写的内容...',
           ),
           maxLines: 8,
         ),
         const SizedBox(height: AppStyles.paddingMedium),
-        _buildStyleSelector(),
+        _buildStyleSelector(context, writingProvider),
       ],
     );
   }
   
-  Widget _buildTranslateInput() {
+  Widget _buildTranslateInput(BuildContext context, WritingProvider writingProvider) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('请输入需要翻译的内容', style: AppStyles.titleMedium),
         const SizedBox(height: AppStyles.paddingMedium),
         TextField(
-          controller: _contentController,
+          controller: writingProvider.contentController,
           decoration: const InputDecoration(
             hintText: '输入需要翻译的内容...',
           ),
           maxLines: 8,
         ),
         const SizedBox(height: AppStyles.paddingMedium),
-        _buildLanguageSelector(),
+        _buildLanguageSelector(context, writingProvider),
       ],
     );
   }
   
-  Widget _buildStyleSelector() {
+  Widget _buildStyleSelector(BuildContext context, WritingProvider writingProvider) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -202,15 +181,11 @@ class _AIWritingScreenState extends State<AIWritingScreen> {
         const SizedBox(height: AppStyles.paddingSmall),
         Wrap(
           spacing: 8,
-          children: _styles.map((style) {
+          children: writingProvider.styles.map((style) {
             return ChoiceChip(
               label: Text(style),
-              selected: _selectedStyle == style,
-              onSelected: (selected) {
-                setState(() {
-                  _selectedStyle = style;
-                });
-              },
+              selected: writingProvider.selectedStyle == style,
+              onSelected: (selected) => writingProvider.setStyle(style),
             );
           }).toList(),
         ),
@@ -218,7 +193,7 @@ class _AIWritingScreenState extends State<AIWritingScreen> {
     );
   }
   
-  Widget _buildLanguageSelector() {
+  Widget _buildLanguageSelector(BuildContext context, WritingProvider writingProvider) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -226,15 +201,11 @@ class _AIWritingScreenState extends State<AIWritingScreen> {
         const SizedBox(height: AppStyles.paddingSmall),
         Wrap(
           spacing: 8,
-          children: _languages.map((language) {
+          children: writingProvider.languages.map((language) {
             return ChoiceChip(
               label: Text(language),
-              selected: _selectedLanguage == language,
-              onSelected: (selected) {
-                setState(() {
-                  _selectedLanguage = language;
-                });
-              },
+              selected: writingProvider.selectedLanguage == language,
+              onSelected: (selected) => writingProvider.setLanguage(language),
             );
           }).toList(),
         ),
@@ -242,12 +213,12 @@ class _AIWritingScreenState extends State<AIWritingScreen> {
     );
   }
   
-  Widget _buildGenerateButton() {
+  Widget _buildGenerateButton(BuildContext context, WritingProvider writingProvider) {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: _isGenerating ? null : _generate,
-        child: _isGenerating
+        onPressed: writingProvider.isGenerating ? null : () => _generate(context, writingProvider),
+        child: writingProvider.isGenerating
             ? const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -268,7 +239,7 @@ class _AIWritingScreenState extends State<AIWritingScreen> {
     );
   }
   
-  Widget _buildResultSection() {
+  Widget _buildResultSection(BuildContext context, WritingProvider writingProvider) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -276,9 +247,9 @@ class _AIWritingScreenState extends State<AIWritingScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text('生成结果', style: AppStyles.titleMedium),
-            if (_resultController.text.isNotEmpty)
+            if (writingProvider.hasResult)
               Text(
-                '${_resultController.text.length} 字',
+                '${writingProvider.resultText.length} 字',
                 style: AppStyles.bodyMedium.copyWith(
                   color: Colors.grey[600],
                 ),
@@ -293,21 +264,22 @@ class _AIWritingScreenState extends State<AIWritingScreen> {
             borderRadius: BorderRadius.circular(AppStyles.radiusMedium),
           ),
           child: TextField(
-            controller: _resultController,
+            controller: writingProvider.resultController,
             decoration: const InputDecoration(
               border: InputBorder.none,
               hintText: '生成的内容将显示在这里...',
             ),
             maxLines: null,
-            readOnly: _isGenerating,
+            readOnly: writingProvider.isGenerating,
           ),
         ),
       ],
     );
   }
   
-  Future<void> _generate() async {
+  Future<void> _generate(BuildContext context, WritingProvider writingProvider) async {
     final appProvider = context.read<AppProvider>();
+    final deepseekService = DeepSeekService();
     
     // 检查VIP状态（可选）
     if (!appProvider.isVip) {
@@ -317,81 +289,74 @@ class _AIWritingScreenState extends State<AIWritingScreen> {
     // 检查字数（估算）
     final estimatedWords = 500; // 假设生成500字
     if (!appProvider.hasEnoughWords(estimatedWords)) {
-      _showInsufficientWordsDialog();
+      _showInsufficientWordsDialog(context);
       return;
     }
     
-    setState(() {
-      _isGenerating = true;
-      _resultController.clear();
-    });
+    writingProvider.startGenerating();
     
     try {
       String result;
       
-      switch (widget.type) {
+      switch (type) {
         case WritingType.free:
-          result = await _deepseekService.generateText(
-            prompt: _promptController.text,
+          result = await deepseekService.generateText(
+            prompt: writingProvider.promptController.text,
           );
           break;
         case WritingType.continue_:
-          result = await _deepseekService.continueWriting(
-            content: _contentController.text,
-            style: _selectedStyle,
+          result = await deepseekService.continueWriting(
+            content: writingProvider.contentController.text,
+            style: writingProvider.selectedStyle,
           );
           break;
         case WritingType.rewrite:
-          result = await _deepseekService.rewriteText(
-            content: _contentController.text,
-            style: _selectedStyle,
+          result = await deepseekService.rewriteText(
+            content: writingProvider.contentController.text,
+            style: writingProvider.selectedStyle,
           );
           break;
         case WritingType.expand:
-          result = await _deepseekService.expandText(
-            content: _contentController.text,
-            style: _selectedStyle,
+          result = await deepseekService.expandText(
+            content: writingProvider.contentController.text,
+            style: writingProvider.selectedStyle,
           );
           break;
         case WritingType.translate:
-          result = await _deepseekService.translateText(
-            content: _contentController.text,
-            targetLanguage: _selectedLanguage,
+          result = await deepseekService.translateText(
+            content: writingProvider.contentController.text,
+            targetLanguage: writingProvider.selectedLanguage,
           );
           break;
       }
       
-      setState(() {
-        _resultController.text = result;
-      });
+      writingProvider.setResult(result);
       
       // 消耗字数
-      final inputWords = _promptController.text.length + _contentController.text.length;
+      final inputWords = writingProvider.promptController.text.length + writingProvider.contentController.text.length;
       final outputWords = result.length;
       final totalWords = inputWords + outputWords;
       await appProvider.consumeWords(totalWords);
       
     } catch (e) {
-      if (mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('生成失败: $e')),
         );
       }
     } finally {
-      setState(() {
-        _isGenerating = false;
-      });
+      writingProvider.finishGenerating();
     }
   }
   
-  void _copyResult() {
-    Clipboard.setData(ClipboardData(text: _resultController.text));
+  void _copyResult(BuildContext context, WritingProvider writingProvider) {
+    Clipboard.setData(ClipboardData(text: writingProvider.resultText));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('已复制到剪贴板')),
     );
   }
   
-  void _showInsufficientWordsDialog() {
+  void _showInsufficientWordsDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -405,7 +370,7 @@ class _AIWritingScreenState extends State<AIWritingScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              // TODO: 跳转到字数包购买页面
+              context.pushNamed(AppRoute.wordPack.name);
             },
             child: const Text('购买'),
           ),
@@ -415,7 +380,7 @@ class _AIWritingScreenState extends State<AIWritingScreen> {
   }
   
   String _getTitle() {
-    switch (widget.type) {
+    switch (type) {
       case WritingType.free:
         return '自由创作';
       case WritingType.continue_:

@@ -120,6 +120,83 @@ class TemplateProvider with ChangeNotifier {
     }
   }
   
+  // 模板详情页状态管理
+  final Map<String, Map<String, TextEditingController>> _detailControllers = {};
+  final Map<String, bool> _detailIsGenerating = {};
+  final Map<String, String?> _detailGeneratedContent = {};
+  
+  /// 初始化模板详情
+  void initTemplateDetail(String templateId, List<TemplateField> fields) {
+    if (!_detailControllers.containsKey(templateId)) {
+      _detailControllers[templateId] = {};
+      for (var field in fields) {
+        _detailControllers[templateId]![field.key] = TextEditingController();
+      }
+      _detailIsGenerating[templateId] = false;
+      _detailGeneratedContent[templateId] = null;
+    }
+  }
+  
+  /// 获取模板详情字段控制器
+  TextEditingController? getTemplateFieldController(String templateId, String fieldKey) {
+    return _detailControllers[templateId]?[fieldKey];
+  }
+  
+  /// 检查模板详情是否正在生成
+  bool isTemplateGenerating(String templateId) {
+    return _detailIsGenerating[templateId] ?? false;
+  }
+  
+  /// 获取模板生成的内容
+  String? getTemplateGeneratedContent(String templateId) {
+    return _detailGeneratedContent[templateId];
+  }
+  
+  /// 开始生成模板内容
+  void startTemplateGenerating(String templateId) {
+    _detailIsGenerating[templateId] = true;
+    _detailGeneratedContent[templateId] = null;
+    notifyListeners();
+  }
+  
+  /// 设置模板生成结果
+  void setTemplateGeneratedContent(String templateId, String content) {
+    _detailGeneratedContent[templateId] = content;
+    notifyListeners();
+  }
+  
+  /// 完成模板生成
+  void finishTemplateGenerating(String templateId) {
+    _detailIsGenerating[templateId] = false;
+    notifyListeners();
+  }
+  
+  /// 清理模板详情状态
+  void disposeTemplateDetail(String templateId) {
+    final controllers = _detailControllers[templateId];
+    if (controllers != null) {
+      for (var controller in controllers.values) {
+        controller.dispose();
+      }
+      _detailControllers.remove(templateId);
+    }
+    _detailIsGenerating.remove(templateId);
+    _detailGeneratedContent.remove(templateId);
+  }
+  
+  @override
+  void dispose() {
+    for (var controllers in _detailControllers.values) {
+      for (var controller in controllers.values) {
+        controller.dispose();
+      }
+    }
+    _detailControllers.clear();
+    _detailIsGenerating.clear();
+    _detailGeneratedContent.clear();
+    super.dispose();
+  }
+  
   /// 获取默认模板列表
   List<TemplateModel> _getDefaultTemplates() {
     return [

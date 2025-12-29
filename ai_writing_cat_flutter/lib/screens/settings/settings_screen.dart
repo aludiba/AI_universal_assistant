@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../providers/app_provider.dart';
 import '../../constants/app_styles.dart';
 import '../../l10n/app_localizations.dart';
-import 'membership_screen.dart';
-import 'word_pack_screen.dart';
+import '../../router/app_router.dart';
 
 /// 设置页面
 class SettingsScreen extends StatelessWidget {
@@ -35,12 +35,7 @@ class SettingsScreen extends StatelessWidget {
                 icon: Icons.card_membership,
                 title: l10n.memberPrivileges,
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const MembershipScreen(),
-                    ),
-                  );
+                  context.pushNamed(AppRoute.membership.name);
                 },
               ),
               _buildListTile(
@@ -48,12 +43,7 @@ class SettingsScreen extends StatelessWidget {
                 icon: Icons.auto_awesome,
                 title: l10n.writingWordPacks,
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const WordPackScreen(),
-                    ),
-                  );
+                  context.pushNamed(AppRoute.wordPack.name);
                 },
               ),
             ],
@@ -207,12 +197,7 @@ class SettingsScreen extends StatelessWidget {
               if (!isVip)
                 ElevatedButton(
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const MembershipScreen(),
-                      ),
-                    );
+                    context.pushNamed(AppRoute.membership.name);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,

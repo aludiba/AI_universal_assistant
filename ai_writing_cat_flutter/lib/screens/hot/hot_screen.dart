@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../providers/hot_provider.dart';
 import '../../providers/app_provider.dart';
@@ -7,8 +8,7 @@ import '../../widgets/hot_card_widget.dart';
 import '../../constants/app_styles.dart';
 import '../../constants/app_colors.dart';
 import '../../l10n/app_localizations.dart';
-import 'hot_search_screen.dart';
-import 'hot_writing_input_screen.dart';
+import '../../router/app_router.dart';
 
 /// 热门页面 - 像素级还原iOS版本
 class HotScreen extends StatefulWidget {
@@ -78,12 +78,7 @@ class _HotScreenState extends State<HotScreen> with AutomaticKeepAliveClientMixi
       color: AppColors.getBackground(context),
       child: GestureDetector(
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const HotSearchScreen(),
-            ),
-          );
+          context.pushNamed(AppRoute.hotSearch.name);
         },
         child: Container(
           height: 36,
@@ -531,12 +526,7 @@ class _HotScreenState extends State<HotScreen> with AutomaticKeepAliveClientMixi
     }
     
     // 跳转到写作输入页面
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => HotWritingInputScreen(item: item),
-      ),
-    );
+    context.pushNamed(AppRoute.hotWrite.name, extra: item);
   }
   
   /// 处理收藏点击
@@ -565,9 +555,6 @@ class _HotScreenState extends State<HotScreen> with AutomaticKeepAliveClientMixi
       
       if (confirmed == true) {
         await provider.toggleFavorite(item);
-        if (mounted) {
-          setState(() {});
-        }
       }
     } else {
       // 添加收藏
@@ -579,7 +566,6 @@ class _HotScreenState extends State<HotScreen> with AutomaticKeepAliveClientMixi
             duration: const Duration(seconds: 1),
           ),
         );
-        setState(() {});
       }
     }
   }

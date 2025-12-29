@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../constants/app_styles.dart';
 import '../../l10n/app_localizations.dart';
-import 'ai_writing_screen.dart';
+import '../../router/app_router.dart';
 
 /// 写作页面
 class WriterScreen extends StatelessWidget {
@@ -24,11 +25,9 @@ class WriterScreen extends StatelessWidget {
             icon: Icons.edit,
             color: Colors.blue,
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const AIWritingScreen(type: WritingType.free),
-                ),
+              context.pushNamed(
+                AppRoute.aiWriting.name,
+                queryParameters: {'type': WritingType.free.name},
               );
             },
           ),
@@ -39,11 +38,9 @@ class WriterScreen extends StatelessWidget {
             icon: Icons.navigate_next,
             color: Colors.green,
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const AIWritingScreen(type: WritingType.continue_),
-                ),
+              context.pushNamed(
+                AppRoute.aiWriting.name,
+                queryParameters: {'type': WritingType.continue_.name},
               );
             },
           ),
@@ -54,11 +51,9 @@ class WriterScreen extends StatelessWidget {
             icon: Icons.refresh,
             color: Colors.orange,
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const AIWritingScreen(type: WritingType.rewrite),
-                ),
+              context.pushNamed(
+                AppRoute.aiWriting.name,
+                queryParameters: {'type': WritingType.rewrite.name},
               );
             },
           ),
@@ -69,11 +64,9 @@ class WriterScreen extends StatelessWidget {
             icon: Icons.expand,
             color: Colors.purple,
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const AIWritingScreen(type: WritingType.expand),
-                ),
+              context.pushNamed(
+                AppRoute.aiWriting.name,
+                queryParameters: {'type': WritingType.expand.name},
               );
             },
           ),
@@ -84,11 +77,9 @@ class WriterScreen extends StatelessWidget {
             icon: Icons.translate,
             color: Colors.teal,
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const AIWritingScreen(type: WritingType.translate),
-                ),
+              context.pushNamed(
+                AppRoute.aiWriting.name,
+                queryParameters: {'type': WritingType.translate.name},
               );
             },
           ),

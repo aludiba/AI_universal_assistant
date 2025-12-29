@@ -7,7 +7,7 @@ import '../../services/deepseek_service.dart';
 import '../../constants/app_styles.dart';
 
 /// 模板详情页面
-class TemplateDetailScreen extends StatefulWidget {
+class TemplateDetailScreen extends StatelessWidget {
   final TemplateModel template;
   
   const TemplateDetailScreen({
@@ -16,51 +16,33 @@ class TemplateDetailScreen extends StatefulWidget {
   });
 
   @override
-  State<TemplateDetailScreen> createState() => _TemplateDetailScreenState();
-}
-
-class _TemplateDetailScreenState extends State<TemplateDetailScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final Map<String, TextEditingController> _controllers = {};
-  final _deepseekService = DeepSeekService();
-  
-  bool _isGenerating = false;
-  String? _generatedContent;
-  
-  @override
-  void initState() {
-    super.initState();
-    // 为每个字段创建控制器
-    for (var field in widget.template.fields) {
-      _controllers[field.key] = TextEditingController();
-    }
-  }
-  
-  @override
-  void dispose() {
-    for (var controller in _controllers.values) {
-      controller.dispose();
-    }
-    super.dispose();
-  }
-  
-  @override
   Widget build(BuildContext context) {
+    final templateProvider = context.watch<TemplateProvider>();
+    final formKey = GlobalKey<FormState>();
+    
+    // 初始化详情状态
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      templateProvider.initTemplateDetail(template.id, template.fields);
+    });
+    
+    final isGenerating = templateProvider.isTemplateGenerating(template.id);
+    final generatedContent = templateProvider.getTemplateGeneratedContent(template.id);
+    
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.template.title),
+        title: Text(template.title),
         actions: [
           Consumer<TemplateProvider>(
             builder: (context, provider, _) {
               return IconButton(
                 icon: Icon(
-                  widget.template.isFavorite
+                  template.isFavorite
                       ? Icons.favorite
                       : Icons.favorite_border,
-                  color: widget.template.isFavorite ? Colors.red : null,
+                  color: template.isFavorite ? Colors.red : null,
                 ),
                 onPressed: () {
-                  provider.toggleFavorite(widget.template.id);
+                  provider.toggleFavorite(template.id);
                 },
               );
             },
@@ -68,13 +50,13 @@ class _TemplateDetailScreenState extends State<TemplateDetailScreen> {
         ],
       ),
       body: Form(
-        key: _formKey,
+        key: formKey,
         child: ListView(
           padding: const EdgeInsets.all(AppStyles.paddingMedium),
           children: [
             // 模板描述
             Text(
-              widget.template.description,
+              template.description,
               style: AppStyles.bodyLarge.copyWith(
                 color: Colors.grey[600],
               ),
@@ -83,7 +65,7 @@ class _TemplateDetailScreenState extends State<TemplateDetailScreen> {
             const SizedBox(height: AppStyles.paddingLarge),
             
             // 输入字段
-            ...widget.template.fields.map((field) => _buildField(field)),
+            ...template.fields.map((field) => _buildField(context, templateProvider, template.id, field)),
             
             const SizedBox(height: AppStyles.paddingLarge),
             
@@ -91,8 +73,8 @@ class _TemplateDetailScreenState extends State<TemplateDetailScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _isGenerating ? null : _generate,
-                child: _isGenerating
+                onPressed: isGenerating ? null : () => _generate(context, templateProvider, formKey),
+                child: isGenerating
                     ? const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -113,9 +95,9 @@ class _TemplateDetailScreenState extends State<TemplateDetailScreen> {
             ),
             
             // 生成结果
-            if (_generatedContent != null) ...[
+            if (generatedContent != null) ...[
               const SizedBox(height: AppStyles.paddingLarge),
-              _buildResultSection(),
+              _buildResultSection(context, generatedContent),
             ],
           ],
         ),
@@ -123,7 +105,9 @@ class _TemplateDetailScreenState extends State<TemplateDetailScreen> {
     );
   }
   
-  Widget _buildField(TemplateField field) {
+  Widget _buildField(BuildContext context, TemplateProvider templateProvider, String templateId, TemplateField field) {
+    final controller = templateProvider.getTemplateFieldController(templateId, field.key);
+    
     return Padding(
       padding: const EdgeInsets.only(bottom: AppStyles.paddingMedium),
       child: Column(
@@ -137,7 +121,7 @@ class _TemplateDetailScreenState extends State<TemplateDetailScreen> {
           ),
           const SizedBox(height: AppStyles.paddingSmall),
           TextFormField(
-            controller: _controllers[field.key],
+            controller: controller,
             decoration: InputDecoration(
               hintText: field.placeholder,
             ),
@@ -159,7 +143,7 @@ class _TemplateDetailScreenState extends State<TemplateDetailScreen> {
     );
   }
   
-  Widget _buildResultSection() {
+  Widget _buildResultSection(BuildContext context, String generatedContent) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -192,68 +176,62 @@ class _TemplateDetailScreenState extends State<TemplateDetailScreen> {
             color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(AppStyles.radiusMedium),
           ),
-          child: Text(_generatedContent!),
+          child: Text(generatedContent),
         ),
       ],
     );
   }
   
-  Future<void> _generate() async {
-    if (!_formKey.currentState!.validate()) {
+  Future<void> _generate(BuildContext context, TemplateProvider templateProvider, GlobalKey<FormState> formKey) async {
+    if (!formKey.currentState!.validate()) {
       return;
     }
     
     final appProvider = context.read<AppProvider>();
+    final deepseekService = DeepSeekService();
     
     // 检查字数
     if (!appProvider.hasEnoughWords(500)) {
-      _showInsufficientWordsDialog();
+      _showInsufficientWordsDialog(context);
       return;
     }
     
-    setState(() {
-      _isGenerating = true;
-      _generatedContent = null;
-    });
+    templateProvider.startTemplateGenerating(template.id);
     
     try {
       // 构建提示词
-      final prompt = _buildPrompt();
+      final prompt = _buildPrompt(templateProvider);
       
       // 调用AI生成
-      final result = await _deepseekService.generateText(prompt: prompt);
+      final result = await deepseekService.generateText(prompt: prompt);
       
-      setState(() {
-        _generatedContent = result;
-      });
+      templateProvider.setTemplateGeneratedContent(template.id, result);
       
       // 消耗字数
       await appProvider.consumeWords(prompt.length + result.length);
       
       // 记录使用
-      final templateProvider = context.read<TemplateProvider>();
-      await templateProvider.useTemplate(widget.template.id);
+      await templateProvider.useTemplate(template.id);
       
     } catch (e) {
-      if (mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('生成失败: $e')),
         );
       }
     } finally {
-      setState(() {
-        _isGenerating = false;
-      });
+      templateProvider.finishTemplateGenerating(template.id);
     }
   }
   
-  String _buildPrompt() {
+  String _buildPrompt(TemplateProvider templateProvider) {
     final buffer = StringBuffer();
-    buffer.writeln('请根据以下信息帮我${widget.template.title}：');
+    buffer.writeln('请根据以下信息帮我${template.title}：');
     buffer.writeln();
     
-    for (var field in widget.template.fields) {
-      final value = _controllers[field.key]!.text;
+    for (var field in template.fields) {
+      final controller = templateProvider.getTemplateFieldController(template.id, field.key);
+      final value = controller?.text ?? '';
       if (value.isNotEmpty) {
         buffer.writeln('${field.label}：$value');
       }
@@ -262,7 +240,7 @@ class _TemplateDetailScreenState extends State<TemplateDetailScreen> {
     return buffer.toString();
   }
   
-  void _showInsufficientWordsDialog() {
+  void _showInsufficientWordsDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -285,4 +263,3 @@ class _TemplateDetailScreenState extends State<TemplateDetailScreen> {
     );
   }
 }
-

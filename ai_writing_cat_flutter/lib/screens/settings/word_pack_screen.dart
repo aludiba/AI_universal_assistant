@@ -229,31 +229,32 @@ class WordPackScreen extends StatelessWidget {
   }
   
   void _purchaseWordPack(BuildContext context, String productId, int words, int price) {
+    final rootContext = context;
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('确认购买'),
         content: Text('确定要购买 ${_formatNumber(words)} 字数包，需支付 ¥$price？'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('取消'),
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
-              final appProvider = context.read<AppProvider>();
+              Navigator.pop(dialogContext);
+              final appProvider = rootContext.read<AppProvider>();
               
               try {
                 await appProvider.purchaseProduct(productId);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                if (rootContext.mounted) {
+                  ScaffoldMessenger.of(rootContext).showSnackBar(
                     SnackBar(content: Text('购买成功！已获得 ${_formatNumber(words)} 字')),
                   );
                 }
               } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                if (rootContext.mounted) {
+                  ScaffoldMessenger.of(rootContext).showSnackBar(
                     SnackBar(content: Text('购买失败: $e')),
                   );
                 }

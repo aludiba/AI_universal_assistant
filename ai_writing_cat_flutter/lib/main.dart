@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import 'l10n/app_localizations.dart';
@@ -6,7 +7,10 @@ import 'providers/app_provider.dart';
 import 'providers/document_provider.dart';
 import 'providers/template_provider.dart';
 import 'providers/hot_provider.dart';
-import 'screens/home/home_screen.dart';
+import 'providers/writing_provider.dart';
+import 'providers/hot_writing_provider.dart';
+import 'providers/hot_search_provider.dart';
+import 'router/app_router.dart';
 import 'constants/app_colors.dart';
 
 void main() async {
@@ -23,39 +27,20 @@ void main() async {
         ChangeNotifierProvider(create: (_) => DocumentProvider()),
         ChangeNotifierProvider(create: (_) => TemplateProvider()..init()),
         ChangeNotifierProvider(create: (_) => HotProvider()..init(locale: appProvider.locale)),
+        ChangeNotifierProvider(create: (_) => WritingProvider()),
+        ChangeNotifierProvider(create: (_) => HotWritingProvider()),
+        ChangeNotifierProvider(create: (_) => HotSearchProvider()),
       ],
       child: const MyApp(),
     ),
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Consumer<AppProvider>(
-      builder: (context, appProvider, _) {
-        return MaterialApp(
-          onGenerateTitle: (context) => AppLocalizations.of(context)!.appName,
-          debugShowCheckedModeBanner: false,
-          
-          // 主题配置
-          theme: _buildLightTheme(),
-          darkTheme: _buildDarkTheme(),
-          themeMode: appProvider.themeMode,
-          
-          // 国际化配置
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          locale: appProvider.locale,
-          
-          // 首页
-          home: const HomeScreen(),
-        );
-      },
-    );
-  }
+  State<MyApp> createState() => _MyAppState();
   
   /// 构建浅色主题
   ThemeData _buildLightTheme() {
@@ -162,6 +147,35 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _MyAppState extends State<MyApp> {
+  late final GoRouter _router = createAppRouter();
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AppProvider>(
+      builder: (context, appProvider, _) {
+        return MaterialApp.router(
+          onGenerateTitle: (context) => AppLocalizations.of(context)!.appName,
+          debugShowCheckedModeBanner: false,
+
+          // 主题配置
+          theme: widget._buildLightTheme(),
+          darkTheme: widget._buildDarkTheme(),
+          themeMode: appProvider.themeMode,
+
+          // 国际化配置
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: appProvider.locale,
+
+          // 路由
+          routerConfig: _router,
+        );
+      },
     );
   }
 }

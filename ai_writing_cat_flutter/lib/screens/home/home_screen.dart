@@ -1,43 +1,29 @@
 import 'package:flutter/material.dart';
-import '../hot/hot_screen.dart';
-import '../writer/writer_screen.dart';
-import '../docs/docs_screen.dart';
-import '../settings/settings_screen.dart';
+import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 
 /// 主界面 - TabBar导航
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class HomeScreen extends StatelessWidget {
+  final StatefulNavigationShell navigationShell;
 
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
+  const HomeScreen({
+    super.key,
+    required this.navigationShell,
+  });
 
-class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 0;
-  
-  final List<Widget> _screens = [
-    const HotScreen(),
-    const WriterScreen(),
-    const DocsScreen(),
-    const SettingsScreen(),
-  ];
-  
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
-      ),
+      body: navigationShell,
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        currentIndex: _currentIndex,
+        currentIndex: navigationShell.currentIndex,
         onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
+          navigationShell.goBranch(
+            index,
+            initialLocation: index == navigationShell.currentIndex,
+          );
         },
         selectedItemColor: Theme.of(context).primaryColor,
         unselectedItemColor: Colors.grey,

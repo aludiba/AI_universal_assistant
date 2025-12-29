@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../providers/document_provider.dart';
-import '../../models/document_model.dart';
 import '../../constants/app_styles.dart';
 
 /// 文档详情页面
-class DocumentDetailScreen extends StatefulWidget {
+class DocumentDetailScreen extends StatelessWidget {
   final String documentId;
   
   const DocumentDetailScreen({
@@ -15,54 +14,18 @@ class DocumentDetailScreen extends StatefulWidget {
   });
 
   @override
-  State<DocumentDetailScreen> createState() => _DocumentDetailScreenState();
-}
-
-class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
-  final _titleController = TextEditingController();
-  final _contentController = TextEditingController();
-  
-  DocumentModel? _document;
-  bool _hasChanges = false;
-  
-  @override
-  void initState() {
-    super.initState();
-    _loadDocument();
-  }
-  
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _contentController.dispose();
-    super.dispose();
-  }
-  
-  void _loadDocument() {
-    final provider = context.read<DocumentProvider>();
-    _document = provider.getDocumentById(widget.documentId);
+  Widget build(BuildContext context) {
+    final provider = context.watch<DocumentProvider>();
+    final document = provider.getDocumentById(documentId);
     
-    if (_document != null) {
-      _titleController.text = _document!.title;
-      _contentController.text = _document!.content;
-      
-      // 监听文本变化
-      _titleController.addListener(_onTextChanged);
-      _contentController.addListener(_onTextChanged);
-    }
-  }
-  
-  void _onTextChanged() {
-    if (!_hasChanges) {
-      setState(() {
-        _hasChanges = true;
+    // 初始化详情状态
+    if (document != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        provider.initDocumentDetail(documentId);
       });
     }
-  }
-  
-  @override
-  Widget build(BuildContext context) {
-    if (_document == null) {
+    
+    if (document == null) {
       return Scaffold(
         appBar: AppBar(
           title: const Text('文档详情'),
@@ -73,12 +36,15 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
       );
     }
     
-    return WillPopScope(
-      onWillPop: () async {
-        if (_hasChanges) {
-          await _saveDocument();
+    final titleController = provider.getDetailController(documentId, 'title');
+    final contentController = provider.getDetailController(documentId, 'content');
+    final hasChanges = provider.hasDocumentChanges(documentId);
+    
+    return PopScope(
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop && hasChanges) {
+          await provider.saveDocumentDetail(documentId);
         }
-        return true;
       },
       child: Scaffold(
         appBar: AppBar(
@@ -86,16 +52,16 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
           actions: [
             IconButton(
               icon: const Icon(Icons.copy),
-              onPressed: _copyContent,
+              onPressed: () => _copyContent(context, contentController),
             ),
             IconButton(
               icon: const Icon(Icons.share),
-              onPressed: _shareDocument,
+              onPressed: () => _shareDocument(context),
             ),
-            if (_hasChanges)
+            if (hasChanges)
               IconButton(
                 icon: const Icon(Icons.save),
-                onPressed: _saveDocument,
+                onPressed: () => _saveDocument(context, provider),
               ),
           ],
         ),
@@ -104,7 +70,7 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
           children: [
             // 标题输入
             TextField(
-              controller: _titleController,
+              controller: titleController,
               decoration: const InputDecoration(
                 hintText: '请输入标题',
                 border: InputBorder.none,
@@ -119,7 +85,7 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
             
             // 内容输入
             TextField(
-              controller: _contentController,
+              controller: contentController,
               decoration: const InputDecoration(
                 hintText: '请输入内容',
                 border: InputBorder.none,
@@ -142,11 +108,11 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
                 children: [
                   _buildStatItem(
                     '字数',
-                    _contentController.text.length.toString(),
+                    contentController.text.length.toString(),
                   ),
                   _buildStatItem(
                     '段落',
-                    _contentController.text.split('\n').length.toString(),
+                    contentController.text.split('\n').length.toString(),
                   ),
                 ],
               ),
@@ -179,42 +145,27 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
     );
   }
   
-  Future<void> _saveDocument() async {
-    if (_document == null) return;
+  Future<void> _saveDocument(BuildContext context, DocumentProvider provider) async {
+    await provider.saveDocumentDetail(documentId);
     
-    final updatedDocument = _document!.copyWith(
-      title: _titleController.text,
-      content: _contentController.text,
-      updatedAt: DateTime.now(),
-    );
-    
-    final provider = context.read<DocumentProvider>();
-    await provider.updateDocument(updatedDocument);
-    
-    setState(() {
-      _hasChanges = false;
-      _document = updatedDocument;
-    });
-    
-    if (mounted) {
+    if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('保存成功')),
       );
     }
   }
   
-  void _copyContent() {
-    Clipboard.setData(ClipboardData(text: _contentController.text));
+  void _copyContent(BuildContext context, TextEditingController contentController) {
+    Clipboard.setData(ClipboardData(text: contentController.text));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('已复制到剪贴板')),
     );
   }
   
-  void _shareDocument() {
+  void _shareDocument(BuildContext context) {
     // TODO: 实现分享功能
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('分享功能开发中')),
     );
   }
 }
-
