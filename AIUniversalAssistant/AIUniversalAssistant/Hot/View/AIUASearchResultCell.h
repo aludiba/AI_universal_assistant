@@ -14,6 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong) UILabel *titleLabel;
 @property (nonatomic, strong) UILabel *subtitleLabel;
 @property (nonatomic, strong) UIImageView *iconImageView;
+@property (nonatomic, strong) UIView *gradientView;
 @property (nonatomic, strong) UIView *separatorView;
 
 @end

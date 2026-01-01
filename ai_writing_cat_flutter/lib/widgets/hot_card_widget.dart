@@ -42,91 +42,104 @@ class HotCardWidget extends StatelessWidget {
             ),
           ],
         ),
-        child: Stack(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 图标容器
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: gradientColor,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          icon,
-                          size: 20,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      // 标题
-                      Expanded(
-                        child: Text(
-                          title,
-                          style: AppStyles.titleMedium.copyWith(
-                            color: AppColors.getTextPrimary(context),
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
+                  // 图标容器
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: gradientColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      icon,
+                      size: 20,
+                      color: Colors.white,
+                    ),
                   ),
-                  const SizedBox(height: 4),
-                  // 副标题 - 不使用Expanded，固定最大行数
-                  Padding(
-                    padding: const EdgeInsets.only(left: 56),
+                  const SizedBox(width: 16),
+                  // 标题
+                  Expanded(
                     child: Text(
-                      subtitle,
-                      style: AppStyles.bodySmall.copyWith(
-                        color: AppColors.getTextSecondary(context),
+                      title,
+                      style: AppStyles.titleMedium.copyWith(
+                        color: AppColors.getTextPrimary(context),
                       ),
-                      maxLines: 3,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
               ),
-            ),
-            // 收藏按钮
-            if (showFavoriteButton)
-              Positioned(
-                left: 16,
-                bottom: 16,
-                child: GestureDetector(
-                  onTap: onFavoriteTap,
-                  child: Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: AppColors.getCardBackground(context),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 3,
-                          offset: const Offset(0, 1),
+              const SizedBox(height: 4),
+              // 副标题：放在 Expanded 里，让底部按钮永远有空间，避免小屏/大字体溢出
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 56),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      // 关键：不同安卓机型/字体渲染下，同样的 maxLines 可能放不下，导致“半行被裁切”。
+                      // 这里根据可用高度动态计算能容纳的最大行数（最多3行），保证永不裁切。
+                      final style = AppStyles.bodySmall.copyWith(
+                        color: AppColors.getTextSecondary(context),
+                        height: 1.25,
+                      );
+                      final fontSize = style.fontSize ?? AppStyles.fontSizeSmall;
+                      final lineHeight = fontSize * (style.height ?? 1.25);
+                      final maxLinesByHeight =
+                          (constraints.maxHeight / lineHeight).floor().clamp(1, 3);
+
+                      return Align(
+                        alignment: Alignment.topLeft,
+                        child: Text(
+                          subtitle,
+                          style: style,
+                          maxLines: maxLinesByHeight,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ],
-                    ),
-                    child: Icon(
-                      isFavorite ? Icons.favorite : Icons.favorite_border,
-                      size: 14,
-                      color: isFavorite ? Colors.red : Colors.grey[600],
-                    ),
+                      );
+                    },
                   ),
                 ),
               ),
-          ],
+              if (showFavoriteButton) ...[
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.bottomLeft,
+                  child: GestureDetector(
+                    onTap: onFavoriteTap,
+                    child: Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: AppColors.getCardBackground(context),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.08),
+                            blurRadius: 3,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        isFavorite ? Icons.favorite : Icons.favorite_border,
+                        size: 14,
+                        color: isFavorite ? Colors.red : Colors.grey[600],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );

@@ -155,8 +155,9 @@ class _HotScreenState extends State<HotScreen> with AutomaticKeepAliveClientMixi
   SliverGridDelegate _gridDelegateForWidth(double width) {
     final crossAxisCount = width >= 700 ? 3 : 2;
     final spacing = width >= 700 ? 18.0 : 14.0;
-    // 稍微提高比例：减少卡片高度，避免 iOS 上显得“空”
-    final aspect = width >= 700 ? 1.25 : 1.18;
+    // 重要：Android（如 S22）部分机型字体渲染会更“占高”，原 1.18 容易让卡片偏矮导致副标题被裁切
+    // 调小 childAspectRatio => 卡片更高 => 更稳健
+    final aspect = width >= 700 ? 1.25 : 1.05;
     return SliverGridDelegateWithFixedCrossAxisCount(
       crossAxisCount: crossAxisCount,
       crossAxisSpacing: spacing,

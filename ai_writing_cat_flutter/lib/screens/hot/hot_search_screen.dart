@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -250,10 +251,19 @@ class _HotSearchScreenState extends State<HotSearchScreen> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Icon(
-                  _getIconData(item.icon),
-                  size: 24,
-                  color: const Color(0xFF3366CC), // AIUA_BLUE_COLOR
+                // 图标容器 - 和热门卡片保持一致
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: _getRandomGradientColor(item.title),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    _getIconData(item.icon),
+                    size: 20,
+                    color: Colors.white,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -402,22 +412,55 @@ class _HotSearchScreenState extends State<HotSearchScreen> {
     );
   }
 
+  /// 获取图标数据 - 和热门页面保持一致
   IconData _getIconData(String iconName) {
-    // 将 iOS SF Symbols 名称映射到 Flutter Material Icons
     final iconMap = {
-      'doc.text': Icons.description,
-      'doc.text.fill': Icons.description,
-      'text.bubble': Icons.chat_bubble_outline,
-      'text.bubble.fill': Icons.chat_bubble,
-      'envelope': Icons.mail_outline,
-      'envelope.fill': Icons.mail,
-      'pencil': Icons.edit,
-      'pencil.circle': Icons.edit,
-      'book': Icons.book,
-      'book.fill': Icons.book,
-      'note.text': Icons.note,
-      'note.text.fill': Icons.note,
+      'mic': Icons.mic,
+      'heart': Icons.favorite,
+      'edit': Icons.edit,
+      'school': Icons.school,
+      'article': Icons.article,
+      'book': Icons.menu_book,
+      'newspaper': Icons.newspaper,
+      'help': Icons.help_outline,
+      'people': Icons.people,
+      'play_circle': Icons.play_circle_outline,
+      'menu_book': Icons.menu_book,
+      'description': Icons.description,
+      'language': Icons.language,
+      'lightbulb': Icons.lightbulb_outline,
+      'calendar_today': Icons.calendar_today,
+      'bar_chart': Icons.bar_chart,
+      'layers': Icons.layers,
+      'track_changes': Icons.track_changes,
+      'email': Icons.email,
+      'chat_bubble': Icons.chat_bubble_outline,
+      'local_fire_department': Icons.local_fire_department,
+      'campaign': Icons.campaign,
+      'label': Icons.label,
+      'celebration': Icons.celebration,
+      'restaurant': Icons.restaurant,
+      'flight': Icons.flight,
+      'favorite': Icons.favorite,
+      'pan_tool': Icons.pan_tool,
+      'auto_awesome': Icons.auto_awesome,
     };
+    
     return iconMap[iconName] ?? Icons.description;
+  }
+  
+  /// 获取随机渐变色 - 和热门卡片保持一致
+  /// 使用标题的 hash 作为随机种子，确保同一 item 在不同页面显示相同颜色
+  Color _getRandomGradientColor(String title) {
+    final colors = [
+      const Color(0xFF3366CC), // AppColors.primary
+      const Color.fromRGBO(204, 102, 51, 1.0),   // 橙色
+      const Color.fromRGBO(102, 153, 51, 1.0),   // 绿色
+      const Color.fromRGBO(204, 51, 102, 1.0),   // 粉色
+      const Color.fromRGBO(153, 51, 204, 1.0),   // 紫色
+      const Color.fromRGBO(51, 153, 153, 1.0),   // 青色
+    ];
+    final random = math.Random(title.hashCode);
+    return colors[random.nextInt(colors.length)];
   }
 }
