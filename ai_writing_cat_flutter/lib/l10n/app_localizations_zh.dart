@@ -391,4 +391,16 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get shareApp => '分享APP';
+
+  @override
+  String get enterKeywordsToSearchTemplates => '输入关键字搜索模板';
+
+  @override
+  String get searchHistory => '搜索历史';
+
+  @override
+  String get noRelatedTemplatesFound => '未找到相关模板';
+
+  @override
+  String get goToWritingModule => '前往写作模块';
 }

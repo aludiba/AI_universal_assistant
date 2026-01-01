@@ -837,6 +837,30 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'分享APP'**
   String get shareApp;
+
+  /// No description provided for @enterKeywordsToSearchTemplates.
+  ///
+  /// In zh, this message translates to:
+  /// **'输入关键字搜索模板'**
+  String get enterKeywordsToSearchTemplates;
+
+  /// No description provided for @searchHistory.
+  ///
+  /// In zh, this message translates to:
+  /// **'搜索历史'**
+  String get searchHistory;
+
+  /// No description provided for @noRelatedTemplatesFound.
+  ///
+  /// In zh, this message translates to:
+  /// **'未找到相关模板'**
+  String get noRelatedTemplatesFound;
+
+  /// No description provided for @goToWritingModule.
+  ///
+  /// In zh, this message translates to:
+  /// **'前往写作模块'**
+  String get goToWritingModule;
 }
 
 class _AppLocalizationsDelegate

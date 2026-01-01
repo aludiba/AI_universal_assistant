@@ -122,6 +122,10 @@
   "clearCache": "清理缓存",
   "cacheCleared": "缓存清理成功",
   "rateApp": "前往评分",
-  "shareApp": "分享APP"
+  "shareApp": "分享APP",
+  "enterKeywordsToSearchTemplates": "输入关键字搜索模板",
+  "searchHistory": "搜索历史",
+  "noRelatedTemplatesFound": "未找到相关模板",
+  "goToWritingModule": "前往写作模块"
 }
 

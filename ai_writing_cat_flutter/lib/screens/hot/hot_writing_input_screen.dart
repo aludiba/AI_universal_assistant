@@ -34,6 +34,18 @@ class HotWritingInputScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(item.title),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            // 返回到上一页（通常是搜索页面）
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              // 如果无法pop（比如直接打开），则回到热门首页
+              context.goNamed(AppRoute.hot.name);
+            }
+          },
+        ),
         actions: [
           if (writingProvider.hasResult)
             IconButton(

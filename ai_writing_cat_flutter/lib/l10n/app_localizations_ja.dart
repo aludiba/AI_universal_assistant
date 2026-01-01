@@ -392,4 +392,16 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get shareApp => 'アプリを共有';
+
+  @override
+  String get enterKeywordsToSearchTemplates => 'キーワードを入力してテンプレートを検索';
+
+  @override
+  String get searchHistory => '検索履歴';
+
+  @override
+  String get noRelatedTemplatesFound => '関連するテンプレートが見つかりません';
+
+  @override
+  String get goToWritingModule => '作成モジュールへ';
 }

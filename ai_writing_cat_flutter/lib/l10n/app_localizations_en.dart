@@ -394,4 +394,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shareApp => 'Share App';
+
+  @override
+  String get enterKeywordsToSearchTemplates =>
+      'Enter keywords to search templates';
+
+  @override
+  String get searchHistory => 'Search History';
+
+  @override
+  String get noRelatedTemplatesFound => 'No related templates found';
+
+  @override
+  String get goToWritingModule => 'Go to Writing Module';
 }

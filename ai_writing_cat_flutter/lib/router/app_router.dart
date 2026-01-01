@@ -52,11 +52,13 @@ GoRouter createAppRouter() {
                   GoRoute(
                     path: 'search',
                     name: AppRoute.hotSearch.name,
+                    parentNavigatorKey: rootNavigatorKey,
                     builder: (context, state) => const HotSearchScreen(),
                   ),
                   GoRoute(
                     path: 'write',
                     name: AppRoute.hotWrite.name,
+                    parentNavigatorKey: rootNavigatorKey,
                     builder: (context, state) {
                       final item = state.extra as HotItemModel;
                       return HotWritingInputScreen(item: item);
@@ -76,6 +78,7 @@ GoRouter createAppRouter() {
                   GoRoute(
                     path: 'ai',
                     name: AppRoute.aiWriting.name,
+                    parentNavigatorKey: rootNavigatorKey,
                     builder: (context, state) {
                       final typeStr = state.uri.queryParameters['type'];
                       final initialContent = state.uri.queryParameters['initialContent'];
@@ -86,6 +89,7 @@ GoRouter createAppRouter() {
                   GoRoute(
                     path: 'template',
                     name: AppRoute.templateDetail.name,
+                    parentNavigatorKey: rootNavigatorKey,
                     builder: (context, state) {
                       final template = state.extra as TemplateModel;
                       return TemplateDetailScreen(template: template);
@@ -105,6 +109,7 @@ GoRouter createAppRouter() {
                   GoRoute(
                     path: ':id',
                     name: AppRoute.docDetail.name,
+                    parentNavigatorKey: rootNavigatorKey,
                     builder: (context, state) {
                       final id = state.pathParameters['id']!;
                       return DocumentDetailScreen(documentId: id);
@@ -124,11 +129,13 @@ GoRouter createAppRouter() {
                   GoRoute(
                     path: 'membership',
                     name: AppRoute.membership.name,
+                    parentNavigatorKey: rootNavigatorKey,
                     builder: (context, state) => const MembershipScreen(),
                   ),
                   GoRoute(
                     path: 'word-pack',
                     name: AppRoute.wordPack.name,
+                    parentNavigatorKey: rootNavigatorKey,
                     builder: (context, state) => const WordPackScreen(),
                   ),
                 ],

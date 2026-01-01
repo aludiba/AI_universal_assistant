@@ -122,7 +122,11 @@
   "clearCache": "キャッシュを削除",
   "cacheCleared": "キャッシュを削除しました",
   "rateApp": "評価する",
-  "shareApp": "アプリを共有"
+  "shareApp": "アプリを共有",
+  "enterKeywordsToSearchTemplates": "キーワードを入力してテンプレートを検索",
+  "searchHistory": "検索履歴",
+  "noRelatedTemplatesFound": "関連するテンプレートが見つかりません",
+  "goToWritingModule": "作成モジュールへ"
 }
 
 

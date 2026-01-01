@@ -122,6 +122,10 @@
   "clearCache": "Clear Cache",
   "cacheCleared": "Cache cleared",
   "rateApp": "Rate App",
-  "shareApp": "Share App"
+  "shareApp": "Share App",
+  "enterKeywordsToSearchTemplates": "Enter keywords to search templates",
+  "searchHistory": "Search History",
+  "noRelatedTemplatesFound": "No related templates found",
+  "goToWritingModule": "Go to Writing Module"
 }
 
