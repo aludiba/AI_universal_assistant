@@ -72,6 +72,9 @@ flutter:
     - assets/hot_categories.json
     - assets/hot_categories_en.json
     - assets/hot_categories_ja.json
+    - assets/writing_categories.json
+    - assets/writing_categories_en.json
+    - assets/writing_categories_ja.json
     
   # 本地化
   generate: true

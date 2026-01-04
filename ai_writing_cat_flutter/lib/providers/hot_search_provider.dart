@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import '../models/hot_item_model.dart';
-import '../services/storage_service.dart';
+import '../services/data_manager.dart';
 import 'hot_provider.dart';
 
 /// 热门搜索页面状态管理
 class HotSearchProvider with ChangeNotifier {
   final TextEditingController searchController = TextEditingController();
-  final _storageService = StorageService();
+  final _dataManager = DataManager();
   
   List<HotItemModel> _searchResults = [];
   List<String> _historySearches = [];
@@ -30,7 +30,7 @@ class HotSearchProvider with ChangeNotifier {
   
   /// 加载历史搜索
   Future<void> loadHistorySearches() async {
-    _historySearches = _storageService.getSearchHistory();
+    _historySearches = _dataManager.loadSearchHistorySearches();
     notifyListeners();
   }
   
@@ -72,14 +72,14 @@ class HotSearchProvider with ChangeNotifier {
       _historySearches.removeRange(20, _historySearches.length);
     }
     
-    await _storageService.saveSearchHistory(_historySearches);
+    await _dataManager.saveHistorySearches(_historySearches);
     notifyListeners();
   }
   
   /// 清空历史搜索
   Future<void> clearHistory() async {
     _historySearches.clear();
-    await _storageService.clearSearchHistory();
+    await _dataManager.clearSearchHistory();
     notifyListeners();
   }
   

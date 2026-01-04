@@ -3,7 +3,7 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:flutter/foundation.dart';
 import '../config/app_config.dart';
 import '../models/subscription_model.dart';
-import 'storage_service.dart';
+import 'data_manager.dart';
 
 /// 内购服务
 class IAPService {
@@ -14,7 +14,7 @@ class IAPService {
   final InAppPurchase _iap = InAppPurchase.instance;
   StreamSubscription<List<PurchaseDetails>>? _subscription;
   
-  final _storageService = StorageService();
+  final _dataManager = DataManager();
   
   // 产品ID列表
   final Set<String> _productIds = {
@@ -191,10 +191,10 @@ class IAPService {
       isLifetime: isLifetime,
     );
     
-    _storageService.saveSubscription(subscription);
+    _dataManager.saveSubscription(subscription);
     
     // 赠送字数
-    _storageService.addWords(vipGift: AppConfig.subscriptionGiftWords);
+    _dataManager.addWords(vipGift: AppConfig.subscriptionGiftWords);
   }
   
   /// 处理字数包购买
@@ -210,7 +210,7 @@ class IAPService {
     }
     
     if (words > 0) {
-      _storageService.addWords(purchased: words);
+      _dataManager.addWords(purchased: words);
     }
   }
   

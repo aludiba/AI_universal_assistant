@@ -1,0 +1,53 @@
+[
+  {
+    "title": "Creative Spark",
+    "items": [
+      {
+        "title": "Classic Reading",
+        "content": "In simple and understandable language, interpret the core ideas and exciting plot of \"The Count of Monte Cristo\" for me"
+      },
+      {
+        "title": "Short Video Script",
+        "content": "As a million-follower short video blogger, please create a short video script about parental love for me"
+      },
+      {
+        "title": "Pet Apology",
+        "content": "Help me write an apology letter to my cat because I forgot to clean its litter box"
+      },
+      {
+        "title": "Activity Reflection",
+        "content": "Write a heartfelt reflection on the community's \"Caring for Left-behind Children Education\" activity"
+      },
+      {
+        "title": "Gratitude Speech",
+        "content": "Please help me write a 300-word thank you speech, focusing on expressing gratitude to my mentor"
+      }
+    ]
+  },
+  {
+    "title": "Viral Templates",
+    "items": [
+      {
+        "title": "Product Promotion",
+        "content": "Create 3 advertising copy for \"Baby Happy Pacifier\", each within 50 words"
+      },
+      {
+        "title": "Tech News",
+        "content": "Write a tech news article about \"AR Glasses Achieving Virtual and Reality Integration\""
+      },
+      {
+        "title": "Movie Review",
+        "content": "Write a movie review for \"The Shawshank Redemption\", focusing on the profound feelings this movie brought me"
+      },
+      {
+        "title": "Birthday Greeting",
+        "content": "Write a heartfelt birthday greeting for my friend Xiao Li"
+      },
+      {
+        "title": "Recommendation Letter",
+        "content": "As a recommender, write a strong recommendation letter for an excellent job candidate"
+      }
+    ]
+  }
+]
+

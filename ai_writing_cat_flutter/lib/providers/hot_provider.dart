@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import '../models/hot_item_model.dart';
-import '../services/hot_service.dart';
+import '../services/data_manager.dart';
 
 /// 热门页面状态管理
 class HotProvider with ChangeNotifier {
-  final _hotService = HotService();
+  final _dataManager = DataManager();
   
   List<HotCategoryModel> _categories = [];
   int _selectedCategoryIndex = 0;
@@ -39,7 +39,7 @@ class HotProvider with ChangeNotifier {
     
     try {
       _currentLocale = locale;
-      _categories = await _hotService.loadHotCategories(localeOverride: locale);
+      _categories = await _dataManager.loadHotCategories(localeOverride: locale);
       await refreshFavorites();
       await refreshRecentUsed();
       await updateContentForSelectedCategory();
@@ -55,7 +55,7 @@ class HotProvider with ChangeNotifier {
   Future<void> ensureLocale(Locale locale) async {
     if (_currentLocale?.languageCode == locale.languageCode) return;
     _currentLocale = locale;
-    _categories = await _hotService.loadHotCategories(localeOverride: locale);
+    _categories = await _dataManager.loadHotCategories(localeOverride: locale);
     // 语言切换后，保持索引不变，但需要刷新当前内容
     await updateContentForSelectedCategory();
   }
@@ -77,7 +77,7 @@ class HotProvider with ChangeNotifier {
       _currentItems = [];
     } else {
       // 常规分类
-      _currentItems = _hotService.getItemsForCategory(selectedCategory!.id);
+      _currentItems = _dataManager.getItemsForCategory(selectedCategory!.id);
     }
     
     notifyListeners();
@@ -85,24 +85,24 @@ class HotProvider with ChangeNotifier {
   
   /// 刷新收藏数据
   Future<void> refreshFavorites() async {
-    _favoriteItems = await _hotService.getFavorites();
+    _favoriteItems = await _dataManager.loadFavorites();
     notifyListeners();
   }
   
   /// 刷新最近使用数据
   Future<void> refreshRecentUsed() async {
-    _recentUsedItems = await _hotService.getRecentUsed();
+    _recentUsedItems = await _dataManager.loadRecentUsed();
     notifyListeners();
   }
   
   /// 切换收藏状态
   Future<void> toggleFavorite(HotItemModel item) async {
-    final isFav = await _hotService.isFavorite(item.id);
+    final isFav = await _dataManager.isFavorite(item.id);
     
     if (isFav) {
-      await _hotService.removeFavorite(item.id);
+      await _dataManager.removeFavorite(item.id);
     } else {
-      await _hotService.addFavorite(item);
+      await _dataManager.addFavorite(item);
     }
     
     await refreshFavorites();
@@ -110,18 +110,18 @@ class HotProvider with ChangeNotifier {
   
   /// 检查是否已收藏
   Future<bool> isFavorite(String itemId) async {
-    return await _hotService.isFavorite(itemId);
+    return await _dataManager.isFavorite(itemId);
   }
   
   /// 添加最近使用
   Future<void> addRecentUsed(HotItemModel item) async {
-    await _hotService.addRecentUsed(item);
+    await _dataManager.addRecentUsed(item);
     await refreshRecentUsed();
   }
   
   /// 清空最近使用
   Future<void> clearRecentUsed() async {
-    await _hotService.clearRecentUsed();
+    await _dataManager.clearRecentUsed();
     await refreshRecentUsed();
   }
 }

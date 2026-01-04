@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../models/document_model.dart';
-import '../services/database_service.dart';
+import '../services/data_manager.dart';
 
 /// 文档状态管理
 class DocumentProvider with ChangeNotifier {
-  final _databaseService = DatabaseService();
+  final _dataManager = DataManager();
   final _uuid = const Uuid();
   
   List<DocumentModel> _documents = [];
@@ -20,7 +20,7 @@ class DocumentProvider with ChangeNotifier {
     notifyListeners();
     
     try {
-      _documents = await _databaseService.getAllDocuments();
+      _documents = await _dataManager.getAllDocuments();
     } catch (e) {
       // 处理错误
     } finally {
@@ -43,7 +43,7 @@ class DocumentProvider with ChangeNotifier {
       updatedAt: now,
     );
     
-    await _databaseService.insertDocument(document);
+    await _dataManager.insertDocument(document);
     await loadDocuments();
     
     return document;
@@ -55,13 +55,13 @@ class DocumentProvider with ChangeNotifier {
       updatedAt: DateTime.now(),
     );
     
-    await _databaseService.updateDocument(updatedDocument);
+    await _dataManager.updateDocument(updatedDocument);
     await loadDocuments();
   }
   
   /// 删除文档
   Future<void> deleteDocument(String id) async {
-    await _databaseService.deleteDocument(id);
+    await _dataManager.deleteDocument(id);
     await loadDocuments();
   }
   

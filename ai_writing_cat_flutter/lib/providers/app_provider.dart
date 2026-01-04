@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import '../services/storage_service.dart';
+import '../services/data_manager.dart';
 import '../services/iap_service.dart';
 import '../models/subscription_model.dart';
 import '../models/word_pack_model.dart';
 
 /// 应用全局状态管理
 class AppProvider with ChangeNotifier {
-  final _storageService = StorageService();
+  final _dataManager = DataManager();
   final _iapService = IAPService();
   
   ThemeMode _themeMode = ThemeMode.system;
@@ -27,23 +27,23 @@ class AppProvider with ChangeNotifier {
   
   /// 初始化
   Future<void> init() async {
-    await _storageService.init();
+    await _dataManager.init();
     
     // 加载主题模式
-    final themeModeStr = _storageService.getThemeMode();
+    final themeModeStr = _dataManager.getThemeMode();
     _themeMode = _getThemeModeFromString(themeModeStr);
     
     // 加载语言
-    final languageCode = _storageService.getLanguage();
+    final languageCode = _dataManager.getLanguage();
     if (languageCode != null) {
       _locale = Locale(languageCode);
     }
     
     // 加载订阅信息
-    _subscription = _storageService.getSubscription();
+    _subscription = _dataManager.getSubscription();
     
     // 加载字数包统计
-    _wordPackStats = _storageService.getWordPackStats();
+    _wordPackStats = _dataManager.getWordPackStats();
     
     // 先把 UI 起起来，再尝试初始化 IAP（失败不阻塞启动）
     try {
@@ -59,32 +59,32 @@ class AppProvider with ChangeNotifier {
   /// 切换主题模式
   Future<void> setThemeMode(ThemeMode mode) async {
     _themeMode = mode;
-    await _storageService.setThemeMode(_getStringFromThemeMode(mode));
+    await _dataManager.setThemeMode(_getStringFromThemeMode(mode));
     notifyListeners();
   }
   
   /// 切换语言
   Future<void> setLocale(Locale locale) async {
     _locale = locale;
-    await _storageService.setLanguage(locale.languageCode);
+    await _dataManager.setLanguage(locale.languageCode);
     notifyListeners();
   }
   
   /// 刷新订阅信息
   Future<void> refreshSubscription() async {
-    _subscription = _storageService.getSubscription();
+    _subscription = _dataManager.getSubscription();
     notifyListeners();
   }
   
   /// 刷新字数包统计
   Future<void> refreshWordPackStats() async {
-    _wordPackStats = _storageService.getWordPackStats();
+    _wordPackStats = _dataManager.getWordPackStats();
     notifyListeners();
   }
   
   /// 消耗字数
   Future<bool> consumeWords(int words) async {
-    final success = await _storageService.consumeWords(words);
+    final success = await _dataManager.consumeWords(words);
     if (success) {
       await refreshWordPackStats();
     }

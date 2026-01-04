@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import '../models/template_model.dart';
-import '../services/database_service.dart';
-import '../services/storage_service.dart';
+import '../services/data_manager.dart';
 
 /// 模板状态管理
 class TemplateProvider with ChangeNotifier {
-  final _databaseService = DatabaseService();
-  final _storageService = StorageService();
+  final _dataManager = DataManager();
   
   List<TemplateModel> _templates = [];
   List<TemplateModel> _favoriteTemplates = [];
@@ -26,7 +24,7 @@ class TemplateProvider with ChangeNotifier {
     await loadTemplates();
     await loadFavoriteTemplates();
     await loadRecentTemplates();
-    _searchHistory = _storageService.getSearchHistory();
+    _searchHistory = _dataManager.loadSearchHistorySearches();
   }
   
   /// 加载所有模板
@@ -35,7 +33,7 @@ class TemplateProvider with ChangeNotifier {
     notifyListeners();
     
     try {
-      _templates = await _databaseService.getAllTemplates();
+      _templates = await _dataManager.getAllTemplates();
     } catch (e) {
       // 处理错误
     } finally {
@@ -47,7 +45,7 @@ class TemplateProvider with ChangeNotifier {
   /// 加载收藏的模板
   Future<void> loadFavoriteTemplates() async {
     try {
-      _favoriteTemplates = await _databaseService.getFavoriteTemplates();
+      _favoriteTemplates = await _dataManager.getFavoriteTemplates();
       notifyListeners();
     } catch (e) {
       // 处理错误
@@ -57,7 +55,7 @@ class TemplateProvider with ChangeNotifier {
   /// 加载最近使用的模板
   Future<void> loadRecentTemplates() async {
     try {
-      _recentTemplates = await _databaseService.getRecentlyUsedTemplates(limit: 10);
+      _recentTemplates = await _dataManager.getRecentlyUsedTemplates(limit: 10);
       notifyListeners();
     } catch (e) {
       // 处理错误
@@ -81,28 +79,28 @@ class TemplateProvider with ChangeNotifier {
   /// 切换收藏状态
   Future<void> toggleFavorite(String templateId) async {
     final template = _templates.firstWhere((t) => t.id == templateId);
-    await _databaseService.updateTemplateFavorite(templateId, !template.isFavorite);
+    await _dataManager.updateTemplateFavorite(templateId, !template.isFavorite);
     await loadTemplates();
     await loadFavoriteTemplates();
   }
   
   /// 使用模板（更新最后使用时间）
   Future<void> useTemplate(String templateId) async {
-    await _databaseService.updateTemplateLastUsed(templateId);
+    await _dataManager.updateTemplateLastUsed(templateId);
     await loadTemplates();
     await loadRecentTemplates();
   }
   
   /// 添加搜索历史
   Future<void> addSearchHistory(String keyword) async {
-    await _storageService.addSearchHistory(keyword);
-    _searchHistory = _storageService.getSearchHistory();
+    await _dataManager.addSearchHistory(keyword);
+    _searchHistory = _dataManager.loadSearchHistorySearches();
     notifyListeners();
   }
   
   /// 清空搜索历史
   Future<void> clearSearchHistory() async {
-    await _storageService.clearSearchHistory();
+    await _dataManager.clearSearchHistory();
     _searchHistory = [];
     notifyListeners();
   }
@@ -110,13 +108,13 @@ class TemplateProvider with ChangeNotifier {
   /// 初始化默认模板
   Future<void> _initDefaultTemplates() async {
     // 检查是否已初始化
-    final existing = await _databaseService.getAllTemplates();
+    final existing = await _dataManager.getAllTemplates();
     if (existing.isNotEmpty) return;
     
     // 添加默认模板
     final defaultTemplates = _getDefaultTemplates();
     for (var template in defaultTemplates) {
-      await _databaseService.upsertTemplate(template);
+      await _dataManager.upsertTemplate(template);
     }
   }
   
