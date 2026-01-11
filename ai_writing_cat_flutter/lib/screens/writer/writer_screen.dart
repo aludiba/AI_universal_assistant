@@ -123,7 +123,7 @@ class _WriterScreenState extends State<WriterScreen> {
     return Scaffold(
       backgroundColor: isDark 
           ? AppColors.backgroundDark 
-          : AppColors.getSecondaryBackground(context),
+          : Colors.white,
       appBar: AppBar(
         title: Text(l10n.tabWriter),
         backgroundColor: Colors.transparent,
@@ -147,12 +147,19 @@ class _WriterScreenState extends State<WriterScreen> {
               child: ListView.builder(
                 controller: _scrollController,
                 padding: EdgeInsets.zero,
-                itemCount: _categories.length + 1, // +1 for input cell
+                itemCount: _categories.length + 2, // +1 for input cell, +1 for divider
                 itemBuilder: (context, index) {
                   if (index == 0) {
                     return _buildInputCell(context, l10n, isDark);
+                  } else if (index == 1) {
+                    // 输入部分和文案模板之间的分割线
+                    return Divider(
+                      height: 1,
+                      thickness: 0.5,
+                      color: AppColors.getDivider(context),
+                    );
                   } else {
-                    return _buildCategorySection(context, _categories[index - 1], isDark);
+                    return _buildCategorySection(context, _categories[index - 2], isDark);
                   }
                 },
               ),
@@ -166,9 +173,7 @@ class _WriterScreenState extends State<WriterScreen> {
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark 
-            ? AppColors.cardBackgroundDark 
-            : Colors.white,
+        color: AppColors.getCardBackground(context),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -179,11 +184,9 @@ class _WriterScreenState extends State<WriterScreen> {
             children: [
               Container(
                 decoration: BoxDecoration(
-                  color: isDark 
-                      ? AppColors.backgroundDark 
-                      : Colors.white,
+                  color: isDark ? AppColors.backgroundDark : Colors.white,
                   border: Border.all(
-                    color: const Color(0xFFE6E6E6),
+                    color: AppColors.getDivider(context),
                     width: 1.0,
                   ),
                   borderRadius: BorderRadius.circular(8),
@@ -270,7 +273,8 @@ class _WriterScreenState extends State<WriterScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Section Header
-        Padding(
+        Container(
+          color: isDark ? AppColors.backgroundDark : Colors.white,
           padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
           child: Text(
             category.title,
@@ -298,14 +302,10 @@ class _WriterScreenState extends State<WriterScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: isDark 
-              ? AppColors.cardBackgroundDark 
-              : Colors.white,
+          color: AppColors.getCardBackground(context),
           border: Border(
             bottom: BorderSide(
-              color: isDark 
-                  ? AppColors.dividerDark 
-                  : AppColors.divider,
+              color: AppColors.getDivider(context),
               width: 0.5,
             ),
           ),

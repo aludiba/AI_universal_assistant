@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kDebugMode, FlutterError, FlutterErrorDetails;
+import 'dart:ui' show PlatformDispatcher;
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
@@ -16,24 +18,98 @@ import 'constants/app_colors.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // 初始化应用提供者
-  final appProvider = AppProvider();
-  await appProvider.init();
+  // 全局错误处理（简化，避免 Stack Overflow）
+  FlutterError.onError = (FlutterErrorDetails details) {
+    if (kDebugMode) {
+      try {
+        debugPrint('=== Flutter Error ===');
+        debugPrint('Exception: ${details.exception}');
+        if (details.stack != null) {
+          debugPrint('Stack: ${details.stack}');
+        }
+        debugPrint('===================');
+      } catch (e) {
+        // 如果打印错误信息本身出错，避免无限递归
+        debugPrint('Error in error handler: $e');
+      }
+    }
+    FlutterError.presentError(details);
+  };
   
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider.value(value: appProvider),
-        ChangeNotifierProvider(create: (_) => DocumentProvider()),
-        ChangeNotifierProvider(create: (_) => TemplateProvider()..init()),
-        ChangeNotifierProvider(create: (_) => HotProvider()..init(locale: appProvider.locale)),
-        ChangeNotifierProvider(create: (_) => WritingProvider()),
-        ChangeNotifierProvider(create: (_) => HotWritingProvider()),
-        ChangeNotifierProvider(create: (_) => HotSearchProvider()),
-      ],
-      child: const MyApp(),
-    ),
-  );
+  // 处理异步错误
+  PlatformDispatcher.instance.onError = (error, stack) {
+    debugPrint('=== Platform Error ===');
+    debugPrint('Error: $error');
+    debugPrint('Stack: $stack');
+    debugPrint('====================');
+    return true;
+  };
+  
+  debugPrint('🚀 应用开始启动...');
+  
+  try {
+    // 初始化应用提供者
+    debugPrint('📦 初始化 AppProvider...');
+    final appProvider = AppProvider();
+    await appProvider.init();
+    debugPrint('✅ AppProvider 初始化完成');
+    
+    debugPrint('🎨 创建 Provider 树...');
+    runApp(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider.value(value: appProvider),
+          ChangeNotifierProvider(create: (_) => DocumentProvider()),
+          ChangeNotifierProvider(create: (_) => TemplateProvider()..init()),
+          ChangeNotifierProvider(create: (_) => HotProvider()..init(locale: appProvider.locale)),
+          ChangeNotifierProvider(create: (_) => WritingProvider()),
+          ChangeNotifierProvider(create: (_) => HotWritingProvider()),
+          ChangeNotifierProvider(create: (_) => HotSearchProvider()),
+        ],
+        child: const MyApp(),
+      ),
+    );
+    debugPrint('✅ 应用启动完成');
+  } catch (e, stackTrace) {
+    debugPrint('❌ 应用启动失败: $e');
+    debugPrint('Stack: $stackTrace');
+    // 即使启动失败，也尝试显示一个简单的错误界面
+    try {
+      runApp(
+        MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error, size: 64, color: Colors.red),
+                    const SizedBox(height: 16),
+                    const Text(
+                      '应用启动失败',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      e.toString().length > 100 
+                        ? '${e.toString().substring(0, 100)}...' 
+                        : e.toString(),
+                      style: const TextStyle(fontSize: 14),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    } catch (errorError) {
+      // 如果显示错误界面也失败，至少打印错误
+      debugPrint('无法显示错误界面: $errorError');
+    }
+  }
 }
 
 class MyApp extends StatefulWidget {

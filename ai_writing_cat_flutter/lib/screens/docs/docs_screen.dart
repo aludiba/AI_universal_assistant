@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import '../../constants/app_colors.dart';
 import '../../providers/document_provider.dart';
 import '../../models/document_model.dart';
-import '../../constants/app_styles.dart';
 import '../../l10n/app_localizations.dart';
 import '../../router/app_router.dart';
+import '../../services/data_manager.dart';
 
 /// 文档页面
 class DocsScreen extends StatefulWidget {
@@ -17,6 +19,8 @@ class DocsScreen extends StatefulWidget {
 }
 
 class _DocsScreenState extends State<DocsScreen> {
+  final DataManager _dataManager = DataManager();
+
   @override
   void initState() {
     super.initState();
@@ -29,15 +33,11 @@ class _DocsScreenState extends State<DocsScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
+      backgroundColor: isDark ? AppColors.backgroundDark : Colors.white,
       appBar: AppBar(
-        title: Text(l10n.myDocuments),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: _createNewDocument,
-          ),
-        ],
+        title: Text(l10n.tabDocs),
       ),
       body: Consumer<DocumentProvider>(
         builder: (context, provider, _) {
@@ -46,118 +46,211 @@ class _DocsScreenState extends State<DocsScreen> {
               child: CircularProgressIndicator(),
             );
           }
-          
-          if (provider.documents.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.description_outlined,
-                    size: 80,
-                    color: Colors.grey[400],
-                  ),
-                  const SizedBox(height: AppStyles.paddingMedium),
-                  Text(
-                    l10n.noDocuments,
-                    style: AppStyles.bodyLarge.copyWith(
-                      color: Colors.grey[600],
+
+          final docs = provider.documents;
+
+          // iOS: UITableViewStyleGrouped + 自定义 cell/section header
+          return Container(
+            color: isDark ? AppColors.backgroundDark : Colors.white,
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                // Section 0: 新建文档 cell（高度 120，上下 8，左右 16）
+                _buildCreateDocumentCell(context, provider),
+
+                // Section 1 Header: “我的文档”（高度 50，底部 8，左右 16）
+                _buildMyDocumentsHeader(context, l10n),
+
+                if (docs.isEmpty)
+                  // iOS: 中间空文本提示
+                  Padding(
+                    padding: const EdgeInsets.only(top: 120),
+                    child: Center(
+                      child: Text(
+                        l10n.noDocuments,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: AppColors.getTextSecondary(context),
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: AppStyles.paddingLarge),
-                  ElevatedButton.icon(
-                    onPressed: _createNewDocument,
-                    icon: const Icon(Icons.add),
-                    label: Text(l10n.newDocument),
-                  ),
-                ],
-              ),
-            );
-          }
-          
-          return ListView.builder(
-            padding: const EdgeInsets.all(AppStyles.paddingMedium),
-            itemCount: provider.documents.length,
-            itemBuilder: (context, index) {
-              final doc = provider.documents[index];
-              return _buildDocumentCard(doc, provider);
-            },
+                  )
+                else
+                  ...docs.map((doc) => _buildDocumentRow(context, doc, provider)),
+              ],
+            ),
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _createNewDocument,
-        child: const Icon(Icons.add),
+    );
+  }
+
+  Widget _buildCreateDocumentCell(BuildContext context, DocumentProvider provider) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: _createNewDocument,
+          child: Container(
+            height: 120,
+            decoration: BoxDecoration(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                width: 1,
+                color: AppColors.getDivider(context),
+              ),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.add,
+                  size: 32,
+                  color: AppColors.getTextSecondary(context),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  l10n.newDocument,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: AppColors.getTextSecondary(context),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
-  
-  Widget _buildDocumentCard(DocumentModel doc, DocumentProvider provider) {
+
+  Widget _buildMyDocumentsHeader(BuildContext context, AppLocalizations l10n) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      height: 50,
+      color: isDark ? AppColors.backgroundDark : Colors.white,
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      alignment: Alignment.bottomLeft,
+      child: Text(
+        l10n.myDocuments,
+        style: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: AppColors.getTextPrimary(context),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDocumentRow(BuildContext context, DocumentModel doc, DocumentProvider provider) {
     final l10n = AppLocalizations.of(context)!;
     final docTitle = doc.title.isEmpty ? l10n.untitledDocument : doc.title;
-    return Card(
-      margin: const EdgeInsets.only(bottom: AppStyles.paddingMedium),
-      child: InkWell(
-        onTap: () {
-          context
-              .pushNamed(AppRoute.docDetail.name, pathParameters: {'id': doc.id})
-              .then((_) {
-            // 返回时刷新列表
-            provider.loadDocuments();
-          });
-        },
-        borderRadius: BorderRadius.circular(AppStyles.radiusMedium),
-        child: Padding(
-          padding: const EdgeInsets.all(AppStyles.paddingMedium),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      docTitle,
-                      style: AppStyles.titleMedium,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+
+    // iOS 有侧滑删除；Flutter 用 Dismissible 近似
+    return Dismissible(
+      key: ValueKey('doc_${doc.id}'),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (_) async {
+        final shouldDelete = await _confirmDelete(doc);
+        return shouldDelete;
+      },
+      onDismissed: (_) async {
+        final messenger = ScaffoldMessenger.of(context);
+        final deletedMsg = l10n.deletedSuccess;
+        await provider.deleteDocument(doc.id);
+        messenger.showSnackBar(
+          SnackBar(content: Text(deletedMsg)),
+        );
+      },
+      background: Container(
+        color: const Color(0xFFEF4444),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 16),
+        child: Text(
+          l10n.delete,
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            context.pushNamed(AppRoute.docDetail.name, pathParameters: {'id': doc.id}).then((_) {
+              provider.loadDocuments();
+            });
+          },
+          child: Container(
+            color: Colors.transparent,
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.description_outlined,
+                        size: 44,
+                        color: AppColors.getTextSecondary(context),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              docTitle,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: AppColors.getTextPrimary(context),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Text(
+                                  _formatDateForDocs(doc.updatedAt),
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.getTextSecondary(context),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '|  ${doc.wordCount} ${l10n.words}',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.getTextSecondary(context),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: const Icon(Icons.more_horiz),
+                        color: AppColors.getTextSecondary(context),
+                        onPressed: () => _showMoreActions(doc, provider),
+                      ),
+                    ],
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline),
-                    color: Colors.red,
-                    onPressed: () => _deleteDocument(doc, provider),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppStyles.paddingSmall),
-              if (doc.content.isNotEmpty)
-                Text(
-                  doc.content,
-                  style: AppStyles.bodyMedium.copyWith(
-                    color: Colors.grey[600],
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                 ),
-              const SizedBox(height: AppStyles.paddingSmall),
-              Row(
-                children: [
-                  Text(
-                    '${doc.wordCount} ${l10n.words}',
-                    style: AppStyles.bodySmall.copyWith(
-                      color: Colors.grey[500],
-                    ),
-                  ),
-                  const SizedBox(width: AppStyles.paddingMedium),
-                  Text(
-                    _formatDate(doc.updatedAt),
-                    style: AppStyles.bodySmall.copyWith(
-                      color: Colors.grey[500],
-                    ),
-                  ),
-                ],
-              ),
-            ],
+                // iOS: 底部分割线，左右 16 inset，高 1
+                Container(
+                  height: 1,
+                  color: AppColors.getDivider(context),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -177,11 +270,11 @@ class _DocsScreenState extends State<DocsScreen> {
       });
     }
   }
-  
-  void _deleteDocument(DocumentModel doc, DocumentProvider provider) {
+
+  Future<bool> _confirmDelete(DocumentModel doc) async {
     final l10n = AppLocalizations.of(context)!;
     final docTitle = doc.title.isEmpty ? l10n.untitledDocument : doc.title;
-    showDialog(
+    final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(l10n.deleteConfirm),
@@ -193,20 +286,70 @@ class _DocsScreenState extends State<DocsScreen> {
           ),
           TextButton(
             onPressed: () {
-              provider.deleteDocument(doc.id);
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(l10n.deletedSuccess)),
-              );
+              Navigator.pop(context, true);
             },
             child: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
     );
+    return result == true;
   }
-  
-  String _formatDate(DateTime date) {
+
+  Future<void> _showMoreActions(DocumentModel doc, DocumentProvider provider) async {
+    final l10n = AppLocalizations.of(context)!;
+    final docTitle = doc.title.isEmpty ? l10n.untitledDocument : doc.title;
+    final messenger = ScaffoldMessenger.of(context);
+
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: Text(l10n.export),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await _dataManager.exportDocument(docTitle, doc.content);
+                },
+              ),
+              ListTile(
+                title: Text(l10n.copy),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final fullText = '$docTitle\n${doc.content.isEmpty ? '' : '\n${doc.content}'}';
+                  await Clipboard.setData(ClipboardData(text: fullText));
+                  messenger.showSnackBar(
+                    SnackBar(content: Text(l10n.copiedToClipboard)),
+                  );
+                },
+              ),
+              ListTile(
+                title: Text(
+                  l10n.delete,
+                  style: const TextStyle(color: Colors.red),
+                ),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final ok = await _confirmDelete(doc);
+                  if (!ok) return;
+                  await provider.deleteDocument(doc.id);
+                  messenger.showSnackBar(
+                    SnackBar(content: Text(l10n.deletedSuccess)),
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  String _formatDateForDocs(DateTime date) {
     final l10n = AppLocalizations.of(context)!;
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -219,7 +362,8 @@ class _DocsScreenState extends State<DocsScreen> {
     } else if (docDate == yesterday) {
       return '${l10n.yesterday} $timeStr';
     } else {
-      return DateFormat('MM-dd HH:mm', l10n.localeName).format(date);
+      // iOS 更接近原始完整时间：yyyy-MM-dd HH:mm:ss
+      return DateFormat('yyyy-MM-dd HH:mm:ss', l10n.localeName).format(date);
     }
   }
 }

@@ -1,0 +1,16 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "AI写作助手 - 支持续写、改写、扩写、翻译等AI写作功能"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "AI写作喵主应用"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "AI写作喵"
+    }
+  ]
+}

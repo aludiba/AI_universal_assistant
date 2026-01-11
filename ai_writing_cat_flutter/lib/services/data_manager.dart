@@ -6,8 +6,8 @@ import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
+import 'hive_storage.dart';
 import '../models/hot_item_model.dart';
 import '../models/writing_record_model.dart';
 import '../models/document_model.dart';
@@ -23,7 +23,7 @@ class DataManager {
   factory DataManager() => _instance;
   DataManager._internal();
 
-  SharedPreferences? _prefs;
+  final HiveStorage _storage = HiveStorage();
   Database? _database;
   List<HotCategoryModel>? _categories;
   String? _loadedLanguageCode;
@@ -33,37 +33,72 @@ class DataManager {
   File? _favoritesFile;
   File? _recentUsedFile;
 
-  /// 初始化
+  /// 初始化（使用 Hive 纯 Dart 存储）
   Future<void> init() async {
-    _prefs = await SharedPreferences.getInstance();
+    await _storage.init();
   }
 
-  SharedPreferences get prefs {
-    if (_prefs == null) {
-      throw Exception('DataManager未初始化，请先调用init()');
-    }
-    return _prefs!;
-  }
+  /// 获取字符串
+  String? _getString(String key) => _storage.getString(key);
+
+  /// 设置字符串
+  Future<bool> _setString(String key, String value) => _storage.setString(key, value);
+
+  /// 获取字符串列表
+  List<String>? _getStringList(String key) => _storage.getStringList(key);
+
+  /// 设置字符串列表
+  Future<bool> _setStringList(String key, List<String> value) => _storage.setStringList(key, value);
+
+  /// 获取整数
+  int? _getInt(String key) => _storage.getInt(key);
+
+  /// 设置整数
+  Future<bool> _setInt(String key, int value) => _storage.setInt(key, value);
+
+  /// 获取布尔值
+  bool? _getBool(String key) => _storage.getBool(key);
+
+  /// 设置布尔值
+  Future<bool> _setBool(String key, bool value) => _storage.setBool(key, value);
+
+  /// 移除键
+  Future<bool> _remove(String key) => _storage.remove(key);
+
+  /// 清空所有数据
+  Future<bool> _clear() => _storage.clear();
 
   // ==================== 数据库相关 ====================
 
   /// 获取数据库实例
+  /// 注意：在鸿蒙等不支持的平台上，如果 sqflite 不可用，会抛出异常
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDatabase();
-    return _database!;
+    try {
+      _database = await _initDatabase();
+      return _database!;
+    } catch (e) {
+      debugPrint('获取数据库实例失败: $e');
+      rethrow;
+    }
   }
 
-  /// 初始化数据库
+  /// 初始化数据库（在鸿蒙等不支持的平台上会抛出异常，需要调用方处理）
   Future<Database> _initDatabase() async {
-    final databasesPath = await getDatabasesPath();
-    final path = p.join(databasesPath, 'ai_writing_cat.db');
+    try {
+      final databasesPath = await getDatabasesPath();
+      final path = p.join(databasesPath, 'ai_writing_cat.db');
 
-    return await openDatabase(
-      path,
-      version: 1,
-      onCreate: _onCreate,
-    );
+      return await openDatabase(
+        path,
+        version: 1,
+        onCreate: _onCreate,
+      );
+    } catch (e, stackTrace) {
+      debugPrint('数据库初始化失败（平台可能不支持 sqflite）: $e');
+      debugPrint('Stack trace: $stackTrace');
+      rethrow; // 重新抛出，让调用方处理
+    }
   }
 
   /// 创建表
@@ -250,7 +285,7 @@ class DataManager {
     }
     // 兼容旧版本 prefs
     try {
-      await prefs.remove('hot_recent_used');
+      await _remove('hot_recent_used');
     } catch (_) {}
   }
 
@@ -297,7 +332,7 @@ class DataManager {
 
     // 2) 兼容旧版本：从 SharedPreferences 迁移一次
     try {
-      final legacy = prefs.getString(legacyPrefsKey);
+      final legacy = _getString(legacyPrefsKey);
       if (legacy == null || legacy.trim().isEmpty) return [];
       final list = jsonDecode(legacy);
       if (list is! List) return [];
@@ -306,7 +341,7 @@ class DataManager {
           .map((json) => HotItemModel.fromJson(json))
           .toList();
       await _writeListToSandbox(file: file, legacyPrefsKey: legacyPrefsKey, items: items);
-      await prefs.remove(legacyPrefsKey);
+      await _remove(legacyPrefsKey);
       return items;
     } catch (e) {
       debugPrint('Error migrating legacy $legacyPrefsKey: $e');
@@ -364,12 +399,12 @@ class DataManager {
 
   /// 搜索模块加载历史搜索数据
   List<String> loadSearchHistorySearches() {
-    return prefs.getStringList('search_history') ?? [];
+    return _getStringList('search_history') ?? [];
   }
 
   /// 搜索模块保存搜索记录
   Future<void> saveHistorySearches(List<String> history) async {
-    await prefs.setStringList('search_history', history);
+    await _setStringList('search_history', history);
   }
 
   /// 添加搜索记录
@@ -385,7 +420,7 @@ class DataManager {
 
   /// 清空搜索历史
   Future<void> clearSearchHistory() async {
-    await prefs.remove('search_history');
+    await _remove('search_history');
   }
 
   // ==================== 写作 ====================
@@ -660,19 +695,19 @@ class DataManager {
 
   /// 保存订阅信息
   Future<void> saveSubscription(SubscriptionModel subscription) async {
-    await prefs.setString('subscription', jsonEncode(subscription.toJson()));
+    await _setString('subscription', jsonEncode(subscription.toJson()));
   }
 
   /// 获取订阅信息
   SubscriptionModel? getSubscription() {
-    final data = prefs.getString('subscription');
+    final data = _getString('subscription');
     if (data == null) return null;
     return SubscriptionModel.fromJson(jsonDecode(data) as Map<String, dynamic>);
   }
 
   /// 清除订阅信息
   Future<void> clearSubscription() async {
-    await prefs.remove('subscription');
+    await _remove('subscription');
   }
 
   /// 是否是VIP
@@ -685,12 +720,12 @@ class DataManager {
 
   /// 保存字数包统计
   Future<void> saveWordPackStats(WordPackStats stats) async {
-    await prefs.setString('word_pack_stats', jsonEncode(stats.toJson()));
+    await _setString('word_pack_stats', jsonEncode(stats.toJson()));
   }
 
   /// 获取字数包统计
   WordPackStats getWordPackStats() {
-    final data = prefs.getString('word_pack_stats');
+    final data = _getString('word_pack_stats');
     if (data == null) {
       return WordPackStats(
         vipGiftWords: 0,
@@ -705,12 +740,12 @@ class DataManager {
   /// 保存字数包列表
   Future<void> saveWordPacks(List<WordPackModel> packs) async {
     final data = packs.map((p) => p.toJson()).toList();
-    await prefs.setString('word_packs', jsonEncode(data));
+    await _setString('word_packs', jsonEncode(data));
   }
 
   /// 获取字数包列表
   List<WordPackModel> getWordPacks() {
-    final data = prefs.getString('word_packs');
+    final data = _getString('word_packs');
     if (data == null) return [];
     final List<dynamic> list = jsonDecode(data) as List;
     return list.map((e) => WordPackModel.fromJson(e as Map<String, dynamic>)).toList();
@@ -754,13 +789,13 @@ class DataManager {
 
   /// 获取试用次数
   int getTrialCount() {
-    return prefs.getInt('trial_count') ?? 0;
+    return _getInt('trial_count') ?? 0;
   }
 
   /// 增加试用次数
   Future<void> incrementTrialCount() async {
     final count = getTrialCount();
-    await prefs.setInt('trial_count', count + 1);
+    await _setInt('trial_count', count + 1);
   }
 
   /// 是否还有试用次数
@@ -772,23 +807,23 @@ class DataManager {
 
   /// 获取今日观看次数
   int getTodayRewardCount() {
-    final lastDate = prefs.getString('reward_last_date');
+    final lastDate = _getString('reward_last_date');
     final today = DateTime.now().toString().substring(0, 10);
 
     if (lastDate != today) {
       return 0;
     }
 
-    return prefs.getInt('reward_count') ?? 0;
+    return _getInt('reward_count') ?? 0;
   }
 
   /// 增加观看次数
   Future<void> incrementRewardCount() async {
     final today = DateTime.now().toString().substring(0, 10);
-    await prefs.setString('reward_last_date', today);
+    await _setString('reward_last_date', today);
 
     final count = getTodayRewardCount();
-    await prefs.setInt('reward_count', count + 1);
+    await _setInt('reward_count', count + 1);
   }
 
   /// 是否可以观看激励视频
@@ -800,48 +835,48 @@ class DataManager {
 
   /// 获取启动次数
   int getLaunchCount() {
-    return prefs.getInt('launch_count') ?? 0;
+    return _getInt('launch_count') ?? 0;
   }
 
   /// 增加启动次数
   Future<void> incrementLaunchCount() async {
     final count = getLaunchCount();
-    await prefs.setInt('launch_count', count + 1);
+    await _setInt('launch_count', count + 1);
   }
 
   /// 是否显示过引导
   bool hasShownGuide() {
-    return prefs.getBool('has_shown_guide') ?? false;
+    return _getBool('has_shown_guide') ?? false;
   }
 
   /// 设置已显示引导
   Future<void> setShownGuide() async {
-    await prefs.setBool('has_shown_guide', true);
+    await _setBool('has_shown_guide', true);
   }
 
   /// 获取主题模式
   String getThemeMode() {
-    return prefs.getString('theme_mode') ?? 'system';
+    return _getString('theme_mode') ?? 'system';
   }
 
   /// 设置主题模式
   Future<void> setThemeMode(String mode) async {
-    await prefs.setString('theme_mode', mode);
+    await _setString('theme_mode', mode);
   }
 
   /// 获取语言
   String? getLanguage() {
-    return prefs.getString('language');
+    return _getString('language');
   }
 
   /// 设置语言
   Future<void> setLanguage(String language) async {
-    await prefs.setString('language', language);
+    await _setString('language', language);
   }
 
   /// 清空所有数据
   Future<void> clearAll() async {
-    await prefs.clear();
+    await _clear();
   }
 
   // ==================== 提示词处理 ====================

@@ -11,7 +11,7 @@ class IAPService {
   factory IAPService() => _instance;
   IAPService._internal();
   
-  final InAppPurchase _iap = InAppPurchase.instance;
+  InAppPurchase? _iap;
   StreamSubscription<List<PurchaseDetails>>? _subscription;
   
   final _dataManager = DataManager();
@@ -29,45 +29,76 @@ class IAPService {
   
   List<ProductDetails> _products = [];
   bool _isAvailable = false;
+  bool _initialized = false;
   
-  /// 初始化IAP
+  /// 初始化IAP（在鸿蒙等不支持的平台上会优雅降级）
   Future<void> init() async {
+    if (_initialized) return;
+    
     try {
-      _isAvailable = await _iap.isAvailable();
-    } catch (e) {
+      // 尝试获取 IAP 实例（在不支持的平台上可能会抛出异常）
+      _iap = InAppPurchase.instance;
+      
+      // 检查是否可用
+      try {
+        _isAvailable = await _iap!.isAvailable();
+      } catch (e) {
+        _isAvailable = false;
+        debugPrint('IAP isAvailable failed (platform may not support IAP): $e');
+        _initialized = true;
+        return;
+      }
+      
+      if (!_isAvailable) {
+        debugPrint('IAP is not available on this platform');
+        _initialized = true;
+        return;
+      }
+      
+      // 监听购买更新
+      try {
+        _subscription = _iap!.purchaseStream.listen(
+          _onPurchaseUpdate,
+          onError: (error) {
+            // 处理错误
+            debugPrint('IAP purchaseStream error: $error');
+          },
+        );
+      } catch (e) {
+        debugPrint('IAP purchaseStream setup failed: $e');
+        _isAvailable = false;
+        _initialized = true;
+        return;
+      }
+      
+      // 加载产品信息
+      await loadProducts();
+      
+      // 恢复未完成的购买
+      try {
+        await _iap!.restorePurchases();
+      } catch (e) {
+        // iOS 模拟器未登录 App Store 时会报 "No active account"
+        debugPrint('IAP restorePurchases failed (ignored): $e');
+      }
+      
+      _initialized = true;
+    } catch (e, stackTrace) {
+      // 捕获所有异常，确保应用不会因 IAP 初始化失败而崩溃
+      debugPrint('IAP init failed completely (platform may not support IAP): $e');
+      debugPrint('Stack trace: $stackTrace');
       _isAvailable = false;
-      debugPrint('IAP isAvailable failed: $e');
-      return;
-    }
-    if (!_isAvailable) return;
-    
-    // 监听购买更新
-    _subscription = _iap.purchaseStream.listen(
-      _onPurchaseUpdate,
-      onError: (error) {
-        // 处理错误
-        debugPrint('IAP purchaseStream error: $error');
-      },
-    );
-    
-    // 加载产品信息
-    await loadProducts();
-    
-    // 恢复未完成的购买
-    try {
-      await _iap.restorePurchases();
-    } catch (e) {
-      // iOS 模拟器未登录 App Store 时会报 "No active account"
-      debugPrint('IAP restorePurchases failed (ignored): $e');
+      _iap = null;
+      _initialized = true;
     }
   }
   
   /// 加载产品信息
   Future<void> loadProducts() async {
-    if (!_isAvailable) return;
+    if (!_isAvailable || _iap == null) return;
     
     try {
-      final ProductDetailsResponse response = await _iap.queryProductDetails(_productIds);
+      final ProductDetailsResponse response = await _iap!.queryProductDetails(_productIds);
       
       if (response.error != null) {
         // iOS 模拟器未登录 App Store 时可能会失败：不影响启动，直接降级为空列表
@@ -98,7 +129,7 @@ class IAPService {
   
   /// 购买产品
   Future<bool> purchaseProduct(String productId) async {
-    if (!_isAvailable) {
+    if (!_isAvailable || _iap == null) {
       throw Exception('应用内购买不可用');
     }
     
@@ -110,7 +141,7 @@ class IAPService {
     final PurchaseParam purchaseParam = PurchaseParam(productDetails: product);
     
     try {
-      return await _iap.buyNonConsumable(purchaseParam: purchaseParam);
+      return await _iap!.buyNonConsumable(purchaseParam: purchaseParam);
     } catch (e) {
       throw Exception('购买失败: $e');
     }
@@ -118,12 +149,12 @@ class IAPService {
   
   /// 恢复购买
   Future<void> restorePurchases() async {
-    if (!_isAvailable) {
+    if (!_isAvailable || _iap == null) {
       throw Exception('应用内购买不可用');
     }
     
     try {
-      await _iap.restorePurchases();
+      await _iap!.restorePurchases();
     } catch (e) {
       // 主动恢复购买：这里仍然抛出，便于 UI 提示
       throw Exception('恢复购买失败: $e');
@@ -132,6 +163,8 @@ class IAPService {
   
   /// 处理购买更新
   void _onPurchaseUpdate(List<PurchaseDetails> purchaseDetailsList) {
+    if (_iap == null) return;
+    
     for (var purchaseDetails in purchaseDetailsList) {
       if (purchaseDetails.status == PurchaseStatus.pending) {
         // 购买待处理
@@ -146,7 +179,7 @@ class IAPService {
       
       // 完成购买
       if (purchaseDetails.pendingCompletePurchase) {
-        _iap.completePurchase(purchaseDetails);
+        _iap!.completePurchase(purchaseDetails);
       }
     }
   }

@@ -1,0 +1,16 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "AI Writing Assistant - Supports continuation, rewriting, expansion, translation and more"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "AI Writing Cat Main App"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "AI Writing Cat"
+    }
+  ]
+}
