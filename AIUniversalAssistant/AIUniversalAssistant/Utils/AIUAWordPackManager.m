@@ -72,12 +72,9 @@ static NSString * kProductIDWordPack6M = nil;
                                                      name:@"AIUASubscriptionStatusChanged"
                                                    object:nil];
 
-        // 非VIP用户不应有赠送字数，启动时兜底重置
-        // 注意：不清除 kAIUAVIPGiftAwarded 标记，防止用户退订后重新订阅时重复赠送
-        BOOL isVIP = [[AIUAIAPManager sharedManager] isVIPMember];
-        if (!isVIP) {
-            [self setLocalInteger:0 forKey:kAIUAVIPGiftedWords];
-        }
+        // 移除危险的兜底重置逻辑
+        // 原因：初始化时VIP状态可能还未加载完成，错误地清除赠送字数会导致用户损失
+        // VIP状态的变化由通知机制处理（subscriptionStatusChanged）
         
         // 启动时清除已过期的购买记录
         [self cleanExpiredPurchases];
@@ -464,13 +461,16 @@ static NSString * kProductIDWordPack6M = nil;
 - (void)refreshVIPGiftedWords {
     BOOL isVIP = [[AIUAIAPManager sharedManager] isVIPMember];
     
+    NSLog(@"[WordPack] 刷新VIP赠送字数 - 当前VIP状态: %@", isVIP ? @"是" : @"否");
+    
     if (isVIP) {
         // 检查是否已经赠送过一次性50万字
         BOOL hasAwarded = [self localBoolForKey:kAIUAVIPGiftAwarded];
+        NSLog(@"[WordPack] 是否已赠送过: %@", hasAwarded ? @"是" : @"否");
         
         if (!hasAwarded) {
             // 首次订阅，一次性赠送50万字
-            NSLog(@"[WordPack] 检测到新VIP用户，一次性赠送 %ld 字", (long)kVIPOneTimeGiftWords);
+            NSLog(@"[WordPack] ✓ 检测到新VIP用户，一次性赠送 %ld 字", (long)kVIPOneTimeGiftWords);
             [self setLocalInteger:kVIPOneTimeGiftWords forKey:kAIUAVIPGiftedWords];
             [self setLocalBool:YES forKey:kAIUAVIPGiftAwarded];
             
@@ -483,6 +483,8 @@ static NSString * kProductIDWordPack6M = nil;
             [[NSNotificationCenter defaultCenter] postNotificationName:AIUAWordPackPurchasedNotification 
                                                                 object:nil 
                                                               userInfo:@{ @"words": @(kVIPOneTimeGiftWords) }];
+            
+            NSLog(@"[WordPack] ✓ 赠送字数已发放并保存");
         } else {
             NSInteger currentWords = [self localIntegerForKey:kAIUAVIPGiftedWords];
             NSLog(@"[WordPack] VIP用户已赠送过一次性字数，当前剩余: %ld", (long)currentWords);
@@ -502,8 +504,9 @@ static NSString * kProductIDWordPack6M = nil;
     // 检查是否处于试用会话中（已经使用了试用次数）
     AIUATrialManager *trialManager = [AIUATrialManager sharedManager];
     if ([trialManager isInTrialSession]) {
-        NSLog(@"[WordPack] ✓ 用户处于试用会话中，字数不消耗");
-        // 试用会话中不消耗字数，直接返回成功
+        NSLog(@"[WordPack] ✓ 用户处于试用会话中，记录消耗但不扣除字数");
+        // 试用会话中记录消耗统计，但不实际扣除字数
+        [self recordConsumption:words];
         if (completion) {
             dispatch_async(dispatch_get_main_queue(), ^{
                 completion(YES, [self totalAvailableWords]);
@@ -515,8 +518,9 @@ static NSString * kProductIDWordPack6M = nil;
     // 检查是否是VIP用户
     BOOL isVIP = [[AIUAIAPManager sharedManager] isVIPMember];
     if (isVIP) {
-        NSLog(@"[WordPack] ✓ VIP用户，字数不消耗");
-        // VIP用户不消耗字数
+        NSLog(@"[WordPack] ✓ VIP用户，记录消耗但不扣除字数");
+        // VIP用户记录消耗统计，但不实际扣除字数
+        [self recordConsumption:words];
         if (completion) {
             dispatch_async(dispatch_get_main_queue(), ^{
                 completion(YES, [self totalAvailableWords]);
@@ -555,12 +559,24 @@ static NSString * kProductIDWordPack6M = nil;
         [self consumeFromPurchasedPacks:remainingToConsume];
     }
     
-    // 3. 更新总消耗字数
+    // 3. 记录消耗统计
+    [self recordConsumption:words];
+    
+    if (completion) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            completion(YES, [self totalAvailableWords]);
+        });
+    }
+}
+
+// 记录字数消耗统计（不实际扣除字数，仅用于统计）
+- (void)recordConsumption:(NSInteger)words {
+    // 更新总消耗字数
     NSInteger totalConsumed = [self localIntegerForKey:kAIUAConsumedWords];
     totalConsumed += words;
     [self setLocalInteger:totalConsumed forKey:kAIUAConsumedWords];
     
-    NSLog(@"[WordPack] ✓ 消耗完成，累计消耗: %ld 字", (long)totalConsumed);
+    NSLog(@"[WordPack] ✓ 记录消耗统计: %ld 字，累计消耗: %ld 字", (long)words, (long)totalConsumed);
     
     // 同步到iCloud
     if (self.iCloudSyncEnabled) {
@@ -571,12 +587,6 @@ static NSString * kProductIDWordPack6M = nil;
     [[NSNotificationCenter defaultCenter] postNotificationName:AIUAWordConsumedNotification
                                                         object:nil
                                                       userInfo:@{@"words": @(words)}];
-    
-    if (completion) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            completion(YES, [self totalAvailableWords]);
-        });
-    }
 }
 
 - (void)consumeFromPurchasedPacks:(NSInteger)words {
