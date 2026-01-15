@@ -32,7 +32,9 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     NSLog(@"========== 应用启动开始 ==========");
-    [[AIUAKeychainManager sharedManager] removeAllObjects];
+    // ⚠️ 切勿在正式逻辑中清空 Keychain：
+    // Keychain 里存有试用次数、字数包购买记录、VIP赠送字数等关键数据；
+    // 否则会导致“重启后试用次数重置/赠送字数为0/已购字数包丢失”等问题。
     // 越狱检测
     if ([AIUAIAPManager isJailbroken]) {
         NSLog(@"[Security] 检测到越狱设备，应用将退出");
@@ -209,8 +211,12 @@
     // 启用iCloud同步
     [[AIUAWordPackManager sharedManager] enableiCloudSync];
     
-    // 刷新VIP赠送字数
-    [[AIUAWordPackManager sharedManager] refreshVIPGiftedWords];
+    // 延迟刷新VIP赠送字数，确保checkSubscriptionStatus完成后再执行
+    // 这样可以确保VIP状态已经正确加载
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [[AIUAWordPackManager sharedManager] refreshVIPGiftedWords];
+        NSLog(@"[App] 已刷新VIP赠送字数");
+    });
     
     // 随机触发评分提示（在合适的时机）
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{

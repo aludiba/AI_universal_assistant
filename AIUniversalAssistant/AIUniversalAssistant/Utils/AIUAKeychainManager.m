@@ -8,8 +8,17 @@
 #import "AIUAKeychainManager.h"
 #import <Security/Security.h>
 
-// 钥匙串服务标识
-static NSString * const kAIUAKeychainService = @"com.yourcompany.aiassistant.keychain";
+// Keychain Service 需要稳定且与 Bundle ID 匹配；同时兼容旧版本写入的 service（用于迁移）。
+static NSString * const kAIUAKeychainLegacyService = @"com.yourcompany.aiassistant.keychain";
+static NSString * const kAIUAKeychainPreviousFixedService = @"com.hujiaofen.writingCat.keychain";
+
+static inline NSString *AIUAKeychainPrimaryService(void) {
+    NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
+    if (!bundleID || bundleID.length == 0) {
+        bundleID = @"aiua";
+    }
+    return [NSString stringWithFormat:@"%@.keychain", bundleID];
+}
 
 @interface AIUAKeychainManager ()
 
@@ -30,10 +39,10 @@ static NSString * const kAIUAKeychainService = @"com.yourcompany.aiassistant.key
 
 #pragma mark - 私有方法 - Keychain操作
 
-- (NSMutableDictionary *)baseQueryForKey:(NSString *)key {
+- (NSMutableDictionary *)baseQueryForKey:(NSString *)key service:(NSString *)service {
     NSMutableDictionary *query = [NSMutableDictionary dictionary];
     query[(__bridge id)kSecClass] = (__bridge id)kSecClassGenericPassword;
-    query[(__bridge id)kSecAttrService] = kAIUAKeychainService;
+    query[(__bridge id)kSecAttrService] = service;
     query[(__bridge id)kSecAttrAccount] = key;
     return query;
 }
@@ -43,7 +52,7 @@ static NSString * const kAIUAKeychainService = @"com.yourcompany.aiassistant.key
         return NO;
     }
     
-    NSMutableDictionary *query = [self baseQueryForKey:key];
+    NSMutableDictionary *query = [self baseQueryForKey:key service:AIUAKeychainPrimaryService()];
     
     // 先删除旧值
     SecItemDelete((__bridge CFDictionaryRef)query);
@@ -67,25 +76,46 @@ static NSString * const kAIUAKeychainService = @"com.yourcompany.aiassistant.key
     if (!key || key.length == 0) {
         return nil;
     }
-    
-    NSMutableDictionary *query = [self baseQueryForKey:key];
-    query[(__bridge id)kSecReturnData] = @YES;
-    query[(__bridge id)kSecMatchLimit] = (__bridge id)kSecMatchLimitOne;
-    
-    CFTypeRef result = NULL;
-    OSStatus status = SecItemCopyMatching((__bridge CFDictionaryRef)query, &result);
-    
-    if (status == errSecSuccess && result) {
-        NSData *data = (__bridge_transfer NSData *)result;
-        NSLog(@"[Keychain] 读取成功: %@", key);
-        return data;
-    } else if (status == errSecItemNotFound) {
-        NSLog(@"[Keychain] 键不存在: %@", key);
-        return nil;
-    } else {
-        NSLog(@"[Keychain] 读取失败: %@, 错误码: %d", key, (int)status);
-        return nil;
+
+    // 依次尝试：primary（当前bundleID） -> 旧固定 -> 旧占位符
+    NSArray<NSString *> *servicesToTry = @[
+        AIUAKeychainPrimaryService(),
+        kAIUAKeychainPreviousFixedService,
+        kAIUAKeychainLegacyService
+    ];
+
+    for (NSUInteger idx = 0; idx < servicesToTry.count; idx++) {
+        NSString *service = servicesToTry[idx];
+        NSMutableDictionary *query = [self baseQueryForKey:key service:service];
+        query[(__bridge id)kSecReturnData] = @YES;
+        query[(__bridge id)kSecMatchLimit] = (__bridge id)kSecMatchLimitOne;
+
+        CFTypeRef result = NULL;
+        OSStatus status = SecItemCopyMatching((__bridge CFDictionaryRef)query, &result);
+
+        if (status == errSecSuccess && result) {
+            NSData *data = (__bridge_transfer NSData *)result;
+            NSLog(@"[Keychain] 读取成功: %@ (service=%@)", key, service);
+
+            // 如果不是 primary service，做一次迁移到 primary，避免后续读取不一致
+            NSString *primary = AIUAKeychainPrimaryService();
+            if (![service isEqualToString:primary]) {
+                NSLog(@"[Keychain] 迁移 Keychain 项到 primary service: %@ -> %@", service, primary);
+                [self setData:data forKey:key];
+                SecItemDelete((__bridge CFDictionaryRef)query);
+            }
+            return data;
+        }
+
+        if (status != errSecItemNotFound) {
+            NSLog(@"[Keychain] 读取失败: %@ (service=%@), 错误码: %d", key, service, (int)status);
+            // 非 not found 的错误，继续尝试下一个 service 没意义，直接返回
+            return nil;
+        }
     }
+
+    NSLog(@"[Keychain] 键不存在: %@", key);
+    return nil;
 }
 
 #pragma mark - 公开方法
@@ -153,7 +183,18 @@ static NSString * const kAIUAKeychainService = @"com.yourcompany.aiassistant.key
     NSError *error = nil;
     id object = nil;
     if (@available(iOS 11.0, *)) {
-        NSSet *allowed = [NSSet setWithArray:@[[NSArray class], [NSDictionary class], [NSString class], [NSNumber class], [NSDate class], [NSData class], [NSNull class]]];
+        // 允许可变容器（很多业务会存 NSMutableArray/NSMutableDictionary；若不允许会导致解档失败、字数包等数据读不出来）
+        NSSet *allowed = [NSSet setWithArray:@[
+            [NSArray class],
+            [NSMutableArray class],
+            [NSDictionary class],
+            [NSMutableDictionary class],
+            [NSString class],
+            [NSNumber class],
+            [NSDate class],
+            [NSData class],
+            [NSNull class]
+        ]];
         object = [NSKeyedUnarchiver unarchivedObjectOfClasses:allowed fromData:data error:&error];
     } else {
 #pragma clang diagnostic push
@@ -173,15 +214,30 @@ static NSString * const kAIUAKeychainService = @"com.yourcompany.aiassistant.key
     if (!key || key.length == 0) {
         return NO;
     }
+
+    // 尝试删除所有可能 service 下的同名 key
+    NSArray<NSString *> *servicesToTry = @[
+        AIUAKeychainPrimaryService(),
+        kAIUAKeychainPreviousFixedService,
+        kAIUAKeychainLegacyService
+    ];
+
+    OSStatus lastStatus = errSecItemNotFound;
+    for (NSString *service in servicesToTry) {
+        NSMutableDictionary *query = [self baseQueryForKey:key service:service];
+        OSStatus status = SecItemDelete((__bridge CFDictionaryRef)query);
+        if (status == errSecSuccess) {
+            lastStatus = status;
+        } else if (status != errSecItemNotFound) {
+            lastStatus = status;
+        }
+    }
     
-    NSMutableDictionary *query = [self baseQueryForKey:key];
-    OSStatus status = SecItemDelete((__bridge CFDictionaryRef)query);
-    
-    if (status == errSecSuccess || status == errSecItemNotFound) {
+    if (lastStatus == errSecSuccess || lastStatus == errSecItemNotFound) {
         NSLog(@"[Keychain] 删除成功: %@", key);
         return YES;
     } else {
-        NSLog(@"[Keychain] 删除失败: %@, 错误码: %d", key, (int)status);
+        NSLog(@"[Keychain] 删除失败: %@, 错误码: %d", key, (int)lastStatus);
         return NO;
     }
 }
@@ -191,25 +247,35 @@ static NSString * const kAIUAKeychainService = @"com.yourcompany.aiassistant.key
 }
 
 - (BOOL)removeAllObjects {
-    // 构建查询字典，只包含服务标识，不包含具体的账户（key）
-    // 这样可以匹配所有使用该服务的钥匙串项
-    NSMutableDictionary *query = [NSMutableDictionary dictionary];
-    query[(__bridge id)kSecClass] = (__bridge id)kSecClassGenericPassword;
-    query[(__bridge id)kSecAttrService] = kAIUAKeychainService;
+    // 删除所有可能 service 下的 Keychain 数据（兼容历史版本）
+    NSArray<NSString *> *servicesToDelete = @[
+        AIUAKeychainPrimaryService(),
+        kAIUAKeychainPreviousFixedService,
+        kAIUAKeychainLegacyService
+    ];
     
-    // 删除所有匹配的项
-    OSStatus status = SecItemDelete((__bridge CFDictionaryRef)query);
-    
-    if (status == errSecSuccess) {
-        NSLog(@"[Keychain] 成功删除所有钥匙串数据");
-        return YES;
-    } else if (status == errSecItemNotFound) {
-        NSLog(@"[Keychain] 钥匙串中没有数据需要删除");
-        return YES; // 没有数据也算成功
-    } else {
-        NSLog(@"[Keychain] 删除所有钥匙串数据失败，错误码: %d", (int)status);
-        return NO;
+    OSStatus lastStatus = errSecItemNotFound;
+    for (NSString *service in servicesToDelete) {
+        NSMutableDictionary *query = [NSMutableDictionary dictionary];
+        query[(__bridge id)kSecClass] = (__bridge id)kSecClassGenericPassword;
+        query[(__bridge id)kSecAttrService] = service;
+        
+        OSStatus status = SecItemDelete((__bridge CFDictionaryRef)query);
+        if (status == errSecSuccess) {
+            lastStatus = status;
+            NSLog(@"[Keychain] 成功删除所有钥匙串数据 (service=%@)", service);
+        } else if (status == errSecItemNotFound) {
+            NSLog(@"[Keychain] service=%@ 没有数据需要删除", service);
+            if (lastStatus == errSecItemNotFound) {
+                lastStatus = status;
+            }
+        } else {
+            NSLog(@"[Keychain] 删除所有钥匙串数据失败 (service=%@)，错误码: %d", service, (int)status);
+            lastStatus = status;
+        }
     }
+    
+    return (lastStatus == errSecSuccess || lastStatus == errSecItemNotFound);
 }
 
 @end

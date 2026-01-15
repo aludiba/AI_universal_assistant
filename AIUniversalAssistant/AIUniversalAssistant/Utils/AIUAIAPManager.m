@@ -32,6 +32,9 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
 @property (nonatomic, assign, readwrite) AIUASubscriptionProductType currentSubscriptionType;
 @property (nonatomic, strong, readwrite, nullable) NSDate *subscriptionExpiryDate;
 
+// 交易队列观察者引用计数（防止多个页面 start/stop 导致误移除观察者，从而“购买成功但不回调/一直处理中”）
+@property (nonatomic, assign) NSInteger paymentObserverRefCount;
+
 @end
 
 @implementation AIUAIAPManager
@@ -51,6 +54,7 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
     self = [super init];
     if (self) {
         _productsCache = [NSMutableDictionary dictionary];
+        _paymentObserverRefCount = 0;
         [self loadLocalSubscriptionInfo];
     }
     return self;
@@ -59,11 +63,33 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
 #pragma mark - Public Methods
 
 - (void)startObservingPaymentQueue {
-    [[SKPaymentQueue defaultQueue] addTransactionObserver:self];
+    @synchronized (self) {
+        self.paymentObserverRefCount += 1;
+        if (self.paymentObserverRefCount == 1) {
+            [[SKPaymentQueue defaultQueue] addTransactionObserver:self];
+            NSLog(@"[IAP] ✅ 已添加交易队列观察者 (ref=%ld)", (long)self.paymentObserverRefCount);
+        } else {
+            NSLog(@"[IAP] 已在观察交易队列，增加引用计数 (ref=%ld)", (long)self.paymentObserverRefCount);
+        }
+    }
 }
 
 - (void)stopObservingPaymentQueue {
-    [[SKPaymentQueue defaultQueue] removeTransactionObserver:self];
+    @synchronized (self) {
+        if (self.paymentObserverRefCount <= 0) {
+            // 防御：避免多次 stop 导致 ref 负数
+            self.paymentObserverRefCount = 0;
+            NSLog(@"[IAP] ⚠️ stopObservingPaymentQueue 被多次调用，忽略移除观察者");
+            return;
+        }
+        self.paymentObserverRefCount -= 1;
+        if (self.paymentObserverRefCount == 0) {
+            [[SKPaymentQueue defaultQueue] removeTransactionObserver:self];
+            NSLog(@"[IAP] 已移除交易队列观察者 (ref=0)");
+        } else {
+            NSLog(@"[IAP] 保留交易队列观察者，仅减少引用计数 (ref=%ld)", (long)self.paymentObserverRefCount);
+        }
+    }
 }
 
 - (void)fetchProductsWithCompletion:(AIUAIAPProductsCompletion)completion {
@@ -644,6 +670,10 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
     [[NSNotificationCenter defaultCenter] postNotificationName:@"AIUASubscriptionStatusChanged" object:nil];
     
     NSLog(@"[IAP] ✓ 已发送订阅状态变化通知");
+
+    // 关键修复：不依赖“字数包页面是否已打开/WordPackManager是否已初始化”
+    // 购买成功后立刻触发一次赠送字数入账，确保字数包页面能立刻显示 50 万字
+    [[AIUAWordPackManager sharedManager] refreshVIPGiftedWords];
 }
 
 - (AIUASubscriptionProductType)productTypeForIdentifier:(NSString *)identifier {

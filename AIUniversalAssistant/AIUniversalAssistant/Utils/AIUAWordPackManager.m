@@ -515,20 +515,6 @@ static NSString * kProductIDWordPack6M = nil;
         return;
     }
     
-    // 检查是否是VIP用户
-    BOOL isVIP = [[AIUAIAPManager sharedManager] isVIPMember];
-    if (isVIP) {
-        NSLog(@"[WordPack] ✓ VIP用户，记录消耗但不扣除字数");
-        // VIP用户记录消耗统计，但不实际扣除字数
-        [self recordConsumption:words];
-        if (completion) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                completion(YES, [self totalAvailableWords]);
-            });
-        }
-        return;
-    }
-    
     // 检查是否有足够字数
     if (![self hasEnoughWords:words]) {
         NSLog(@"[WordPack] ❌ 字数不足");
@@ -640,13 +626,6 @@ static NSString * kProductIDWordPack6M = nil;
     AIUATrialManager *trialManager = [AIUATrialManager sharedManager];
     if ([trialManager isInTrialSession]) {
         NSLog(@"[WordPack] 用户处于试用会话中，字数不受限制");
-        return YES;
-    }
-    
-    // 检查是否是VIP用户
-    BOOL isVIP = [[AIUAIAPManager sharedManager] isVIPMember];
-    if (isVIP) {
-        NSLog(@"[WordPack] VIP用户，字数不受限制");
         return YES;
     }
     

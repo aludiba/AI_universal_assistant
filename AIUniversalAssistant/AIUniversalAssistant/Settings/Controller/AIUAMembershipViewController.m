@@ -225,6 +225,10 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
     UIView *headerView = [[UIView alloc] init];
     headerView.backgroundColor = [UIColor clearColor];
     
+    // 检查当前VIP状态
+    AIUAIAPManager *iapManager = [AIUAIAPManager sharedManager];
+    BOOL isVIP = iapManager.isVIPMember;
+    
     // VIP标题容器
     UIView *titleContainer = [[UIView alloc] init];
     [headerView addSubview:titleContainer];
@@ -252,11 +256,32 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
     vipLabel.textColor = [UIColor whiteColor];
     [vipBadge addSubview:vipLabel];
     
-    // 副标题
+    // 副标题或当前会员状态
     UILabel *subtitleLabel = [[UILabel alloc] init];
-    subtitleLabel.text = L(@"unlock_all_features");
+    if (isVIP) {
+        // 显示已开通会员信息
+        NSString *subscriptionType = [iapManager productNameForType:iapManager.currentSubscriptionType];
+        if (iapManager.subscriptionExpiryDate) {
+            NSTimeInterval timeInterval = [iapManager.subscriptionExpiryDate timeIntervalSinceNow];
+            if (timeInterval > 50 * 365 * 24 * 60 * 60) {
+                // 永久会员
+                subtitleLabel.text = [NSString stringWithFormat:@"✓ %@ - %@", subscriptionType, L(@"lifetime")];
+            } else {
+                // 显示到期时间
+                NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+                formatter.dateFormat = @"yyyy-MM-dd";
+                NSString *expiryDateString = [formatter stringFromDate:iapManager.subscriptionExpiryDate];
+                subtitleLabel.text = [NSString stringWithFormat:@"✓ %@ - %@ %@", subscriptionType, L(@"expires_on"), expiryDateString];
+            }
+        } else {
+            subtitleLabel.text = [NSString stringWithFormat:@"✓ %@", subscriptionType];
+        }
+        subtitleLabel.textColor = AIUAUIColorRGB(16, 185, 129); // 绿色，表示已开通
+    } else {
+        subtitleLabel.text = L(@"unlock_all_features");
+        subtitleLabel.textColor = AIUA_SECONDARY_LABEL_COLOR;
+    }
     subtitleLabel.font = AIUAUIFontSystem(13);
-    subtitleLabel.textColor = AIUA_SECONDARY_LABEL_COLOR; // 使用系统二级标签颜色，自动适配暗黑模式
     subtitleLabel.numberOfLines = 0;
     [headerView addSubview:subtitleLabel];
     
