@@ -70,6 +70,10 @@ typedef void(^AIUAIAPRestoreCompletion)(BOOL success, NSInteger restoredCount, N
 /// 清除订阅信息（仅用于测试）
 - (void)clearSubscriptionInfo;
 
+/// 清除所有购买数据（包括订阅、字数包、试用次数，仅用于测试）
+/// ⚠️ 警告：此操作不可逆！
+- (void)clearAllPurchaseData;
+
 /// 本地验证收据
 - (BOOL)verifyReceiptLocally;
 

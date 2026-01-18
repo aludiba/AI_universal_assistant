@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		3467C6945C66A42C7950FE19 /* libPods-AIUniversalAssistant.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 472BCD2178CA8F142C63F76E /* libPods-AIUniversalAssistant.a */; };
+		E6A392202F15272100965C73 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E6A3921F2F15272100965C73 /* StoreKit.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -15,6 +16,7 @@
 		472BCD2178CA8F142C63F76E /* libPods-AIUniversalAssistant.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-AIUniversalAssistant.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		AAF11542F303D1FA17FD668E /* Pods-AIUniversalAssistant.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AIUniversalAssistant.release.xcconfig"; path = "Target Support Files/Pods-AIUniversalAssistant/Pods-AIUniversalAssistant.release.xcconfig"; sourceTree = "<group>"; };
 		E2506EABE9F963F0787CCC33 /* Pods-AIUniversalAssistant.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AIUniversalAssistant.debug.xcconfig"; path = "Target Support Files/Pods-AIUniversalAssistant/Pods-AIUniversalAssistant.debug.xcconfig"; sourceTree = "<group>"; };
+		E6A3921F2F15272100965C73 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -44,6 +46,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3467C6945C66A42C7950FE19 /* libPods-AIUniversalAssistant.a in Frameworks */,
+				E6A392202F15272100965C73 /* StoreKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -71,6 +74,7 @@
 		386577D48295DA1031E2D98D /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				E6A3921F2F15272100965C73 /* StoreKit.framework */,
 				472BCD2178CA8F142C63F76E /* libPods-AIUniversalAssistant.a */,
 			);
 			name = Frameworks;
@@ -235,10 +239,13 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = AIUniversalAssistant/AIUniversalAssistant.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 4492U6H476;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = B7L3AJ5DV4;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "$(SRCROOT)/AIUniversalAssistant/PrefixHeader.pch";
@@ -259,9 +266,10 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.writingCat.cna;
+				PRODUCT_BUNDLE_IDENTIFIER = com.hujiaofen.writingCat;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = AIUniversalAssistant_dev;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -277,10 +285,13 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = AIUniversalAssistant/AIUniversalAssistant.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 4492U6H476;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = B7L3AJ5DV4;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "$(SRCROOT)/AIUniversalAssistant/PrefixHeader.pch";
@@ -301,9 +312,10 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.writingCat.cna;
+				PRODUCT_BUNDLE_IDENTIFIER = com.hujiaofen.writingCat;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = AIUniversalAssistant_dev;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;

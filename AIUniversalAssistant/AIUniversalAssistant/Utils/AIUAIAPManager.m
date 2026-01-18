@@ -7,6 +7,7 @@
 
 #import "AIUAIAPManager.h"
 #import "AIUAWordPackManager.h"
+#import "AIUATrialManager.h"
 #import "AIUAConfigID.h"
 #import "AIUAAlertHelper.h"
 #import <sys/stat.h>
@@ -32,8 +33,11 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
 @property (nonatomic, assign, readwrite) AIUASubscriptionProductType currentSubscriptionType;
 @property (nonatomic, strong, readwrite, nullable) NSDate *subscriptionExpiryDate;
 
-// 交易队列观察者引用计数（防止多个页面 start/stop 导致误移除观察者，从而“购买成功但不回调/一直处理中”）
+// 交易队列观察者引用计数（防止多个页面 start/stop 导致误移除观察者，从而"购买成功但不回调/一直处理中"）
 @property (nonatomic, assign) NSInteger paymentObserverRefCount;
+
+// 上次收据验证时间（避免频繁验证收据）
+@property (nonatomic, strong) NSDate *lastReceiptVerificationTime;
 
 @end
 
@@ -285,8 +289,30 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
 - (void)checkSubscriptionStatus {
     [self loadLocalSubscriptionInfo];
     
+    // 检查是否需要重新验证收据
+    // 如果距离上次验证不到 30 秒，则跳过验证（避免频繁解析收据）
+    NSDate *now = [NSDate date];
+    if (self.lastReceiptVerificationTime) {
+        NSTimeInterval timeSinceLastVerification = [now timeIntervalSinceDate:self.lastReceiptVerificationTime];
+        if (timeSinceLastVerification < 30.0) {
+            NSLog(@"[IAP] ⏭️ 距离上次收据验证仅 %.1f 秒，跳过本次验证", timeSinceLastVerification);
+            
+            // 仍然检查订阅是否过期
+            if (self.subscriptionExpiryDate) {
+                if ([now compare:self.subscriptionExpiryDate] == NSOrderedDescending) {
+                    NSLog(@"[IAP] 订阅已过期");
+                    _isVIPMember = NO;
+                    [self saveLocalSubscriptionInfo];
+                }
+            }
+            
+            return;
+        }
+    }
+    
     // 验证收据并更新订阅信息
     BOOL isValid = [self verifyReceiptLocally];
+    self.lastReceiptVerificationTime = now; // 记录验证时间
     
     if (!isValid) {
         // 收据验证失败时，只记录日志，不清除VIP状态
@@ -309,7 +335,6 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
     
     // 检查订阅是否过期
     if (self.subscriptionExpiryDate) {
-        NSDate *now = [NSDate date];
         if ([now compare:self.subscriptionExpiryDate] == NSOrderedDescending) {
             // 订阅已过期
             NSLog(@"[IAP] 订阅已过期");
@@ -335,6 +360,29 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
     [defaults synchronize];
     
     NSLog(@"[IAP] 清除订阅信息");
+}
+
+- (void)clearAllPurchaseData {
+    NSLog(@"[IAP] ⚠️ 开始清除所有购买数据...");
+    
+    // 1. 清除订阅信息
+    [self clearSubscriptionInfo];
+    
+    // 2. 清除字数包数据
+    [[AIUAWordPackManager sharedManager] clearAllWordPackData];
+    
+    // 3. 重置试用次数
+    [[AIUATrialManager sharedManager] resetTrialCount];
+    
+    // 4. 清除收据验证时间缓存
+    self.lastReceiptVerificationTime = nil;
+    
+    // 5. 发送通知，更新UI
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"AIUASubscriptionStatusChanged"
+                                                        object:nil
+                                                      userInfo:nil];
+    
+    NSLog(@"[IAP] ✓ 所有购买数据已清除");
 }
 
 #pragma mark - Product ID Management
@@ -587,6 +635,9 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
 #pragma mark - Transaction Processing
 
 - (void)completeTransaction:(SKPaymentTransaction *)transaction {
+    // 清除收据验证缓存，确保购买后立即重新验证
+    self.lastReceiptVerificationTime = nil;
+    
     // 验证收据
     [self verifyReceipt:transaction];
     
@@ -868,28 +919,32 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
     
     NSMutableDictionary *result = [NSMutableDictionary dictionary];
     NSMutableArray *inAppPurchases = [NSMutableArray array];
+    NSMutableSet *foundProductIds = [NSMutableSet set]; // 避免重复添加相同产品
     
     const uint8_t *bytes = [receiptData bytes];
     NSUInteger length = receiptData.length;
+    
+    BOOL bundleIdFound = NO; // 标记是否已找到 Bundle ID
     
     // 尝试查找Bundle ID和购买记录
     // Bundle ID 在收据中的字段类型为 2
     // In-App Purchase 在收据中的字段类型为 17
     
     for (NSUInteger i = 0; i < length - 20; i++) {
-        // 查找 Bundle ID 模式
-        if (i + 100 < length) {
+        // 查找 Bundle ID 模式（只查找一次）
+        if (!bundleIdFound && i + 100 < length) {
             NSString *bundleId = [self extractBundleIdFromReceipt:receiptData atOffset:i];
             if (bundleId && bundleId.length > 0) {
                 result[@"bundle_id"] = bundleId;
-                NSLog(@"[IAP] 从收据中提取 Bundle ID: %@", bundleId);
+                NSLog(@"[IAP] ✓ 从收据中提取 Bundle ID: %@", bundleId);
+                bundleIdFound = YES; // 找到后不再重复查找
             }
         }
         
         // 查找产品ID模式（简化查找）
         NSString *productId = [self extractProductIdFromReceipt:receiptData atOffset:i];
-        if (productId && [productId containsString:@"."]) {
-            // 可能是一个有效的产品ID
+        if (productId && [productId containsString:@"."] && ![foundProductIds containsObject:productId]) {
+            // 可能是一个有效的产品ID，且未重复添加
             NSMutableDictionary *purchase = [NSMutableDictionary dictionary];
             purchase[@"product_id"] = productId;
             
@@ -900,7 +955,8 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
             }
             
             [inAppPurchases addObject:purchase];
-            NSLog(@"[IAP] 从收据中提取产品: %@", productId);
+            [foundProductIds addObject:productId]; // 标记为已找到
+            NSLog(@"[IAP] ✓ 从收据中提取产品: %@", productId);
         }
     }
     

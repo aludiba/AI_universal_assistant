@@ -49,6 +49,10 @@
 // 调试错误日志弹窗开关（开发/测试时设为1，发布时设为0）
 #define AIUA_SHOW_DEBUG_ERROR_ALERTS 1
 
+// 清除购买数据功能开关（开发/测试时设为1，发布时必须设为0）
+// 警告：此功能会清除所有订阅和字数包数据，仅用于测试！
+#define AIUA_ENABLE_CLEAR_PURCHASE_DATA 1
+
 // ========== IAP产品ID配置 ==========
 // 说明：
 // 1. 如果定义了自定义产品ID，则使用自定义的（确保与App Store Connect中的完全一致）

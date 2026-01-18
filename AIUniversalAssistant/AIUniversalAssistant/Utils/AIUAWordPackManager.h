@@ -179,6 +179,15 @@ extern NSString * const AIUAWordConsumedNotification;
 - (void)importWordPackData:(NSString *)jsonString
                 completion:(void(^)(BOOL success, NSError * _Nullable error))completion;
 
+#pragma mark - 调试/测试功能
+
+/**
+ * 清除所有字数包数据（用于测试）
+ * 包括VIP赠送字数、购买记录、消耗字数等
+ * ⚠️ 警告：此操作不可逆！
+ */
+- (void)clearAllWordPackData;
+
 @end
 
 NS_ASSUME_NONNULL_END

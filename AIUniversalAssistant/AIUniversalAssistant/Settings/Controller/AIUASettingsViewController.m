@@ -14,6 +14,7 @@
 #import "AIUAWordPackViewController.h"
 #import "AIUAIAPManager.h"
 #import "AIUADataManager.h"
+#import "AIUAConfigID.h"
 #import <Masonry/Masonry.h>
 #import <StoreKit/StoreKit.h>
 #import <MBProgressHUD/MBProgressHUD.h>
@@ -122,6 +123,12 @@
     }
     
     [menuItems addObject:@{@"title": L(@"clear_cache"), @"icon": @"trash.fill", @"color": @"#F97316", @"action": @"clearCache"}];
+    
+    // 调试功能：清除所有购买数据（通过宏开关控制）
+    #if AIUA_ENABLE_CLEAR_PURCHASE_DATA
+    [menuItems addObject:@{@"title": @"🔧 清除购买数据", @"icon": @"exclamationmark.triangle.fill", @"color": @"#DC2626", @"action": @"clearPurchaseData"}];
+    #endif
+    
     [menuItems addObject:@{@"title": L(@"rate_app"), @"icon": @"star.fill", @"color": @"#EF4444", @"action": @"rateApp"}];
     [menuItems addObject:@{@"title": L(@"share_app"), @"icon": @"square.and.arrow.up.fill", @"color": @"#06B6D4", @"action": @"shareApp"}];
     
@@ -202,6 +209,8 @@
         [self showWordPacks];
     } else if ([action isEqualToString:@"clearCache"]) {
         [self showClearCacheAlert];
+    } else if ([action isEqualToString:@"clearPurchaseData"]) {
+        [self showClearPurchaseDataAlert];
     } else if ([action isEqualToString:@"rateApp"]) {
         [self rateApp];
     } else if ([action isEqualToString:@"shareApp"]) {
@@ -431,6 +440,58 @@
         });
     }];
 }
+
+#pragma mark - 清除购买数据（调试功能）
+
+#if AIUA_ENABLE_CLEAR_PURCHASE_DATA
+
+- (void)showClearPurchaseDataAlert {
+    NSString *message = @"⚠️ 此操作将清除所有购买数据：\n\n• VIP订阅信息\n• 字数包购买记录\n• 试用次数\n\n此操作不可逆！仅用于测试。\n\n确定要清除吗？";
+    
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"清除购买数据"
+                                                                   message:message
+                                                            preferredStyle:UIAlertControllerStyleAlert];
+    
+    UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:L(@"cancel")
+                                                           style:UIAlertActionStyleCancel
+                                                         handler:nil];
+    
+    UIAlertAction *confirmAction = [UIAlertAction actionWithTitle:@"确定清除"
+                                                            style:UIAlertActionStyleDestructive
+                                                          handler:^(UIAlertAction * _Nonnull action) {
+        [self performClearPurchaseData];
+    }];
+    
+    [alert addAction:cancelAction];
+    [alert addAction:confirmAction];
+    
+    [self presentViewController:alert animated:YES completion:nil];
+}
+
+- (void)performClearPurchaseData {
+    MBProgressHUD *hud = [MBProgressHUD showHUDAddedTo:self.view animated:YES];
+    hud.label.text = @"正在清除...";
+    hud.mode = MBProgressHUDModeIndeterminate;
+    
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        // 清除所有购买数据
+        [[AIUAIAPManager sharedManager] clearAllPurchaseData];
+        
+        [hud hideAnimated:YES];
+        
+        // 显示成功提示
+        MBProgressHUD *successHud = [MBProgressHUD showHUDAddedTo:self.view animated:YES];
+        successHud.mode = MBProgressHUDModeText;
+        successHud.label.text = @"✓ 已清除所有购买数据";
+        successHud.label.numberOfLines = 0;
+        [successHud hideAnimated:YES afterDelay:2.0];
+        
+        // 刷新页面显示
+        [self setupData];
+    });
+}
+
+#endif // AIUA_ENABLE_CLEAR_PURCHASE_DATA
 
 #pragma mark - 评分和分享
 

@@ -1049,5 +1049,37 @@ static NSString * kProductIDWordPack6M = nil;
     }
 }
 
+#pragma mark - 调试/测试功能
+
+- (void)clearAllWordPackData {
+    NSLog(@"[WordPack] ⚠️ 开始清除所有字数包数据...");
+    
+    // 清除VIP赠送字数
+    [self.keychainManager removeObjectForKey:kAIUAVIPGiftedWords];
+    [self.keychainManager removeObjectForKey:kAIUAVIPGiftAwarded];
+    [self.keychainManager removeObjectForKey:kAIUAVIPGiftedWordsLastRefreshDate];
+    
+    // 清除购买记录
+    [self.keychainManager removeObjectForKey:kAIUAWordPackPurchases];
+    [self.keychainManager removeObjectForKey:kAIUAPurchasedWords];
+    
+    // 清除消耗记录
+    [self.keychainManager removeObjectForKey:kAIUAConsumedWords];
+    
+    // 清除iCloud数据
+    if (self.iCloudSyncEnabled && [self isiCloudAvailable]) {
+        [self.iCloudStore removeObjectForKey:kAIUAiCloudWordPackData];
+        [self.iCloudStore synchronize];
+        NSLog(@"[WordPack] 已清除iCloud字数包数据");
+    }
+    
+    // 发送通知，更新UI
+    [[NSNotificationCenter defaultCenter] postNotificationName:AIUAWordPackPurchasedNotification
+                                                        object:nil
+                                                      userInfo:nil];
+    
+    NSLog(@"[WordPack] ✓ 所有字数包数据已清除");
+}
+
 @end
 
