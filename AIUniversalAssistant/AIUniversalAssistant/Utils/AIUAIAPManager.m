@@ -703,8 +703,8 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
     _isVIPMember = YES;
     self.currentSubscriptionType = type;
     
-    // 设置过期时间
-    NSDate *expiryDate = [self calculateExpiryDateForProductType:type];
+    // 计算过期时间（支持累加）
+    NSDate *expiryDate = [self calculateExpiryDateForProductType:type withAccumulation:YES];
     self.subscriptionExpiryDate = expiryDate;
     
     NSLog(@"[IAP] ✓ 已设置VIP状态 - 类型: %ld, 到期: %@", (long)type, expiryDate);
@@ -722,7 +722,7 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
     
     NSLog(@"[IAP] ✓ 已发送订阅状态变化通知");
 
-    // 关键修复：不依赖“字数包页面是否已打开/WordPackManager是否已初始化”
+    // 关键修复：不依赖"字数包页面是否已打开/WordPackManager是否已初始化"
     // 购买成功后立刻触发一次赠送字数入账，确保字数包页面能立刻显示 50 万字
     [[AIUAWordPackManager sharedManager] refreshVIPGiftedWords];
 }
@@ -741,15 +741,33 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
 }
 
 - (NSDate *)calculateExpiryDateForProductType:(AIUASubscriptionProductType)type {
+    return [self calculateExpiryDateForProductType:type withAccumulation:NO];
+}
+
+- (NSDate *)calculateExpiryDateForProductType:(AIUASubscriptionProductType)type withAccumulation:(BOOL)accumulate {
     NSDate *now = [NSDate date];
     NSCalendar *calendar = [NSCalendar currentCalendar];
     NSDateComponents *components = [[NSDateComponents alloc] init];
     
+    // 永久会员：不累加，直接设置为100年后
+    // 如果已经是永久会员（到期时间在50年后），则保持不变
+    if (type == AIUASubscriptionProductTypeLifetimeBenefits) {
+        if (self.subscriptionExpiryDate) {
+            // 检查是否已经是永久会员（到期时间在50年后）
+            NSTimeInterval timeInterval = [self.subscriptionExpiryDate timeIntervalSinceNow];
+            if (timeInterval > 50 * 365 * 24 * 60 * 60) {
+                NSLog(@"[IAP] 用户已经是永久会员，保持现有到期时间: %@", self.subscriptionExpiryDate);
+                return self.subscriptionExpiryDate;
+            }
+        }
+        components.year = 100;
+        NSDate *lifetimeExpiry = [calendar dateByAddingComponents:components toDate:now options:0];
+        NSLog(@"[IAP] 设置永久会员，到期时间: %@", lifetimeExpiry);
+        return lifetimeExpiry;
+    }
+    
+    // 其他订阅类型：计算订阅时长
     switch (type) {
-        case AIUASubscriptionProductTypeLifetimeBenefits:
-            // 永久会员，设置为100年后
-            components.year = 100;
-            break;
         case AIUASubscriptionProductTypeYearly:
             components.year = 1;
             break;
@@ -759,8 +777,30 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
         case AIUASubscriptionProductTypeWeekly:
             components.day = 7;
             break;
+        default:
+            components.day = 7;
+            break;
     }
     
+    // 如果需要累加，且已有未过期的订阅，则从现有到期时间开始累加
+    if (accumulate && self.subscriptionExpiryDate) {
+        NSDate *existingExpiry = self.subscriptionExpiryDate;
+        NSDate *baseDate = existingExpiry;
+        
+        // 如果现有订阅已过期，则从当前时间开始计算
+        if ([now compare:existingExpiry] == NSOrderedDescending) {
+            baseDate = now;
+            NSLog(@"[IAP] 现有订阅已过期，从当前时间开始计算新订阅");
+        } else {
+            NSLog(@"[IAP] 现有订阅未过期（到期: %@），从现有到期时间累加", existingExpiry);
+        }
+        
+        NSDate *newExpiryDate = [calendar dateByAddingComponents:components toDate:baseDate options:0];
+        NSLog(@"[IAP] 订阅累加: 基础时间 %@ + 订阅时长 = 新到期时间 %@", baseDate, newExpiryDate);
+        return newExpiryDate;
+    }
+    
+    // 不需要累加或没有现有订阅，从当前时间开始计算
     return [calendar dateByAddingComponents:components toDate:now options:0];
 }
 

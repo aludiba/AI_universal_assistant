@@ -1152,22 +1152,26 @@
         return;
     }
     
-    // 估算需要消耗的字数（输入 + 输出）
-    // 根据当前内容长度和操作类型估算
+    // 估算需要消耗的字数
+    // 注意：所有功能都只消耗输出字数（outputWords），不计算输入字数（inputWords）
+    // 因为原文已经存在，只有新生成的内容才需要消耗字数
     NSInteger inputWords = [AIUAWordPackManager countWordsInText:self.currentContent];
     NSInteger estimatedOutputWords = 0;
+    NSInteger estimatedConsumeWords = 0; // 实际需要消耗的字数（只计算输出，不计算输入）
     
     switch (type) {
         case AIUAWritingEditTypeContinue:
-            // 续写：估算生成与原文相似长度的内容
+            // 续写：估算生成与原文相似长度的内容，只消耗输出字数（新增的）
             estimatedOutputWords = MAX(inputWords, 500);
+            estimatedConsumeWords = estimatedOutputWords;
             break;
         case AIUAWritingEditTypeRewrite:
-            // 改写：生成与原文相似长度的内容
+            // 改写：生成与原文相似长度的内容，只消耗输出字数（重新生成）
             estimatedOutputWords = MAX(inputWords, 300);
+            estimatedConsumeWords = estimatedOutputWords;
             break;
         case AIUAWritingEditTypeExpand:
-            // 扩写：根据选择的长度估算
+            // 扩写：根据选择的长度估算，只消耗新增的字数（输出 - 输入）
             if ([self.selectedLength isEqualToString:L(@"short")]) {
                 estimatedOutputWords = MAX((NSInteger)(inputWords * 1.5), 500);
             } else if ([self.selectedLength isEqualToString:L(@"medium")]) {
@@ -1175,14 +1179,17 @@
             } else {
                 estimatedOutputWords = MAX((NSInteger)(inputWords * 3.0), 2000);
             }
+            // 扩写只消耗新增的字数（输出 - 输入）
+            estimatedConsumeWords = MAX(estimatedOutputWords - inputWords, 0);
             break;
         case AIUAWritingEditTypeTranslate:
-            // 翻译：生成与原文相似长度的内容
+            // 翻译：生成与原文相似长度的内容，只消耗输出字数（重新生成）
             estimatedOutputWords = MAX(inputWords, 500);
+            estimatedConsumeWords = estimatedOutputWords;
             break;
     }
     
-    NSInteger estimatedTotalWords = inputWords + estimatedOutputWords;
+    NSInteger estimatedTotalWords = estimatedConsumeWords;
     
     // 检查字数是否足够
     if (![[AIUAWordPackManager sharedManager] hasEnoughWords:estimatedTotalWords]) {
@@ -1302,20 +1309,48 @@
                 // 恢复输入框和工具栏按钮
                 [strongself setUIEnabled:YES];
                 
-                // 计算实际消耗的字数（输入 + 输出）
+                // 计算实际消耗的字数
+                // 注意：所有功能都只消耗输出字数（outputWords），不计算输入字数（inputWords）
+                // 因为原文已经存在，只有新生成的内容才需要消耗字数
                 NSInteger inputWords = [AIUAWordPackManager countWordsInText:strongself.currentContent ?: @""];
                 NSInteger outputWords = [AIUAWordPackManager countWordsInText:strongself.generatedContent];
-                NSInteger totalWords = inputWords + outputWords;
+                NSInteger consumeWords = 0; // 实际需要消耗的字数（只计算输出，不计算输入）
                 
-                if (totalWords > 0) {
-                    [[AIUAWordPackManager sharedManager] consumeWords:totalWords completion:^(BOOL success, NSInteger remainingWords) {
+                switch (type) {
+                    case AIUAWritingEditTypeContinue:
+                        // 续写：只消耗输出字数（新增的）
+                        consumeWords = outputWords;
+                        break;
+                    case AIUAWritingEditTypeRewrite:
+                        // 改写：只消耗输出字数（重新生成）
+                        consumeWords = outputWords;
+                        break;
+                    case AIUAWritingEditTypeExpand:
+                        // 扩写：只消耗新增的字数（输出 - 输入）
+                        consumeWords = MAX(outputWords - inputWords, 0);
+                        break;
+                    case AIUAWritingEditTypeTranslate:
+                        // 翻译：只消耗输出字数（重新生成）
+                        consumeWords = outputWords;
+                        break;
+                }
+                
+                if (consumeWords > 0) {
+                    [[AIUAWordPackManager sharedManager] consumeWords:consumeWords completion:^(BOOL success, NSInteger remainingWords) {
                         if (success) {
-                            NSLog(@"[DocDetail] 消耗字数成功: 输入 %ld 字 + 输出 %ld 字 = 总计 %ld 字，剩余: %ld 字", 
-                                  (long)inputWords, (long)outputWords, (long)totalWords, (long)remainingWords);
+                            if (type == AIUAWritingEditTypeExpand) {
+                                NSLog(@"[DocDetail] 消耗字数成功（扩写）: 输入 %ld 字，输出 %ld 字，新增 %ld 字，消耗 %ld 字，剩余: %ld 字", 
+                                      (long)inputWords, (long)outputWords, (long)(outputWords - inputWords), (long)consumeWords, (long)remainingWords);
+                            } else {
+                                NSLog(@"[DocDetail] 消耗字数成功: 输入 %ld 字，输出 %ld 字，消耗 %ld 字（仅输出），剩余: %ld 字", 
+                                      (long)inputWords, (long)outputWords, (long)consumeWords, (long)remainingWords);
+                            }
                         } else {
                             NSLog(@"[DocDetail] 消耗字数失败，剩余: %ld 字", (long)remainingWords);
                         }
                     }];
+                } else {
+                    NSLog(@"[DocDetail] 无需消耗字数（扩写时输出字数小于等于输入字数）");
                 }
                 
                 // 随机触发评分提示（文档编辑完成是一个好时机）
