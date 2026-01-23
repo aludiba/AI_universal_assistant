@@ -65,12 +65,6 @@ static NSString * kProductIDWordPack6M = nil;
         _iCloudStore = [NSUbiquitousKeyValueStore defaultStore];
         _iCloudSyncEnabled = NO;
         _keychainManager = [AIUAKeychainManager sharedManager];
-        
-        // 监听VIP状态变化
-        [[NSNotificationCenter defaultCenter] addObserver:self
-                                                 selector:@selector(subscriptionStatusChanged:)
-                                                     name:@"AIUASubscriptionStatusChanged"
-                                                   object:nil];
 
         // 移除危险的兜底重置逻辑
         // 原因：初始化时VIP状态可能还未加载完成，错误地清除赠送字数会导致用户损失
@@ -84,13 +78,6 @@ static NSString * kProductIDWordPack6M = nil;
 
 - (void)dealloc {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
-}
-
-#pragma mark - 订阅状态监听
-
-- (void)subscriptionStatusChanged:(NSNotification *)notification {
-    NSLog(@"[WordPack] VIP订阅状态变化，刷新赠送字数");
-    [self refreshVIPGiftedWords];
 }
 
 #pragma mark - 本地存储辅助方法（使用Keychain）

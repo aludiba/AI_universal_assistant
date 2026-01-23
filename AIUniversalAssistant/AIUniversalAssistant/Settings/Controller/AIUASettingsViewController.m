@@ -66,6 +66,8 @@
 - (void)subscriptionStatusChanged:(NSNotification *)notification {
     // 订阅状态改变，重新构建整个菜单列表（因为VIP状态改变会影响菜单项的显示）
     [self setupData];
+    // 更新字数包赠送字数信息
+    [[AIUAWordPackManager sharedManager] refreshVIPGiftedWords];
 }
 
 - (void)cacheCleared:(NSNotification *)notification {
