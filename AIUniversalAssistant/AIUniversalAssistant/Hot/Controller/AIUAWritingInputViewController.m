@@ -4,6 +4,8 @@
 #import "AIUADataManager.h"
 #import "AIUAMBProgressManager.h"
 #import "AIUAWritingRecordsViewController.h"
+#import "AIUAWordPackManager.h"
+#import "AIUAWordPackViewController.h"
 
 @interface AIUAWritingInputViewController ()<UITextFieldDelegate, UITextViewDelegate>
 
@@ -546,6 +548,30 @@
     
     // 构建完整的提示词
     NSString *prompt = [NSString stringWithFormat:@"%@:%@，%@:%@", L(@"theme"), theme, L(@"require"), requirement];
+    
+    // 估算需要消耗的字数（输入 + 输出）
+    NSInteger inputWords = [AIUAWordPackManager countWordsInText:prompt ?: @""];
+    NSInteger estimatedOutputWords = self.selectedWordCount > 0 ? self.selectedWordCount : 1000; // 默认估算输出1000字
+    NSInteger estimatedTotalWords = inputWords + estimatedOutputWords;
+    // 检查字数是否足够
+    if (![[AIUAWordPackManager sharedManager] hasEnoughWords:estimatedTotalWords]) {
+        NSInteger availableWords = [[AIUAWordPackManager sharedManager] totalAvailableWords];
+        NSString *message = [NSString stringWithFormat:L(@"insufficient_words_message"), @(estimatedTotalWords), @(availableWords)];
+        
+        [AIUAAlertHelper showAlertWithTitle:L(@"insufficient_words")
+                                    message:message
+                              cancelBtnText:L(@"cancel")
+                             confirmBtnText:L(@"purchase_word_pack")
+                               inController:self
+                               cancelAction:nil
+                              confirmAction:^{
+            // 跳转到字数包购买页面
+            AIUAWordPackViewController *wordPackVC = [[AIUAWordPackViewController alloc] init];
+            [self.navigationController pushViewController:wordPackVC animated:YES];
+        }];
+        return;
+    }
+    
     if (self.selectedWordCount > 0) {
         AIUAWritingDetailViewController *detailVC = [[AIUAWritingDetailViewController alloc] initWithPrompt:prompt apiKey:self.apiKey type:self.type wordCount:self.selectedWordCount];
         [self.navigationController pushViewController:detailVC animated:YES];

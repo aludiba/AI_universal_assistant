@@ -211,8 +211,10 @@
         [self showWordPacks];
     } else if ([action isEqualToString:@"clearCache"]) {
         [self showClearCacheAlert];
+#if AIUA_ENABLE_CLEAR_PURCHASE_DATA
     } else if ([action isEqualToString:@"clearPurchaseData"]) {
         [self showClearPurchaseDataAlert];
+#endif
     } else if ([action isEqualToString:@"rateApp"]) {
         [self rateApp];
     } else if ([action isEqualToString:@"shareApp"]) {

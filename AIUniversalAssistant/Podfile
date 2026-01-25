@@ -2,9 +2,9 @@
 platform :ios, '15.0'
 
 target 'AIUniversalAssistant' do
-  # Comment the next line if you don't want to use dynamic frameworks
-  # use_frameworks!
-
+  # 使用动态框架（Ads-CN 需要 xcframework 支持）
+  use_frameworks! :linkage => :static
+  
   # Pods for AIUniversalAssistant
     pod 'SDWebImage'
     pod 'MJRefresh'
