@@ -211,7 +211,7 @@
 "word_pack_note_1" = "Word packs are valid for 90 days after purchase and will expire if unused";
 "word_pack_note_2" = "VIP subscription gifted words will be consumed first, followed by purchased word packs";
 "word_pack_note_3" = "VIP members receive 500,000 words one-time after subscription";
-"word_pack_note_4" = "Word counting: Input + Output, 1 Chinese character, letter, digit, punctuation, or space counts as 1 word";
+"word_pack_note_4" = "Word counting: Output only, 1 Chinese character, letter, digit, punctuation, or space counts as 1 word";
 "confirm_purchase_word_pack" = "Confirm purchase of %@ word pack for ¥%@?";
 "word_pack_purchase_success" = "Purchase successful! You've received %@ words";
 "processing" = "Processing...";

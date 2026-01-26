@@ -549,10 +549,9 @@
     // 构建完整的提示词
     NSString *prompt = [NSString stringWithFormat:@"%@:%@，%@:%@", L(@"theme"), theme, L(@"require"), requirement];
     
-    // 估算需要消耗的字数（输入 + 输出）
-    NSInteger inputWords = [AIUAWordPackManager countWordsInText:prompt ?: @""];
+    // 估算需要消耗的字数（只计算输出，不计算输入）
     NSInteger estimatedOutputWords = self.selectedWordCount > 0 ? self.selectedWordCount : 1000; // 默认估算输出1000字
-    NSInteger estimatedTotalWords = inputWords + estimatedOutputWords;
+    NSInteger estimatedTotalWords = estimatedOutputWords; // 只消耗输出字数
     // 检查字数是否足够
     if (![[AIUAWordPackManager sharedManager] hasEnoughWords:estimatedTotalWords]) {
         NSInteger availableWords = [[AIUAWordPackManager sharedManager] totalAvailableWords];
