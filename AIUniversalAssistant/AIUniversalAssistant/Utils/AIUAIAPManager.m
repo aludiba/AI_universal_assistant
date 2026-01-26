@@ -607,6 +607,18 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
     // 而不是简单的累加（累加可能导致到期时间不准确）
     [self checkSubscriptionStatus];
     
+    // 恢复订阅时，同时从 iCloud 同步字数包数据
+    AIUAWordPackManager *wordPackManager = [AIUAWordPackManager sharedManager];
+    if ([wordPackManager isiCloudAvailable]) {
+        NSLog(@"[IAP] 恢复订阅完成，启用 iCloud 同步并同步字数包数据");
+        // 确保 iCloud 同步已启用
+        [wordPackManager enableiCloudSync];
+        // 从 iCloud 同步字数包数据（包括购买记录、VIP赠送字数等）
+        [wordPackManager syncFromiCloud];
+    } else {
+        NSLog(@"[IAP] iCloud 不可用，跳过字数包数据同步");
+    }
+    
     // 确保在主线程执行回调
     dispatch_async(dispatch_get_main_queue(), ^{
         if (self.restoreCompletion) {
