@@ -134,10 +134,12 @@
     [menuItems addObject:@{@"title": L(@"rate_app"), @"icon": @"star.fill", @"color": @"#EF4444", @"action": @"rateApp"}];
     [menuItems addObject:@{@"title": L(@"share_app"), @"icon": @"square.and.arrow.up.fill", @"color": @"#06B6D4", @"action": @"shareApp"}];
     
-    // 只有VIP会员才显示看激励视频入口
+    // 只有VIP会员且开启广告时才显示看激励视频入口
+    #if AIUA_AD_ENABLED
     if (isVIP) {
         [menuItems addObject:@{@"title": L(@"watch_reward_title"), @"icon": @"play.rectangle.on.rectangle.fill", @"color": @"#22C55E", @"action": @"watchReward"}];
     }
+    #endif
     
     [menuItems addObject:@{@"title": L(@"contact_us"), @"icon": @"envelope.fill", @"color": @"#F59E0B", @"action": @"contactUs"}];
     [menuItems addObject:@{@"title": L(@"about_us"), @"icon": @"info.circle.fill", @"color": @"#8B5CF6", @"action": @"aboutUs"}];
@@ -248,25 +250,20 @@
         return L(@"not_vip_member");
     }
     
-    // 获取订阅类型
-    NSString *subscriptionType = [iapManager productNameForType:iapManager.currentSubscriptionType];
-    
-    // 获取到期时间
     if (iapManager.subscriptionExpiryDate) {
-        // 如果是永久会员（到期时间>50年），显示"永久会员"
         NSTimeInterval timeInterval = [iapManager.subscriptionExpiryDate timeIntervalSinceNow];
+        // 永久有效（到期>50年）时仅显示「永久会员 - 永久有效」
         if (timeInterval > 50 * 365 * 24 * 60 * 60) {
-            return [NSString stringWithFormat:@"%@ - %@", subscriptionType, L(@"lifetime")];
+            return [NSString stringWithFormat:@"%@ - %@", L(@"lifetime_member"), L(@"lifetime")];
         }
-        
-        // 显示到期时间
+        // 非永久会员：只显示「会员 - 到期时间」，不显示周度/月度/年度等类型
         NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
         formatter.dateFormat = @"yyyy-MM-dd";
         NSString *expiryDateString = [formatter stringFromDate:iapManager.subscriptionExpiryDate];
-        return [NSString stringWithFormat:@"%@ - %@ %@", subscriptionType, L(@"expires_on"), expiryDateString];
+        return [NSString stringWithFormat:@"%@ - %@ %@", L(@"member"), L(@"expires_on"), expiryDateString];
     }
     
-    return subscriptionType;
+    return L(@"member");
 }
 
 - (void)showCreationRecords {
@@ -519,8 +516,8 @@
     NSString *appName = @"AI写作喵";
     NSString *appDescription = L(@"share_app_description"); // "一款强大的AI写作助手，帮你轻松完成各种写作任务"
     
-    // App Store链接（上架后替换为实际链接）
-    NSString *appStoreURL = @"https://apps.apple.com/app/YOUR_APP_STORE_ID"; // TODO: 替换为实际的App Store链接
+    // App Store链接（正确格式：https://apps.apple.com/app/id{APP_ID}）
+    NSString *appStoreURL = @"https://apps.apple.com/app/id6755778624";
     
     // 分享文本
     NSString *shareText = [NSString stringWithFormat:@"%@\n\n%@\n\n%@", appName, appDescription, appStoreURL];

@@ -603,6 +603,10 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
 - (void)paymentQueueRestoreCompletedTransactionsFinished:(SKPaymentQueue *)queue {
     NSLog(@"[IAP] 恢复购买完成，共恢复 %ld 个", (long)self.restoredPurchasesCount);
     
+    // 恢复完成后，从收据中重新验证订阅状态，确保使用实际的到期时间
+    // 而不是简单的累加（累加可能导致到期时间不准确）
+    [self checkSubscriptionStatus];
+    
     // 确保在主线程执行回调
     dispatch_async(dispatch_get_main_queue(), ^{
         if (self.restoreCompletion) {
@@ -681,14 +685,25 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
         // 字数包是消耗型产品，恢复购买时不应该重复发放
         NSLog(@"[IAP] 恢复字数包产品: %@，消耗型产品不重复发放", productIdentifier);
     } else {
-        // 恢复会员订阅
-        [self unlockContentForProductIdentifier:productIdentifier];
+        // 检查当前是否已是永久会员，如果是则跳过恢复（避免覆盖永久会员状态）
+        BOOL isCurrentlyLifetime = NO;
+        if (self.subscriptionExpiryDate) {
+            NSTimeInterval timeInterval = [self.subscriptionExpiryDate timeIntervalSinceNow];
+            isCurrentlyLifetime = (timeInterval > 50 * 365 * 24 * 60 * 60);
+        }
+        
+        if (isCurrentlyLifetime) {
+            NSLog(@"[IAP] 当前已是永久会员，跳过恢复交易 %@，保持永久会员状态", productIdentifier);
+        } else {
+            // 恢复会员订阅
+            [self unlockContentForProductIdentifier:productIdentifier];
+            // 只有订阅产品才计入恢复订阅数量，字数包不计入
+            self.restoredPurchasesCount++;
+        }
     }
     
     // 完成交易
     [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
-    
-    self.restoredPurchasesCount++;
 }
 
 #pragma mark - Content Unlocking
@@ -897,6 +912,18 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
             return NO;
         }
         
+        // 检查当前是否已是永久会员（到期时间>50年），如果是则不再从收据中覆盖
+        BOOL isCurrentlyLifetime = NO;
+        if (self.subscriptionExpiryDate) {
+            NSTimeInterval timeInterval = [self.subscriptionExpiryDate timeIntervalSinceNow];
+            isCurrentlyLifetime = (timeInterval > 50 * 365 * 24 * 60 * 60);
+        }
+        
+        if (isCurrentlyLifetime) {
+            NSLog(@"[IAP] 当前已是永久会员，跳过收据解析，保持永久会员状态");
+            return YES;
+        }
+        
         // 提取订阅信息
         NSArray *inAppPurchases = receiptInfo[@"in_app"];
         if (inAppPurchases && inAppPurchases.count > 0) {
@@ -911,6 +938,21 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
                 
                 // 根据 product_id 确定订阅类型
                 AIUASubscriptionProductType productType = [self productTypeFromProductId:productId];
+                
+                // 如果是永久会员，直接设置为永久，不再使用收据中的到期时间
+                if (productType == AIUASubscriptionProductTypeLifetimeBenefits) {
+                    _isVIPMember = YES;
+                    self.currentSubscriptionType = productType;
+                    // 永久会员设置为100年后
+                    NSDate *now = [NSDate date];
+                    NSCalendar *calendar = [NSCalendar currentCalendar];
+                    NSDateComponents *components = [[NSDateComponents alloc] init];
+                    components.year = 100;
+                    self.subscriptionExpiryDate = [calendar dateByAddingComponents:components toDate:now options:0];
+                    NSLog(@"[IAP] 从收据中识别到永久会员，设置为永久有效");
+                    [self saveLocalSubscriptionInfo];
+                    return YES;
+                }
                 
                 // 更新本地缓存
                 self.currentSubscriptionType = productType;
@@ -930,10 +972,10 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
                         NSLog(@"[IAP] 订阅已过期");
                     }
                 } else {
-                    // 永久会员或非续期订阅
+                    // 非永久会员但没有到期时间，从当前时间计算
                     _isVIPMember = YES;
                     self.subscriptionExpiryDate = [self calculateExpiryDateForProductType:productType];
-                    NSLog(@"[IAP] 永久订阅");
+                    NSLog(@"[IAP] 订阅无到期时间，从当前时间计算");
                 }
                 
                 // 保存更新后的信息

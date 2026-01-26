@@ -142,7 +142,7 @@ static NSString * const kUserDeclinedRatingKey = @"AIUAUserDeclinedRating";
 + (void)openAppStoreRatingPage {
     // 获取App Store ID（需要在Info.plist或Config中配置）
     NSString *appID = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"AppStoreID"];
-    if (!appID || [appID isEqualToString:@"YOUR_APP_STORE_ID"]) {
+    if (!appID || [appID isEqualToString:@"6755778624"]) {
         NSLog(@"[评分] App Store ID未配置");
         return;
     }

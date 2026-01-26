@@ -154,6 +154,9 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
     
+    // 刷新 footer（如果用户购买永久会员后返回，需要隐藏"选择订阅方案"）
+    self.tableView.tableFooterView = [self createFooterView];
+    
     // 更新初始选中状态
     [self updateSelectedPlanUI];
 }
@@ -259,22 +262,20 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
     // 副标题或当前会员状态
     UILabel *subtitleLabel = [[UILabel alloc] init];
     if (isVIP) {
-        // 显示已开通会员信息
-        NSString *subscriptionType = [iapManager productNameForType:iapManager.currentSubscriptionType];
         if (iapManager.subscriptionExpiryDate) {
             NSTimeInterval timeInterval = [iapManager.subscriptionExpiryDate timeIntervalSinceNow];
             if (timeInterval > 50 * 365 * 24 * 60 * 60) {
-                // 永久会员
-                subtitleLabel.text = [NSString stringWithFormat:@"✓ %@ - %@", subscriptionType, L(@"lifetime")];
+                // 永久有效时仅显示「永久会员 - 永久有效」
+                subtitleLabel.text = [NSString stringWithFormat:@"✓ %@ - %@", L(@"lifetime_member"), L(@"lifetime")];
             } else {
-                // 显示到期时间
+                // 非永久会员：只显示「会员 - 到期时间」，不显示周度/月度/年度等类型
                 NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
                 formatter.dateFormat = @"yyyy-MM-dd";
                 NSString *expiryDateString = [formatter stringFromDate:iapManager.subscriptionExpiryDate];
-                subtitleLabel.text = [NSString stringWithFormat:@"✓ %@ - %@ %@", subscriptionType, L(@"expires_on"), expiryDateString];
+                subtitleLabel.text = [NSString stringWithFormat:@"✓ %@ - %@ %@", L(@"member"), L(@"expires_on"), expiryDateString];
             }
         } else {
-            subtitleLabel.text = [NSString stringWithFormat:@"✓ %@", subscriptionType];
+            subtitleLabel.text = [NSString stringWithFormat:@"✓ %@", L(@"member")];
         }
         subtitleLabel.textColor = AIUAUIColorRGB(16, 185, 129); // 绿色，表示已开通
     } else {
@@ -343,6 +344,21 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
 
 
 - (UIView *)createFooterView {
+    // 检查用户是否已是永久会员
+    AIUAIAPManager *iapManager = [AIUAIAPManager sharedManager];
+    BOOL isLifetime = NO;
+    if (iapManager.isVIPMember && iapManager.subscriptionExpiryDate) {
+        NSTimeInterval interval = [iapManager.subscriptionExpiryDate timeIntervalSinceNow];
+        isLifetime = (interval > 50 * 365 * 24 * 60 * 60);
+    }
+    
+    // 如果已是永久会员，不显示"选择订阅方案"部分
+    if (isLifetime) {
+        UIView *footerView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, AIUAScreenWidth, 0.01)];
+        footerView.backgroundColor = AIUA_BACK_COLOR;
+        return footerView;
+    }
+    
     CGFloat footerHeight = 300;
     UIView *footerView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, AIUAScreenWidth, footerHeight)];
     footerView.backgroundColor = AIUA_BACK_COLOR; // 使用系统背景色，自动适配暗黑模式
@@ -726,9 +742,9 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
             [AIUAMBProgressManager hideHUD:self.view];
             
             if (success && restoredCount > 0) {
-                // 恢复成功
+                // 恢复成功（不展示具体数量：Apple 返回全部历史交易，数量无意义）
                 [AIUAAlertHelper showAlertWithTitle:L(@"restore_success")
-                                            message:[NSString stringWithFormat:L(@"subscription_restored_count"), (long)restoredCount]
+                                            message:L(@"subscription_restored")
                                       cancelBtnText:nil
                                      confirmBtnText:L(@"confirm")
                                        inController:self

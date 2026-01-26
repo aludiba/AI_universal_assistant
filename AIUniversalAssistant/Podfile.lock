@@ -1,46 +1,4 @@
 PODS:
-  - Ads-CN (7.2.1.0):
-    - Ads-CN/BUAdLive-Framework (= 7.2.1.0)
-    - Ads-CN/BUAdSDK (= 7.2.1.0)
-  - Ads-CN/BUAdLive (7.2.1.0)
-  - Ads-CN/BUAdLive-Framework (7.2.1.0):
-    - Ads-CN/BUAdLive
-    - BUTTSDKFramework/LivePull-Lite (= 1.46.2.7-premium)
-  - Ads-CN/BUAdSDK (7.2.1.0)
-  - BUTTSDKFramework/Core (1.46.2.7-premium)
-  - BUTTSDKFramework/LiveBase (1.46.2.7-premium):
-    - BUTTSDKFramework/Core
-    - BUTTSDKFramework/Reachability
-  - BUTTSDKFramework/LivePlayer/Base (1.46.2.7-premium):
-    - BUTTSDKFramework/Core
-    - BUTTSDKFramework/LiveBase
-    - BUTTSDKFramework/Reachability
-  - BUTTSDKFramework/LivePlayer/Lite (1.46.2.7-premium):
-    - BUTTSDKFramework/LivePlayer/Base
-    - BUTTSDKFramework/PlayerCore/LiveLite
-  - BUTTSDKFramework/LivePull-Lite (1.46.2.7-premium):
-    - BUTTSDKFramework/LivePlayer/Lite
-    - BUTTSDKFramework/Strategy/Lite
-  - BUTTSDKFramework/PlayerCore/Base (1.46.2.7-premium):
-    - BUTTSDKFramework/Core
-    - BUTTSDKFramework/Tools
-  - BUTTSDKFramework/PlayerCore/LiveLite (1.46.2.7-premium):
-    - BUTTSDKFramework/PlayerCore/Base
-    - BUTTSDKFramework/TTFFmpeg/LiveLite
-  - BUTTSDKFramework/Reachability (1.46.2.7-premium)
-  - BUTTSDKFramework/SSL (1.46.2.7-premium)
-  - BUTTSDKFramework/Strategy/Core (1.46.2.7-premium):
-    - BUTTSDKFramework/LiveBase
-    - BUTTSDKFramework/Reachability
-  - BUTTSDKFramework/Strategy/Lite (1.46.2.7-premium):
-    - BUTTSDKFramework/LivePlayer/Lite
-    - BUTTSDKFramework/Strategy/Core
-  - BUTTSDKFramework/Tools (1.46.2.7-premium):
-    - BUTTSDKFramework/SSL
-  - BUTTSDKFramework/TTFFmpeg/Base (1.46.2.7-premium):
-    - BUTTSDKFramework/Tools
-  - BUTTSDKFramework/TTFFmpeg/LiveLite (1.46.2.7-premium):
-    - BUTTSDKFramework/TTFFmpeg/Base
   - Masonry (1.1.0)
   - MBProgressHUD (1.2.0)
   - MJRefresh (3.7.9)
@@ -49,7 +7,6 @@ PODS:
   - SDWebImage/Core (5.21.3)
 
 DEPENDENCIES:
-  - Ads-CN
   - Masonry
   - MBProgressHUD
   - MJRefresh
@@ -57,21 +14,17 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
-    - Ads-CN
-    - BUTTSDKFramework
     - Masonry
     - MBProgressHUD
     - MJRefresh
     - SDWebImage
 
 SPEC CHECKSUMS:
-  Ads-CN: d92a8153c4db60a5f195fe263da2e41de4e1d24c
-  BUTTSDKFramework: b5d45b40003335843f05088c2373cef0b5638a9e
   Masonry: 678fab65091a9290e40e2832a55e7ab731aad201
   MBProgressHUD: 3ee5efcc380f6a79a7cc9b363dd669c5e1ae7406
   MJRefresh: ff9e531227924c84ce459338414550a05d2aea78
   SDWebImage: 16309af6d214ba3f77a7c6f6fdda888cb313a50a
 
-PODFILE CHECKSUM: 5b51302cf10cfe4662df9000ad04a7fe15db4400
+PODFILE CHECKSUM: f1c67b6705074c3154c45db72ca268dc2ac47752
 
-COCOAPODS: 1.16.2
+COCOAPODS: 1.11.3

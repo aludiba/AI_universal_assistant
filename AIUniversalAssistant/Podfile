@@ -14,7 +14,7 @@ target 'AIUniversalAssistant' do
   # 穿山甲广告SDK (国内版本)
   # 注意：如果 AIUA_AD_ENABLED 设置为 0（模拟器开发时），请注释掉下面这行以避免链接错误
   # 需要启用时，取消注释并运行 pod install
-    pod 'Ads-CN'
+#    pod 'Ads-CN'
     # 如果是海外版本，使用: pod 'Ads-Global'
 end
 
