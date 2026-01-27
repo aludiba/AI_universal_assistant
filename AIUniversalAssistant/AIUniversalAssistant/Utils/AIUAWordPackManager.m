@@ -850,7 +850,7 @@ static NSString * kProductIDWordPack6M = nil;
     
     // VIP是否已赠送标记
     data[@"vipGiftAwarded"] = @([self localBoolForKey:kAIUAVIPGiftAwarded]);
-    
+
     // VIP赠送字数上次刷新日期（保留兼容性，但不再使用）
     NSDate *lastRefreshDate = [self localObjectForKey:kAIUAVIPGiftedWordsLastRefreshDate];
     if (lastRefreshDate) {
