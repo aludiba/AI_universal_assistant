@@ -972,7 +972,7 @@
         
         if (self.currentContent.length == 0) {
             [AIUAAlertHelper showAlertWithTitle:L(@"prompt")
-                                       message:L(@"please_enter_main_content_firs")
+                                       message:L(@"please_enter_main_content_first")
                                  cancelBtnText:nil
                                 confirmBtnText:L(@"confirm")
                                   inController:self
