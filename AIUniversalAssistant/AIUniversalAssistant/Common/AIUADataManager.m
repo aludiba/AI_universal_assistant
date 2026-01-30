@@ -8,6 +8,7 @@
 #import "AIUADataManager.h"
 #import "AIUAMBProgressManager.h"
 #import "AIUAToolsManager.h"
+#import "AIUAWordPackManager.h"
 
 // 缓存清理完成通知
 NSString * const AIUACacheClearedNotification = @"AIUACacheClearedNotification";
@@ -293,7 +294,67 @@ NSString * const AIUACacheClearedNotification = @"AIUACacheClearedNotification";
     
     if ([[NSFileManager defaultManager] fileExistsAtPath:plistPath]) {
         NSArray *writings = [NSArray arrayWithContentsOfFile:plistPath];
-        return writings ?: @[];
+        if (!writings || ![writings isKindOfClass:[NSArray class]]) {
+            return @[];
+        }
+        
+        // 兼容性修复：历史版本可能用 NSString.length 作为 wordCount，导致与“字数包扣减口径”不一致。
+        // 这里统一为 AIUAWordPackManager 的统计规则（与扣减一致），并回写到 plist。
+        BOOL didModify = NO;
+        NSMutableArray *fixed = [NSMutableArray arrayWithCapacity:writings.count];
+        for (id item in writings) {
+            if (![item isKindOfClass:[NSDictionary class]]) {
+                continue;
+            }
+            NSMutableDictionary *m = [item mutableCopy];
+            NSString *title = m[@"title"] ?: @"";
+            NSString *content = m[@"content"] ?: @"";
+            // 与扣减口径一致：按“标题+正文”整体统计
+            NSMutableString *fullTextForCount = [NSMutableString string];
+            if (title.length > 0) {
+                [fullTextForCount appendString:title];
+            }
+            if (title.length > 0 && content.length > 0) {
+                [fullTextForCount appendString:@"\n"];
+            }
+            if (content.length > 0) {
+                [fullTextForCount appendString:content];
+            }
+            NSInteger recalculated = [AIUAWordPackManager countWordsInText:fullTextForCount];
+            NSNumber *existing = m[@"wordCount"];
+            NSInteger existingValue = [existing isKindOfClass:[NSNumber class]] ? existing.integerValue : -1;
+            
+            if (existingValue != recalculated) {
+                NSLog(@"[DataManager] 📝 修正文档 '%@': 旧=%ld, 新=%ld", 
+                      [title length] > 20 ? [[title substringToIndex:20] stringByAppendingString:@"..."] : title, 
+                      (long)existingValue, (long)recalculated);
+                m[@"wordCount"] = @(recalculated);
+                didModify = YES;
+            }
+            [fixed addObject:[m copy]];
+        }
+        
+        if (didModify) {
+            NSLog(@"[DataManager] ✅ 检测到不一致，回写 plist...");
+            NSData *plistData = [NSPropertyListSerialization dataWithPropertyList:fixed
+                                                                          format:NSPropertyListXMLFormat_v1_0
+                                                                         options:0
+                                                                           error:nil];
+            if (plistData) {
+                BOOL writeSuccess = [plistData writeToFile:plistPath atomically:YES];
+                if (writeSuccess) {
+                    NSLog(@"[DataManager] ✅ wordCount 迁移完成并已回写");
+                } else {
+                    NSLog(@"[DataManager] ❌ wordCount 迁移失败：无法写入文件");
+                }
+            } else {
+                NSLog(@"[DataManager] ❌ wordCount 迁移失败：无法序列化");
+            }
+        } else {
+            NSLog(@"[DataManager] ✓ 所有文档 wordCount 已是最新规则，无需迁移");
+        }
+        
+        return [fixed copy];
     }
     
     return @[];

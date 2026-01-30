@@ -450,7 +450,18 @@
     [self processFinalContent:finalText];
     
     // 计算实际消耗的字数（只计算输出，不计算输入）
-    NSInteger outputWords = [AIUAWordPackManager countWordsInText:finalText];
+    // 关键：必须与保存 wordCount 时的口径一致（按处理后的 finalTitle + \n + finalContent 统计）
+    NSMutableString *fullTextForConsume = [NSMutableString string];
+    if (self.finalTitle.length > 0) {
+        [fullTextForConsume appendString:self.finalTitle];
+    }
+    if (self.finalTitle.length > 0 && self.finalContent.length > 0) {
+        [fullTextForConsume appendString:@"\n"];
+    }
+    if (self.finalContent.length > 0) {
+        [fullTextForConsume appendString:self.finalContent];
+    }
+    NSInteger outputWords = [AIUAWordPackManager countWordsInText:fullTextForConsume];
     
     if (outputWords > 0) {
         [[AIUAWordPackManager sharedManager] consumeWords:outputWords completion:^(BOOL success, NSInteger remainingWords) {
@@ -555,7 +566,18 @@
     writingRecord[@"prompt"] = self.prompt ?: @"";
     writingRecord[@"createTime"] = [[AIUADataManager sharedManager] currentTimeString];
     writingRecord[@"type"] = self.type ?: @"";
-    writingRecord[@"wordCount"] = @(self.finalContent.length);
+    // 统一字数统计口径：与扣减一致（按“标题+正文”整体统计）
+    NSMutableString *fullTextForCount = [NSMutableString string];
+    if (self.finalTitle.length > 0) {
+        [fullTextForCount appendString:self.finalTitle];
+    }
+    if (self.finalTitle.length > 0 && self.finalContent.length > 0) {
+        [fullTextForCount appendString:@"\n"];
+    }
+    if (self.finalContent.length > 0) {
+        [fullTextForCount appendString:self.finalContent];
+    }
+    writingRecord[@"wordCount"] = @([AIUAWordPackManager countWordsInText:fullTextForCount]);
     
     // 保存不可变副本，避免后续被修改
     self.currentWritingDocParam = [writingRecord copy];
@@ -623,7 +645,20 @@
             tempDict[@"prompt"] = self.prompt ?: @"";
             tempDict[@"createTime"] = [[AIUADataManager sharedManager] currentTimeString];
             tempDict[@"type"] = self.type ?: @"";
-            tempDict[@"wordCount"] = @(self.contentTextView.text.length);
+            // 统一字数统计口径：与扣减一致（按“标题+正文”整体统计）
+            NSMutableString *tempFullTextForCount = [NSMutableString string];
+            NSString *tempTitle = self.titleLabel.text ?: @"";
+            NSString *tempContent = self.contentTextView.text ?: @"";
+            if (tempTitle.length > 0) {
+                [tempFullTextForCount appendString:tempTitle];
+            }
+            if (tempTitle.length > 0 && tempContent.length > 0) {
+                [tempFullTextForCount appendString:@"\n"];
+            }
+            if (tempContent.length > 0) {
+                [tempFullTextForCount appendString:tempContent];
+            }
+            tempDict[@"wordCount"] = @([AIUAWordPackManager countWordsInText:tempFullTextForCount]);
             self.currentWritingDocParam = [tempDict copy];
         }
     }

@@ -1536,7 +1536,18 @@
     }
     writingRecord[@"title"] = title ?: @"";
     writingRecord[@"content"] = content ?: @"";
-    writingRecord[@"wordCount"] = @(content.length);
+    // 统一字数统计口径：与扣减一致（按“标题+正文”整体统计；1个中文字符/字母/数字/标点/空格=1字，emoji计为1字）
+    NSMutableString *fullTextForCount = [NSMutableString string];
+    if (title.length > 0) {
+        [fullTextForCount appendString:title];
+    }
+    if (title.length > 0 && content.length > 0) {
+        [fullTextForCount appendString:@"\n"];
+    }
+    if (content.length > 0) {
+        [fullTextForCount appendString:content];
+    }
+    writingRecord[@"wordCount"] = @([AIUAWordPackManager countWordsInText:fullTextForCount]);
     self.writingItem = [writingRecord copy];
 }
 
