@@ -39,6 +39,12 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
 // 上次收据验证时间（避免频繁验证收据）
 @property (nonatomic, strong) NSDate *lastReceiptVerificationTime;
 
+// 上次自动恢复购买尝试时间（用于网络恢复后重试，避免频繁请求）
+@property (nonatomic, strong) NSDate *lastRestoreAttemptDate;
+
+// 本次恢复是否已预约过“网络错误延迟重试”（仅重试一次）
+@property (nonatomic, assign) BOOL hasScheduledRestoreRetryForNetworkError;
+
 @end
 
 @implementation AIUAIAPManager
@@ -280,10 +286,26 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
     
     self.restoreCompletion = completion;
     self.restoredPurchasesCount = 0;
+    self.lastRestoreAttemptDate = [NSDate date];
+    self.hasScheduledRestoreRetryForNetworkError = NO; // 允许本次恢复在网络错误时延迟重试一次
     
     [[SKPaymentQueue defaultQueue] restoreCompletedTransactions];
     
     NSLog(@"[IAP] 开始恢复购买");
+}
+
+- (void)retryRestoreIfNoSubscriptionWithCompletion:(AIUAIAPRestoreCompletion)completion {
+    if (self.isVIPMember || self.subscriptionExpiryDate) {
+        return;
+    }
+    NSTimeInterval since = 999;
+    if (self.lastRestoreAttemptDate) {
+        since = [[NSDate date] timeIntervalSinceDate:self.lastRestoreAttemptDate];
+    }
+    if (since < 30.0) {
+        return;
+    }
+    [self restorePurchasesWithCompletion:completion];
 }
 
 - (void)checkSubscriptionStatus {
@@ -604,8 +626,12 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
     NSLog(@"[IAP] 恢复购买完成，共恢复 %ld 个", (long)self.restoredPurchasesCount);
     
     // 恢复完成后，从收据中重新验证订阅状态，确保使用实际的到期时间
-    // 而不是简单的累加（累加可能导致到期时间不准确）
     [self checkSubscriptionStatus];
+    
+    // 通知 UI 刷新（首次启动自动恢复时，设置页等需立即更新）
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"AIUASubscriptionStatusChanged" object:nil];
+    });
     
     // 恢复订阅时，同时从 iCloud 同步字数包数据
     AIUAWordPackManager *wordPackManager = [AIUAWordPackManager sharedManager];
@@ -633,32 +659,68 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
 }
 
 - (void)paymentQueue:(SKPaymentQueue *)queue restoreCompletedTransactionsFailedWithError:(NSError *)error {
-    NSString *errorMessage = error.localizedDescription;
+    NSString *errorMessage = error.localizedDescription ?: @"";
     NSLog(@"[IAP] 恢复购买失败: %@", errorMessage);
     
-    // 确保在主线程执行所有UI相关操作和回调
-    dispatch_async(dispatch_get_main_queue(), ^{
-        // 显示调试错误弹窗
-        [AIUAAlertHelper showDebugErrorAlert:errorMessage context:@"恢复购买失败"];
-        
-        if (self.restoreCompletion) {
-            self.restoreCompletion(NO, 0, errorMessage);
-            self.restoreCompletion = nil;
-        }
-    });
+    BOOL isNetworkError = ([errorMessage containsString:@"断开"] ||
+                           [errorMessage containsString:@"互联网"] ||
+                           [errorMessage containsString:@"网络"] ||
+                           [errorMessage containsString:@"connection"] ||
+                           [errorMessage containsString:@"Connection"] ||
+                           error.code == NSURLErrorNotConnectedToInternet ||
+                           error.code == NSURLErrorNetworkConnectionLost);
+    
+    AIUAIAPRestoreCompletion completion = self.restoreCompletion;
+    self.restoreCompletion = nil;
+    
+    if (isNetworkError && !self.hasScheduledRestoreRetryForNetworkError && !self.isVIPMember && !self.subscriptionExpiryDate) {
+        self.hasScheduledRestoreRetryForNetworkError = YES;
+        __weak typeof(self) wself = self;
+        NSLog(@"[IAP] 恢复因网络失败，5 秒后自动重试一次（用户选择网络后可能成功）");
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            __strong typeof(wself) sself = wself;
+            if (!sself || sself.isVIPMember || sself.subscriptionExpiryDate) {
+                if (completion) completion(NO, 0, errorMessage);
+                return;
+            }
+            NSLog(@"[IAP] 执行网络错误后的延迟恢复...");
+            [sself restorePurchasesWithCompletion:^(BOOL success, NSInteger restoredCount, NSString * _Nullable errMsg) {
+                if (completion) completion(success, restoredCount, errMsg);
+                if (success) {
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        [[NSNotificationCenter defaultCenter] postNotificationName:@"AIUASubscriptionStatusChanged" object:nil];
+                    });
+                }
+            }];
+        });
+    } else {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [AIUAAlertHelper showDebugErrorAlert:errorMessage context:@"恢复购买失败"];
+            if (completion) completion(NO, 0, errorMessage);
+        });
+    }
 }
 
 #pragma mark - Transaction Processing
 
 - (void)completeTransaction:(SKPaymentTransaction *)transaction {
+    NSString *productIdentifier = transaction.payment.productIdentifier;
+    BOOL isWordPack = [productIdentifier containsString:@"wordpack"];
+    
     // 清除收据验证缓存，确保购买后立即重新验证
     self.lastReceiptVerificationTime = nil;
     
-    // 验证收据
+    // 验证收据（仅影响订阅状态；字数包为消耗型，不写入订阅到期时间）
     [self verifyReceipt:transaction];
     
-    // 解锁内容
-    [self unlockContentForProductIdentifier:transaction.payment.productIdentifier];
+    // 仅对订阅产品解锁会员并更新到期时间；购买字数包与会员周期无关，不得刷新/累加到期时间
+    if (!isWordPack) {
+        [self unlockContentForProductIdentifier:productIdentifier];
+    } else {
+        NSLog(@"[IAP] 字数包购买完成: %@，不修改会员到期时间", productIdentifier);
+        // 仅刷新字数包相关展示（赠送字数等），不发送订阅状态变化
+        [[AIUAWordPackManager sharedManager] refreshVIPGiftedWords];
+    }
     
     // 完成交易
     [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
@@ -694,27 +756,24 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
     
     if (isWordPack) {
         // 恢复字数包 - 不重复发放，只在购买时发放一次
-        // 字数包是消耗型产品，恢复购买时不应该重复发放
         NSLog(@"[IAP] 恢复字数包产品: %@，消耗型产品不重复发放", productIdentifier);
     } else {
-        // 检查当前是否已是永久会员，如果是则跳过恢复（避免覆盖永久会员状态）
+        BOOL isLifetimeProduct = (productIdentifier && ([productIdentifier containsString:@"lifetimeBenefits"] || [productIdentifier containsString:@"lifetime"]));
+        // 若当前已是永久会员，则只接受永久会员交易，有限期交易不覆盖
         BOOL isCurrentlyLifetime = NO;
         if (self.subscriptionExpiryDate) {
             NSTimeInterval timeInterval = [self.subscriptionExpiryDate timeIntervalSinceNow];
             isCurrentlyLifetime = (timeInterval > 50 * 365 * 24 * 60 * 60);
         }
         
-        if (isCurrentlyLifetime) {
-            NSLog(@"[IAP] 当前已是永久会员，跳过恢复交易 %@，保持永久会员状态", productIdentifier);
+        if (isCurrentlyLifetime && !isLifetimeProduct) {
+            NSLog(@"[IAP] 当前已是永久会员，跳过有限期交易 %@，保持永久会员状态", productIdentifier);
         } else {
-            // 恢复会员订阅
             [self unlockContentForProductIdentifier:productIdentifier];
-            // 只有订阅产品才计入恢复订阅数量，字数包不计入
             self.restoredPurchasesCount++;
         }
     }
     
-    // 完成交易
     [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
 }
 
@@ -725,6 +784,19 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
     
     // 确定产品类型
     AIUASubscriptionProductType type = [self productTypeForIdentifier:productIdentifier];
+    
+    // 若当前已是永久会员（到期>50年），不得被有限期订阅覆盖（恢复时可能先处理年付再处理永久）
+    BOOL isCurrentlyLifetime = NO;
+    if (self.subscriptionExpiryDate) {
+        NSTimeInterval interval = [self.subscriptionExpiryDate timeIntervalSinceNow];
+        isCurrentlyLifetime = (interval > 50 * 365 * 24 * 60 * 60);
+    }
+    if (isCurrentlyLifetime && type != AIUASubscriptionProductTypeLifetimeBenefits) {
+        NSLog(@"[IAP] 当前已是永久会员，跳过有限期订阅 %@，保持永久状态", productIdentifier);
+        [self saveLocalSubscriptionInfo];
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"AIUASubscriptionStatusChanged" object:nil];
+        return;
+    }
     
     // 设置会员状态
     _isVIPMember = YES;
@@ -755,7 +827,7 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
 }
 
 - (AIUASubscriptionProductType)productTypeForIdentifier:(NSString *)identifier {
-    if ([identifier containsString:@"lifetimeBenefits"]) {
+    if (identifier && ([identifier containsString:@"lifetimeBenefits"] || [identifier containsString:@"lifetime"])) {
         return AIUASubscriptionProductTypeLifetimeBenefits;
     } else if ([identifier containsString:@"yearly"]) {
         return AIUASubscriptionProductTypeYearly;
@@ -881,13 +953,14 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
     // 1. 检查收据文件是否存在
     NSURL *receiptURL = [[NSBundle mainBundle] appStoreReceiptURL];
     if (!receiptURL) {
-        NSLog(@"[IAP] 收据URL为空");
+        NSLog(@"[IAP] ❌ 收据URL为空");
         return NO;
     }
     
     NSData *receiptData = [NSData dataWithContentsOfURL:receiptURL];
     if (!receiptData || receiptData.length == 0) {
-        NSLog(@"[IAP] 收据数据为空");
+        NSLog(@"[IAP] ❌ 收据数据为空（可能是重装后收据未生成）");
+        NSLog(@"[IAP] 💡 解决方案：请在App中点击「恢复购买」按钮，系统会自动刷新收据并恢复订阅");
         return NO;
     }
     
@@ -936,32 +1009,82 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
             return YES;
         }
         
+        // 若本地已有未过期的订阅到期时间，通常不以收据覆盖；但如果不是永久会员且距上次验证超过7天，仍需刷新以同步最新订阅
+        NSDate *now = [NSDate date];
+        if (self.subscriptionExpiryDate && [now compare:self.subscriptionExpiryDate] == NSOrderedAscending) {
+            BOOL isLocalLifetime = ([self.subscriptionExpiryDate timeIntervalSinceNow] > 50 * 365 * 24 * 60 * 60);
+            // 永久会员或近期刚验证过的订阅：保留本地，跳过覆盖
+            if (isLocalLifetime || (self.lastReceiptVerificationTime && [now timeIntervalSinceDate:self.lastReceiptVerificationTime] < 7 * 24 * 60 * 60)) {
+                NSLog(@"[IAP] 本地订阅未过期（到期: %@），%@，跳过从收据覆盖", self.subscriptionExpiryDate, isLocalLifetime ? @"永久会员" : @"近期刚验证");
+                return YES;
+            }
+            // 非永久且距上次验证超过7天：仍走收据刷新，防止用户在其它设备订阅/升级后本地未同步
+            NSLog(@"[IAP] 本地订阅未过期但距上次验证超过7天，从收据刷新最新状态");
+        }
+        
         // 提取订阅信息
         NSArray *inAppPurchases = receiptInfo[@"in_app"];
+        NSLog(@"[IAP] 收据中共有 %lu 个购买项", (unsigned long)(inAppPurchases ? inAppPurchases.count : 0));
+        
         if (inAppPurchases && inAppPurchases.count > 0) {
-            // 找到最新的有效订阅
-            NSDictionary *latestSubscription = [self findLatestValidSubscription:inAppPurchases];
-            
-            if (latestSubscription) {
-                NSString *productId = latestSubscription[@"product_id"];
-                NSDate *expiresDate = latestSubscription[@"expires_date"];
-                
-                NSLog(@"[IAP] 从收据中提取订阅信息 - 产品: %@, 到期: %@", productId, expiresDate);
-                
-                // 根据 product_id 确定订阅类型
-                AIUASubscriptionProductType productType = [self productTypeFromProductId:productId];
-                
-                // 如果是永久会员，直接设置为永久，不再使用收据中的到期时间
-                if (productType == AIUASubscriptionProductTypeLifetimeBenefits) {
+            // 优先：若收据中任意一项为永久会员，直接按永久处理，避免被有限期覆盖
+            for (NSDictionary *purchase in inAppPurchases) {
+                NSString *pid = purchase[@"product_id"];
+                if (pid && ([pid containsString:@"lifetimeBenefits"] || [pid containsString:@"lifetime"]) && ![pid containsString:@"wordpack"]) {
                     _isVIPMember = YES;
-                    self.currentSubscriptionType = productType;
-                    // 永久会员设置为100年后
+                    self.currentSubscriptionType = AIUASubscriptionProductTypeLifetimeBenefits;
                     NSDate *now = [NSDate date];
                     NSCalendar *calendar = [NSCalendar currentCalendar];
                     NSDateComponents *components = [[NSDateComponents alloc] init];
                     components.year = 100;
                     self.subscriptionExpiryDate = [calendar dateByAddingComponents:components toDate:now options:0];
-                    NSLog(@"[IAP] 从收据中识别到永久会员，设置为永久有效");
+                    NSLog(@"[IAP] 收据中发现永久会员产品 %@，强制按永久有效处理", pid);
+                    [self saveLocalSubscriptionInfo];
+                    return YES;
+                }
+            }
+            
+            // 找到最新的有效订阅
+            NSDictionary *latestSubscription = [self findLatestValidSubscription:inAppPurchases];
+            
+            if (latestSubscription) {
+                NSString *productId = latestSubscription[@"product_id"];
+                // 字数包与会员周期无关，不得用收据中的字数包项覆盖订阅状态
+                if (productId && [productId containsString:@"wordpack"]) {
+                    NSLog(@"[IAP] 收据中该项为字数包，跳过订阅覆盖: %@", productId);
+                } else {
+                NSDate *expiresDate = latestSubscription[@"expires_date"];
+                
+                NSLog(@"[IAP] 从收据中提取订阅信息 - 产品: %@, 到期: %@", productId, expiresDate);
+                
+                // 若收据中的到期时间超过 20 年，视为有效永久会员（兜底，防止产品ID未识别为 lifetime）
+                NSDate *now = [NSDate date];
+                if (expiresDate && [expiresDate timeIntervalSinceDate:now] > 20 * 365 * 24 * 60 * 60) {
+                    _isVIPMember = YES;
+                    self.currentSubscriptionType = AIUASubscriptionProductTypeLifetimeBenefits;
+                    NSCalendar *calendar = [NSCalendar currentCalendar];
+                    NSDateComponents *components = [[NSDateComponents alloc] init];
+                    components.year = 100;
+                    self.subscriptionExpiryDate = [calendar dateByAddingComponents:components toDate:now options:0];
+                    NSLog(@"[IAP] 收据到期时间超过20年，视为永久会员并设置为永久有效");
+                    [self saveLocalSubscriptionInfo];
+                    return YES;
+                }
+                
+                // 根据 product_id 确定订阅类型
+                AIUASubscriptionProductType productType = [self productTypeFromProductId:productId];
+                
+                // 如果是永久会员，直接设置为永久，忽略收据中的到期时间（避免被错误的有限期覆盖）
+                if (productType == AIUASubscriptionProductTypeLifetimeBenefits) {
+                    _isVIPMember = YES;
+                    self.currentSubscriptionType = productType;
+                    // 永久会员统一设置为100年后，不使用收据中的 expiresDate
+                    NSDate *now = [NSDate date];
+                    NSCalendar *calendar = [NSCalendar currentCalendar];
+                    NSDateComponents *components = [[NSDateComponents alloc] init];
+                    components.year = 100;
+                    self.subscriptionExpiryDate = [calendar dateByAddingComponents:components toDate:now options:0];
+                    NSLog(@"[IAP] 从收据中识别到永久会员（产品: %@），设置为永久有效（忽略收据到期时间）", productId);
                     [self saveLocalSubscriptionInfo];
                     return YES;
                 }
@@ -992,11 +1115,19 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
                 
                 // 保存更新后的信息
                 [self saveLocalSubscriptionInfo];
+                }
+            } else {
+                NSLog(@"[IAP] ⚠️ 收据中有 %lu 个购买项，但未找到有效订阅（可能都是字数包或已过期订阅）", (unsigned long)inAppPurchases.count);
             }
+        } else {
+            NSLog(@"[IAP] ⚠️ 收据解析成功，但没有找到任何购买项（可能是新设备或收据未同步）");
+            NSLog(@"[IAP] 💡 建议：点击「恢复购买」按钮手动同步订阅信息");
         }
+    } else {
+        NSLog(@"[IAP] ❌ 收据解析失败，无法从收据中提取订阅信息");
     }
     
-    NSLog(@"[IAP] 本地收据验证通过");
+    NSLog(@"[IAP] 本地收据验证完成");
     
     // 注意：这只是基本验证，真正的安全性需要服务器端验证
     return YES;
@@ -1387,8 +1518,13 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
     for (NSDictionary *purchase in inAppPurchases) {
         NSString *productId = purchase[@"product_id"];
         
-        // 检查是否是永久会员
-        if ([productId containsString:@"lifetimeBenefits"]) {
+        // 字数包为消耗型产品，与会员周期无关，不参与“最新订阅”选择
+        if (productId && [productId containsString:@"wordpack"]) {
+            continue;
+        }
+        
+        // 检查是否是永久会员（兼容 lifetimeBenefits 及含 lifetime 的产品ID）
+        if (productId && ([productId containsString:@"lifetimeBenefits"] || [productId containsString:@"lifetime"])) {
             lifetimePurchase = purchase;
             break; // 找到永久会员直接返回，不再继续查找
         }
@@ -1415,13 +1551,13 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
         return latestPurchase;
     }
     
-    // 兜底返回第一个
-    return inAppPurchases.firstObject;
+    // 无有效订阅时不兜底返回 firstObject，避免把字数包等非订阅项当作订阅（productTypeFromProductId 对未知 ID 会返回 LifetimeBenefits）
+    return nil;
 }
 
 // 根据产品ID获取订阅类型
 - (AIUASubscriptionProductType)productTypeFromProductId:(NSString *)productId {
-    if ([productId containsString:@"lifetimeBenefits"]) {
+    if (productId && ([productId containsString:@"lifetimeBenefits"] || [productId containsString:@"lifetime"])) {
         return AIUASubscriptionProductTypeLifetimeBenefits;
     } else if ([productId containsString:@"yearly"]) {
         return AIUASubscriptionProductTypeYearly;
@@ -1430,7 +1566,9 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
     } else if ([productId containsString:@"weekly"]) {
         return AIUASubscriptionProductTypeWeekly;
     }
-    return AIUASubscriptionProductTypeLifetimeBenefits;
+    // 未知产品ID不应默认为永久会员，记录日志后返回周会员（最保守的订阅类型）
+    NSLog(@"[IAP] ⚠️ 未识别的产品ID: %@，默认按周会员处理", productId);
+    return AIUASubscriptionProductTypeWeekly;
 }
 
 #pragma mark - VIP Member Status
@@ -1457,7 +1595,11 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
     self.subscriptionExpiryDate = [defaults objectForKey:kAIUASubscriptionExpiryDate];
     
 #if AIUA_VIP_CHECK_ENABLED
-    NSLog(@"[IAP] 加载本地订阅信息 - VIP: %d, Type: %ld", _isVIPMember, (long)self.currentSubscriptionType);
+    if (!self.subscriptionExpiryDate && !_isVIPMember) {
+        NSLog(@"[IAP] 本地无订阅信息（可能是首次安装或删除重装），将从收据恢复");
+    } else {
+        NSLog(@"[IAP] 加载本地订阅信息 - VIP: %d, Type: %ld, 到期: %@", _isVIPMember, (long)self.currentSubscriptionType, self.subscriptionExpiryDate);
+    }
 #else
     NSLog(@"[IAP] 会员检测已关闭，所有用户视为VIP");
 #endif

@@ -47,7 +47,7 @@
 #define AIUA_EXPIRING_WORDS_TEST_ENABLED   0    // 1: 开启测试数据  0: 关闭测试数据（使用真实数据）
 
 // 调试错误日志弹窗开关（开发/测试时设为1，发布时设为0）
-#define AIUA_SHOW_DEBUG_ERROR_ALERTS 1
+#define AIUA_SHOW_DEBUG_ERROR_ALERTS 0
 
 // 清除购买数据功能开关（开发/测试时设为1，发布时必须设为0）
 // 警告：此功能会清除所有订阅和字数包数据，仅用于测试！

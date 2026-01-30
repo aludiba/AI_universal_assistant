@@ -67,6 +67,10 @@
     [[AIUAIAPManager sharedManager] startObservingPaymentQueue];
     NSLog(@"[启动] IAP管理器初始化完成");
     
+    // 立即从收据验证订阅状态；无订阅时不做恢复，等用户选择网络弹窗后再在 applicationDidBecomeActive 中自动恢复
+    [[AIUAIAPManager sharedManager] checkSubscriptionStatus];
+    NSLog(@"[启动] 订阅状态检查完成");
+    
     if (AIUA_AD_ENABLED) {
         // 初始化穿山甲SDK
         [self initPangleSDK];
@@ -202,8 +206,20 @@
 }
 
 - (void)applicationDidBecomeActive:(UIApplication *)application {
-    // 这会从本地收据中提取订阅信息，即使用户重新下载或更换设备
+    // 从本地收据提取订阅信息
     [[AIUAIAPManager sharedManager] checkSubscriptionStatus];
+    
+    // 若仍无订阅（如重装后首次打开无网络导致恢复失败），切回前台时自动重试恢复（限流 30 秒）
+    [[AIUAIAPManager sharedManager] retryRestoreIfNoSubscriptionWithCompletion:^(BOOL success, NSInteger restoredCount, NSString * _Nullable errorMessage) {
+        if (success) {
+            NSLog(@"[App] ✅ 自动恢复购买成功");
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [[NSNotificationCenter defaultCenter] postNotificationName:@"AIUASubscriptionStatusChanged" object:nil];
+            });
+        } else if (errorMessage.length > 0) {
+            NSLog(@"[App] ⚠️ 自动恢复失败: %@", errorMessage);
+        }
+    }];
     
     // 注意：iCloud提醒已移至开屏广告关闭后的首页显示（showiCloudAlertAfterSplashAd）
     // 这里不再显示iCloud提醒，避免在开屏广告之前弹出

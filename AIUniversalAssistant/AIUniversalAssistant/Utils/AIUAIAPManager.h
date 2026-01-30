@@ -58,6 +58,9 @@ typedef void(^AIUAIAPRestoreCompletion)(BOOL success, NSInteger restoredCount, N
 /// 恢复购买
 - (void)restorePurchasesWithCompletion:(AIUAIAPRestoreCompletion)completion;
 
+/// 若无订阅且距上次恢复尝试超过 30 秒，则自动重试恢复（用于网络恢复后补恢复）
+- (void)retryRestoreIfNoSubscriptionWithCompletion:(nullable AIUAIAPRestoreCompletion)completion;
+
 /// 获取产品ID
 - (NSString *)productIdentifierForType:(AIUASubscriptionProductType)type;
 
