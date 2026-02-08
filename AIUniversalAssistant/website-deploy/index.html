@@ -253,26 +253,44 @@
             font-size: 0.9rem;
         }
 
-        /* Legal sections (用户协议、隐私政策) */
-        .legal-section {
-            max-width: 800px;
+        /* Support */
+        .support { background: var(--bg-light); }
+        .support-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            max-width: 900px;
             margin: 0 auto;
-            padding: 4rem 1.5rem;
-            display: none;
         }
-        .legal-section.visible { display: block; padding-top: 5rem; }
-        .legal-section h2 { font-size: 1.5rem; margin-bottom: 1.5rem; color: var(--text); }
-        .legal-section h3 { font-size: 1.2rem; margin-top: 1.5rem; margin-bottom: 0.75rem; color: var(--text); }
-        .legal-section h4 { font-size: 1.05rem; margin-top: 1.25rem; margin-bottom: 0.5rem; color: var(--text); }
-        .legal-section p, .legal-section li { margin-bottom: 0.75rem; color: var(--text-muted); line-height: 1.75; }
-        .legal-section ul { padding-left: 1.5rem; margin-bottom: 1rem; }
-        .back-top { display: inline-block; margin-bottom: 1.5rem; color: var(--primary); text-decoration: none; font-weight: 500; }
-        .back-top:hover { text-decoration: underline; }
-
-        /* Contact */
-        .contact { background: var(--bg-light); text-align: center; }
-        .contact p { color: var(--text-muted); margin-bottom: 0.5rem; }
-        .contact a { color: var(--primary); text-decoration: none; font-weight: 500; }
+        .support-card {
+            background: #fff;
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            border: 1px solid rgba(0,0,0,0.04);
+            text-align: center;
+        }
+        .support-card .icon { font-size: 2.5rem; margin-bottom: 1rem; }
+        .support-card h3 { font-size: 1.15rem; margin-bottom: 0.75rem; color: var(--text); }
+        .support-card p { font-size: 0.95rem; color: var(--text-muted); line-height: 1.7; margin-bottom: 0.5rem; }
+        .support-card .qq-number {
+            display: inline-block;
+            margin-top: 0.5rem;
+            padding: 0.5rem 1.5rem;
+            background: var(--bg-gradient);
+            color: #fff;
+            font-weight: 600;
+            font-size: 1.1rem;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            user-select: all;
+        }
+        .support-card a { color: var(--primary); text-decoration: none; font-weight: 500; }
+        .support-card a:hover { text-decoration: underline; }
+        .support-faq { max-width: 720px; margin: 2.5rem auto 0; text-align: left; }
+        .faq-item { margin-bottom: 1.25rem; }
+        .faq-item h4 { font-size: 1rem; color: var(--text); margin-bottom: 0.35rem; }
+        .faq-item p { font-size: 0.95rem; color: var(--text-muted); line-height: 1.7; }
 
         @media (max-width: 768px) {
             .nav { padding: 0.75rem 1rem; }
@@ -288,9 +306,9 @@
         <ul class="nav-links">
             <li><a href="#features">功能</a></li>
             <li><a href="#about">关于</a></li>
-            <li><a href="#contact">联系我们</a></li>
-            <li><a href="user-agreement.html">用户协议</a></li>
-            <li><a href="privacy-policy.html">隐私政策</a></li>
+            <li><a href="#contact">技术支持</a></li>
+            <li><a href="https://hujiaofenwritingcat.top/user-agreement.html" target="_blank">用户协议</a></li>
+            <li><a href="https://hujiaofenwritingcat.top/privacy-policy.html" target="_blank">隐私政策</a></li>
         </ul>
     </nav>
 
@@ -416,10 +434,42 @@
         </div>
     </section>
 
-    <section class="section contact" id="contact">
-        <h2 class="section-title">联系我们</h2>
-        <p>如有问题或建议，欢迎通过应用内反馈功能与我们联系。</p>
-        <p><a href="https://apps.apple.com/app/id6755778624" target="_blank" rel="noopener">前往 App Store 下载 AI创作喵</a></p>
+    <section class="section support" id="contact">
+        <h2 class="section-title">技术支持与帮助</h2>
+        <div class="support-grid">
+            <div class="support-card">
+                <div class="icon">💬</div>
+                <h3>QQ 技术支持群</h3>
+                <p>如果您在使用过程中遇到任何问题、需要帮助或有功能建议，欢迎加入我们的 QQ 技术支持群，群内有工作人员为您解答。</p>
+                <div class="qq-number">319539849</div>
+                <p style="margin-top: 0.75rem; font-size: 0.9rem;">（复制群号，在 QQ 中搜索加入）</p>
+            </div>
+            <div class="support-card">
+                <div class="icon">📱</div>
+                <h3>应用内联系客服</h3>
+                <p>打开 AI创作喵 App，前往「设置 → 联系客服」，即可查看 QQ 群二维码并一键加入技术支持群，与客服人员直接沟通。</p>
+                <p><a href="https://apps.apple.com/app/id6755778624" target="_blank" rel="noopener">前往 App Store 下载 AI创作喵</a></p>
+            </div>
+        </div>
+        <div class="support-faq">
+            <h3 style="text-align:center; margin-bottom:1.5rem; color:var(--text);">常见问题</h3>
+            <div class="faq-item">
+                <h4>Q：如何恢复已购买的会员订阅？</h4>
+                <p>A：打开 App，前往「设置 → 会员特权」页面，点击「恢复订阅」按钮即可恢复您之前通过同一 Apple ID 购买的会员订阅。字数包为消耗型产品，不支持通过恢复购买重新发放，但如果您开启了 iCloud，字数包余额会自动通过 iCloud 在不同设备间同步。</p>
+            </div>
+            <div class="faq-item">
+                <h4>Q：如何取消自动续订？</h4>
+                <p>A：前往 iPhone「设置 → Apple ID → 订阅」，找到 AI创作喵 对应的订阅项，点击取消即可。取消后，当前订阅期内仍可正常使用。</p>
+            </div>
+            <div class="faq-item">
+                <h4>Q：字数包有效期是多久？</h4>
+                <p>A：字数包有效期为 90 天，从购买成功时开始计算。建议根据实际创作需求合理购买。</p>
+            </div>
+            <div class="faq-item">
+                <h4>Q：遇到问题如何获取帮助？</h4>
+                <p>A：您可以加入我们的 QQ 技术支持群（群号：319539849），群内有工作人员为您提供一对一的技术支持与帮助。也可以在 App 内通过「设置 → 联系客服」扫码加群。</p>
+            </div>
+        </div>
     </section>
 
     <footer class="footer">
@@ -432,14 +482,17 @@
                 <div>
                     <h4>法律信息</h4>
                     <ul>
-                        <li><a href="user-agreement.html">用户协议</a></li>
-                        <li><a href="privacy-policy.html">隐私政策</a></li>
+                        <li><a href="https://hujiaofenwritingcat.top/user-agreement.html" target="_blank">用户协议</a></li>
+                        <li><a href="https://hujiaofenwritingcat.top/privacy-policy.html" target="_blank">隐私政策</a></li>
+                        <li><a href="https://hujiaofenwritingcat.top/auto-renewal.html" target="_blank">自动续费服务协议</a></li>
                     </ul>
                 </div>
                 <div>
-                    <h4>联系我们</h4>
+                    <h4>技术支持</h4>
                     <ul>
-                        <li><a href="#contact">应用内反馈</a></li>
+                        <li><a href="#contact">技术支持与帮助</a></li>
+                        <li>QQ 技术支持群：319539849</li>
+                        <li><a href="#contact">应用内联系客服</a></li>
                         <li><a href="https://apps.apple.com/app/id6755778624" target="_blank" rel="noopener">App Store 下载</a></li>
                     </ul>
                 </div>
@@ -448,81 +501,17 @@
         </div>
     </footer>
 
-    <section class="legal-section" id="user-agreement">
-        <a href="#" class="back-top">← 返回首页</a>
-        <h2>用户协议</h2>
-        <p>欢迎使用 AI创作喵！在使用本应用之前，请您仔细阅读并理解本用户协议的全部内容。一旦您开始使用本应用，即表示您已完全理解并同意接受本协议的所有条款。如果您不同意本协议的任何内容，请立即停止使用本应用。</p>
-        <h3>一、服务说明</h3>
-        <h4>1. 应用介绍</h4>
-        <p>AI创作喵是一款基于人工智能技术的智能写作助手应用，为您提供以下核心功能：</p>
-        <ul>
-            <li>AI 辅助写作：智能续写、改写、扩写、翻译等写作功能</li>
-            <li>创作模板：提供多种写作场景的模板和示例</li>
-            <li>文档管理：创建、编辑、保存和管理您的创作内容</li>
-            <li>创作记录：查看和管理您的创作历史</li>
-            <li>字数包服务：提供字数包购买和使用管理功能</li>
-        </ul>
-        <h4>2. 账户体系</h4>
-        <p>本应用使用 Apple ID 作为用户身份标识，无需单独注册账户。通过 Apple ID，您可以进行应用内购买、恢复已购买的订阅和字数包，以及在不同设备间同步字数包数据。</p>
-        <h3>二、订阅与购买服务</h3>
-        <p>本应用提供周会员、月会员、年会员、终身会员等订阅类型。订阅服务采用自动续订机制，在订阅到期前 24 小时内，系统将自动从您的 Apple ID 账户扣费。您可以在 iPhone 设置 → Apple ID → 订阅中随时取消自动续订。首次订阅任意会员套餐，一次性赠送 50 万字字数包。字数包有效期为 90 天，从购买成功时开始计算。根据 Apple 的政策，订阅费用一经扣款，除非法律另有规定，否则不予退款。字数包为消耗型产品，购买后即开始计算有效期，不予退款。所有退款申请需通过 Apple 处理。</p>
-        <h3>三、用户行为规范与免责</h3>
-        <p>您在使用本应用时须遵守相关法律法规，不得利用本应用从事违法活动或生成违法、有害、诽谤、骚扰、威胁、侵权等内容。您对通过本应用生成的所有内容承担全部责任。本应用提供的 AI 生成内容仅供参考，不构成任何形式的建议、指导或承诺。我们不对因服务中断或第三方服务问题导致的损失承担责任。更多条款请于应用内查阅完整版用户协议。</p>
-    </section>
-
-    <section class="legal-section" id="privacy">
-        <a href="#" class="back-top">← 返回首页</a>
-        <h2>隐私政策</h2>
-        <p>我们非常重视您的隐私保护。本隐私政策说明了我们如何收集、使用、存储和保护您的个人信息。在使用本应用之前，请您仔细阅读并理解本隐私政策的全部内容。</p>
-        <h3>一、信息收集</h3>
-        <p>我们可能收集以下信息：用户内容（您输入的写作内容、提示词、创建的文档及 AI 生成内容）；账户与订阅信息（通过 Apple IAP 的订阅状态、购买记录、字数包使用记录、VIP 状态等）；使用数据（应用使用频率、功能使用情况、错误日志、广告展示与点击数据）；设备信息（设备型号、系统版本、应用版本、网络状态等）。我们不会收集您的精确位置信息。</p>
-        <h3>二、信息使用目的</h3>
-        <p>我们收集的信息将用于：提供服务（AI 写作、订阅与字数包管理、iCloud 同步、恢复购买）；改进服务（分析使用数据、修复错误、开发新功能）；个性化体验（根据使用习惯优化推荐与界面）；广告服务（在您授权 IDFA 的前提下展示个性化广告）；安全与合规（防止欺诈、保护服务安全、遵守法律法规）。</p>
-        <h3>三、信息存储与保护</h3>
-        <p>您的写作内容与创作记录存储在设备本地；字数包数据可通过 Apple iCloud 同步；订阅等敏感信息存储在设备 Keychain 中。我们采取合理的安全措施保护您的信息。您的写作内容在删除应用时将一并删除；订阅信息在有效期内存储，过期后仅保留必要历史记录。更多条款请于应用内查阅完整版隐私政策。</p>
-    </section>
-
     <script>
-        (function() {
-            var navLinks = document.querySelectorAll('.nav-links a, .footer a[href^="#"], a.logo');
-            var legalSections = document.querySelectorAll('.legal-section');
-            var mainSections = document.querySelectorAll('.hero, .screenshots, .testimonials-sec, .features, .why, .about, .contact, .footer');
-
-            function showMain() {
-                mainSections.forEach(function(el) { el.style.display = ''; });
-                legalSections.forEach(function(el) { el.classList.remove('visible'); });
-            }
-            function showLegal(id) {
-                mainSections.forEach(function(el) { el.style.display = 'none'; });
-                legalSections.forEach(function(el) {
-                    el.classList.toggle('visible', el.id === id);
-                });
-            }
-
-            navLinks.forEach(function(a) {
-                a.addEventListener('click', function(e) {
-                    var href = a.getAttribute('href');
-                    if (href === '#') { showMain(); window.scrollTo(0,0); e.preventDefault(); return; }
-                    if (href.indexOf('#') !== 0) return;
-                    var id = href.slice(1);
-                    if (id === 'user-agreement' || id === 'privacy') {
-                        e.preventDefault();
-                        showLegal(id);
-                        window.scrollTo(0, 0);
-                    } else {
-                        showMain();
-                    }
-                });
-            });
-
-            document.querySelectorAll('.back-top').forEach(function(btn) {
-                btn.addEventListener('click', function(e) {
+        // 平滑滚动到锚点
+        document.querySelectorAll('a[href^="#"]').forEach(function(a) {
+            a.addEventListener('click', function(e) {
+                var href = a.getAttribute('href');
+                if (href === '#') {
                     e.preventDefault();
-                    showMain();
-                    window.scrollTo(0, 0);
-                });
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
             });
-        })();
+        });
     </script>
 </body>
 </html>

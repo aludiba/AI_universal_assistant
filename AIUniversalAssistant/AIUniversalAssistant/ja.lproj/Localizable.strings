@@ -161,14 +161,14 @@
 "weekly_desc" = "AI執筆を体験";
 "recommended" = "おすすめ";
 "auto_renew_notice" = "自動更新、いつでもキャンセル可能";
-"agree_to_terms" = "《利用規約》と《自動更新サービス規約》に同意";
+"agree_to_terms" = "《利用規約》《プライバシーポリシー》《自動更新サービス規約》に同意";
 "auto_renew_agreement" = "自動更新サービス規約";
 "activate_now" = "今すぐ有効化";
 "restore_success" = "復元成功";
 "subscription_restored" = "サブスクリプションが正常に復元されました";
 "cannot_subscribe" = "サブスクリプションできません";
 "no_subscription_found" = "有効なサブスクリプション記録が見つかりません";
-"please_agree_to_terms" = "まず利用規約に同意してください";
+"please_agree_to_terms" = "まず利用規約・プライバシーポリシー・自動更新サービス規約に同意してください";
 "confirm_purchase" = "購入を確認";
 "confirm_purchase_plan" = "%@ ¥%@の購入を確認しますか？";
 "subscription_success" = "サブスクリプション成功";
@@ -255,4 +255,3 @@
 // トライアル機能
 "trial_expired_title" = "トライアル終了";
 "trial_expired_message" = "トライアルが終了しました。継続利用には会員登録が必要です";
-

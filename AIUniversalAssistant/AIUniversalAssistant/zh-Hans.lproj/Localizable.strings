@@ -161,14 +161,14 @@
 "weekly_desc" = "体验AI写作";
 "recommended" = "推荐";
 "auto_renew_notice" = "自动续费，可随时取消";
-"agree_to_terms" = "同意《用户协议》和《自动续费服务协议》";
+"agree_to_terms" = "同意《用户协议》《隐私政策》和《自动续费服务协议》";
 "auto_renew_agreement" = "自动续费服务协议";
 "activate_now" = "立即开通";
 "restore_success" = "恢复成功";
 "subscription_restored" = "订阅已成功恢复";
 "cannot_subscribe" = "无法订阅";
 "no_subscription_found" = "没有找到有效订阅记录";
-"please_agree_to_terms" = "请先同意用户协议";
+"please_agree_to_terms" = "请先同意用户协议、隐私政策和自动续费服务协议";
 "confirm_purchase" = "确认购买";
 "confirm_purchase_plan" = "确认购买 %@ ¥%@？";
 "subscription_success" = "订阅成功";

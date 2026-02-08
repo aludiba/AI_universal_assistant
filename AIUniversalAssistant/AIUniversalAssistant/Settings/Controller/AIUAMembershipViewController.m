@@ -443,19 +443,26 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
     UILabel *agreementLabel = [[UILabel alloc] init];
     agreementLabel.font = AIUAUIFontSystem(11);
     agreementLabel.textColor = AIUA_SECONDARY_LABEL_COLOR; // 使用系统二级标签颜色，自动适配暗黑模式
-    agreementLabel.numberOfLines = 2;
+    agreementLabel.numberOfLines = 0;
     
     NSString *agreementText = L(@"agree_to_terms");
     NSMutableAttributedString *attrString = [[NSMutableAttributedString alloc] initWithString:agreementText];
     
-    // 高亮用户协议和自动续费协议
+    // 高亮用户协议、隐私政策和自动续费协议
     NSRange userAgreementRange = [agreementText rangeOfString:L(@"user_agreement")];
+    NSRange privacyPolicyRange = [agreementText rangeOfString:L(@"privacy_policy")];
     NSRange autoRenewRange = [agreementText rangeOfString:L(@"auto_renew_agreement")];
     
     if (userAgreementRange.location != NSNotFound) {
         [attrString addAttribute:NSForegroundColorAttributeName
                            value:AIUAUIColorRGB(59, 130, 246)
                            range:userAgreementRange];
+    }
+    
+    if (privacyPolicyRange.location != NSNotFound) {
+        [attrString addAttribute:NSForegroundColorAttributeName
+                           value:AIUAUIColorRGB(59, 130, 246)
+                           range:privacyPolicyRange];
     }
     
     if (autoRenewRange.location != NSNotFound) {
@@ -716,19 +723,57 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
     return image;
 }
 
+- (NSUInteger)characterIndexAtPoint:(CGPoint)point inLabel:(UILabel *)label {
+    if (!label.attributedText || label.attributedText.length == 0) {
+        return NSNotFound;
+    }
+    
+    NSTextStorage *textStorage = [[NSTextStorage alloc] initWithAttributedString:label.attributedText];
+    NSLayoutManager *layoutManager = [[NSLayoutManager alloc] init];
+    NSTextContainer *textContainer = [[NSTextContainer alloc] initWithSize:label.bounds.size];
+    textContainer.lineFragmentPadding = 0;
+    textContainer.maximumNumberOfLines = label.numberOfLines;
+    textContainer.lineBreakMode = label.lineBreakMode;
+    
+    [layoutManager addTextContainer:textContainer];
+    [textStorage addLayoutManager:layoutManager];
+    
+    NSUInteger glyphIndex = [layoutManager glyphIndexForPoint:point inTextContainer:textContainer];
+    CGRect glyphRect = [layoutManager boundingRectForGlyphRange:NSMakeRange(glyphIndex, 1) inTextContainer:textContainer];
+    if (!CGRectContainsPoint(glyphRect, point)) {
+        return NSNotFound;
+    }
+    
+    return [layoutManager characterIndexForGlyphAtIndex:glyphIndex];
+}
+
 - (void)handleAgreementTap:(UITapGestureRecognizer *)gesture {
     UILabel *label = (UILabel *)gesture.view;
     CGPoint location = [gesture locationInView:label];
     
     NSString *text = label.attributedText.string;
     NSRange userAgreementRange = [text rangeOfString:L(@"user_agreement")];
+    NSRange privacyPolicyRange = [text rangeOfString:L(@"privacy_policy")];
     NSRange autoRenewRange = [text rangeOfString:L(@"auto_renew_agreement")];
     
-    // 简单判断点击位置（实际项目中可以使用更精确的方法）
-    if (location.x < label.bounds.size.width / 2 && userAgreementRange.location != NSNotFound) {
+    NSUInteger index = [self characterIndexAtPoint:location inLabel:label];
+    if (index == NSNotFound) {
+        return;
+    }
+    
+    if (userAgreementRange.location != NSNotFound && NSLocationInRange(index, userAgreementRange)) {
         [self showUserAgreement];
-    } else if (autoRenewRange.location != NSNotFound) {
+        return;
+    }
+    
+    if (privacyPolicyRange.location != NSNotFound && NSLocationInRange(index, privacyPolicyRange)) {
+        [self showPrivacyPolicy];
+        return;
+    }
+    
+    if (autoRenewRange.location != NSNotFound && NSLocationInRange(index, autoRenewRange)) {
         [self showAutoRenewAgreement];
+        return;
     }
 }
 
@@ -880,6 +925,12 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
     [self.navigationController pushViewController:vc animated:YES];
 }
 
+- (void)showPrivacyPolicy {
+    AIUATextViewController *vc = [[AIUATextViewController alloc] init];
+    vc.htmlFileName = @"隐私政策.html";
+    [self.navigationController pushViewController:vc animated:YES];
+}
+
 - (void)showAutoRenewAgreement {
     AIUATextViewController *vc = [[AIUATextViewController alloc] init];
     vc.htmlFileName = @"自动续费服务协议.html";
@@ -887,4 +938,3 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
 }
 
 @end
-

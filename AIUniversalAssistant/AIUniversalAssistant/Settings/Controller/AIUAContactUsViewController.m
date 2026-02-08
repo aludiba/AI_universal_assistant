@@ -148,14 +148,14 @@
 
 - (void)showJoinGroupTips {
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"加入QQ群"
-                                                                   message:@"群号：463574369\n\n请打开手机QQ，点击右上角「+」，选择「加群/群号」手动添加，或扫描二维码加入。"
+                                                                   message:@"群号：319539849\n\n请打开手机QQ，点击右上角「+」，选择「加群/群号」手动添加，或扫描二维码加入。"
                                                             preferredStyle:UIAlertControllerStyleAlert];
     
     UIAlertAction *copyAction = [UIAlertAction actionWithTitle:@"复制群号"
                                                          style:UIAlertActionStyleDefault
                                                        handler:^(UIAlertAction * _Nonnull action) {
         UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
-        pasteboard.string = @"463574369";
+        pasteboard.string = @"319539849";
         NSLog(@"[联系客服] 群号已复制到剪贴板");
         [self showToast:@"群号已复制"];
     }];

@@ -8,8 +8,9 @@
 #import "AIUATextViewController.h"
 #import <Masonry/Masonry.h>
 #import <WebKit/WebKit.h>
+#import <SafariServices/SafariServices.h>
 
-@interface AIUATextViewController ()
+@interface AIUATextViewController () <WKNavigationDelegate>
 
 @property (nonatomic, strong) UITextView *textView;
 @property (nonatomic, strong) WKWebView *webView;
@@ -21,8 +22,11 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     
-    // 如果指定了HTML文件名，优先使用WebView加载HTML
-    if (self.htmlFileName && self.htmlFileName.length > 0) {
+    // 如果指定了URL，优先使用WebView加载远程页面
+    if (self.urlString && self.urlString.length > 0) {
+        [self loadURLString];
+    } else if (self.htmlFileName && self.htmlFileName.length > 0) {
+        // 如果指定了HTML文件名，使用WebView加载HTML
         [self loadHTMLFile];
     } else if (self.text && self.text.length > 0) {
         // 否则使用TextView显示文本
@@ -35,20 +39,45 @@
 
 - (void)setText:(NSString *)text {
     _text = text;
-    if (!self.htmlFileName || self.htmlFileName.length == 0) {
-    self.textView.text = text;
-    // 确保文本视图滚动到顶部
-    dispatch_async(dispatch_get_main_queue(), ^{
-        [self.textView setContentOffset:CGPointZero animated:NO];
-    });
+    if ((!self.htmlFileName || self.htmlFileName.length == 0) && (!self.urlString || self.urlString.length == 0)) {
+        self.textView.text = text;
+        // 确保文本视图滚动到顶部
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.textView setContentOffset:CGPointZero animated:NO];
+        });
     }
 }
 
 - (void)setHtmlFileName:(NSString *)htmlFileName {
     _htmlFileName = htmlFileName;
-    if (htmlFileName && htmlFileName.length > 0) {
+    if (htmlFileName && htmlFileName.length > 0 && (!self.urlString || self.urlString.length == 0)) {
         [self loadHTMLFile];
     }
+}
+
+- (void)setUrlString:(NSString *)urlString {
+    _urlString = urlString;
+    if (urlString && urlString.length > 0) {
+        [self loadURLString];
+    }
+}
+
+- (void)loadURLString {
+    if (!self.urlString || self.urlString.length == 0) {
+        return;
+    }
+    
+    NSURL *url = [NSURL URLWithString:self.urlString];
+    if (!url) {
+        return;
+    }
+    
+    // 隐藏TextView，显示WebView
+    self.textView.hidden = YES;
+    self.webView.hidden = NO;
+    
+    NSURLRequest *request = [NSURLRequest requestWithURL:url];
+    [self.webView loadRequest:request];
 }
 
 - (void)loadHTMLFile {
@@ -198,6 +227,7 @@
         WKWebView *webView = [[WKWebView alloc] initWithFrame:CGRectZero configuration:config];
         webView.backgroundColor = AIUA_BACK_COLOR; // 使用系统背景色，自动适配暗黑模式
         webView.opaque = NO;
+        webView.navigationDelegate = self;
         [self.view addSubview:webView];
         
         [webView mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -208,6 +238,35 @@
         _webView = webView;
     }
     return _webView;
+}
+
+#pragma mark - WKNavigationDelegate
+
+- (void)webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
+    NSURL *url = navigationAction.request.URL;
+    
+    // 允许本地文件加载和初始页面加载
+    if ([url isFileURL] || navigationAction.navigationType == WKNavigationTypeLinkActivated == NO) {
+        // 对于非链接点击的导航（如初始加载），直接允许
+        if (navigationAction.navigationType != WKNavigationTypeLinkActivated) {
+            decisionHandler(WKNavigationActionPolicyAllow);
+            return;
+        }
+    }
+    
+    // 用户点击了链接
+    if (navigationAction.navigationType == WKNavigationTypeLinkActivated) {
+        NSString *scheme = url.scheme.lowercaseString;
+        // http/https 外部链接，用应用内 Safari 控制器打开（不跳出应用）
+        if ([scheme isEqualToString:@"http"] || [scheme isEqualToString:@"https"]) {
+            SFSafariViewController *safariVC = [[SFSafariViewController alloc] initWithURL:url];
+            [self presentViewController:safariVC animated:YES completion:nil];
+            decisionHandler(WKNavigationActionPolicyCancel);
+            return;
+        }
+    }
+    
+    decisionHandler(WKNavigationActionPolicyAllow);
 }
 
 @end

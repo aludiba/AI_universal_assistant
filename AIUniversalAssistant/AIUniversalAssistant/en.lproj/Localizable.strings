@@ -161,14 +161,14 @@
 "weekly_desc" = "Experience AI writing";
 "recommended" = "Recommended";
 "auto_renew_notice" = "Auto-renewal, cancel anytime";
-"agree_to_terms" = "Agree to User Agreement and Auto-Renewal Agreement";
+"agree_to_terms" = "Agree to User Agreement, Privacy Policy, and Auto-Renewal Agreement";
 "auto_renew_agreement" = "Auto-Renewal Agreement";
 "activate_now" = "Activate Now";
 "restore_success" = "Restore Successful";
 "subscription_restored" = "Subscription restored successfully";
 "cannot_subscribe" = "Cannot Subscribe";
 "no_subscription_found" = "No valid subscription record found";
-"please_agree_to_terms" = "Please agree to the terms first";
+"please_agree_to_terms" = "Please agree to the User Agreement, Privacy Policy, and Auto-Renewal Agreement first";
 "confirm_purchase" = "Confirm Purchase";
 "confirm_purchase_plan" = "Confirm purchase %@ for ¥%@?";
 "subscription_success" = "Subscription Successful";

@@ -9,6 +9,7 @@ website-deploy/
 ├── index.html              # 官网首页
 ├── user-agreement.html     # 用户协议页面
 ├── privacy-policy.html     # 隐私政策页面
+├── auto-renew-agreement.html # 自动续费服务协议页面
 ├── images/                 # 图片资源目录
 │   ├── screenshot1.png
 │   ├── screenshot2.png
@@ -43,6 +44,7 @@ rsync -avz website-deploy/ user@your-server:/path/to/website/
 2. 检查链接：
    - 用户协议：`https://hujiaofenwritingcat.top/user-agreement.html`
    - 隐私政策：`https://hujiaofenwritingcat.top/privacy-policy.html`
+   - 自动续费服务协议：`https://hujiaofenwritingcat.top/auto-renew-agreement.html`
 3. 确认图片正常显示
 4. 测试移动端访问
 
