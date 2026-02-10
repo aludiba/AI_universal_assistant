@@ -7,13 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		3467C6945C66A42C7950FE19 /* libPods-AIUniversalAssistant.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 472BCD2178CA8F142C63F76E /* libPods-AIUniversalAssistant.a */; };
+		BFC866A8B7F7FCEE24759E6F /* Pods_AIUniversalAssistant.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 794A82FADD1BC5675B608A2A /* Pods_AIUniversalAssistant.framework */; };
 		E6A392202F15272100965C73 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E6A3921F2F15272100965C73 /* StoreKit.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		18A161382E8BD07A00E13FB0 /* AIUniversalAssistant.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AIUniversalAssistant.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		472BCD2178CA8F142C63F76E /* libPods-AIUniversalAssistant.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-AIUniversalAssistant.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		794A82FADD1BC5675B608A2A /* Pods_AIUniversalAssistant.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_AIUniversalAssistant.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		AAF11542F303D1FA17FD668E /* Pods-AIUniversalAssistant.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AIUniversalAssistant.release.xcconfig"; path = "Target Support Files/Pods-AIUniversalAssistant/Pods-AIUniversalAssistant.release.xcconfig"; sourceTree = "<group>"; };
 		E2506EABE9F963F0787CCC33 /* Pods-AIUniversalAssistant.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AIUniversalAssistant.debug.xcconfig"; path = "Target Support Files/Pods-AIUniversalAssistant/Pods-AIUniversalAssistant.debug.xcconfig"; sourceTree = "<group>"; };
 		E6A3921F2F15272100965C73 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
@@ -45,8 +45,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				3467C6945C66A42C7950FE19 /* libPods-AIUniversalAssistant.a in Frameworks */,
 				E6A392202F15272100965C73 /* StoreKit.framework in Frameworks */,
+				BFC866A8B7F7FCEE24759E6F /* Pods_AIUniversalAssistant.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -75,7 +75,7 @@
 			isa = PBXGroup;
 			children = (
 				E6A3921F2F15272100965C73 /* StoreKit.framework */,
-				472BCD2178CA8F142C63F76E /* libPods-AIUniversalAssistant.a */,
+				794A82FADD1BC5675B608A2A /* Pods_AIUniversalAssistant.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -101,7 +101,6 @@
 				18A161352E8BD07A00E13FB0 /* Frameworks */,
 				18A161362E8BD07A00E13FB0 /* Resources */,
 				945866655D1D9DECEC4191F8 /* [CP] Copy Pods Resources */,
-				AB56DACD7A896CC3EE933BB2 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -131,14 +130,14 @@
 				};
 			};
 			buildConfigurationList = 18A161332E8BD07A00E13FB0 /* Build configuration list for PBXProject "AIUniversalAssistant" */;
-			developmentRegion = en;
+			developmentRegion = "zh-Hans";
 			hasScannedForEncodings = 0;
 			knownRegions = (
-				en,
 				Base,
 				"zh-Hans",
-				"en-GB",
+				en,
 				ja,
+				"en-GB",
 			);
 			mainGroup = 18A1612F2E8BD07A00E13FB0;
 			minimizedProjectReferenceProxies = 1;
@@ -171,30 +170,17 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-AIUniversalAssistant/Pods-AIUniversalAssistant-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-AIUniversalAssistant/Pods-AIUniversalAssistant-resources-${CONFIGURATION}-output-files.xcfilelist",
 			);
+			outputPaths = (
+			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-AIUniversalAssistant/Pods-AIUniversalAssistant-resources.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		AB56DACD7A896CC3EE933BB2 /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-AIUniversalAssistant/Pods-AIUniversalAssistant-frameworks-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-AIUniversalAssistant/Pods-AIUniversalAssistant-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-AIUniversalAssistant/Pods-AIUniversalAssistant-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		BABEA38DAA4B49F80CB2A622 /* [CP] Check Pods Manifest.lock */ = {
@@ -243,7 +229,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = B7L3AJ5DV4;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
@@ -254,27 +240,31 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "AI创作喵";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "用于广告展示和内容加载";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "保存图片到相册";
-				INFOPLIST_KEY_NSUserTrackingUsageDescription = "为了向您提供更好的广告体验，请允许应用跟踪您的活动";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UIStatusBarStyle = "";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.hujiaofen.writingCat;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = AIUniversalAssistant_dev;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -287,9 +277,9 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = AIUniversalAssistant/AIUniversalAssistant.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = B7L3AJ5DV4;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
@@ -300,26 +290,30 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "AI创作喵";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "用于广告展示和内容加载";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "保存图片到相册";
-				INFOPLIST_KEY_NSUserTrackingUsageDescription = "为了向您提供更好的广告体验，请允许应用跟踪您的活动";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UIStatusBarStyle = "";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.hujiaofen.writingCat;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = AIUniversalAssistant_dev;
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = AIUniversalAssistant_dis;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};

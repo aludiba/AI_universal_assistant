@@ -51,7 +51,7 @@
 
 // 清除购买数据功能开关（开发/测试时设为1，发布时必须设为0）
 // 警告：此功能会清除所有订阅和字数包数据，仅用于测试！
-#define AIUA_ENABLE_CLEAR_PURCHASE_DATA 1
+#define AIUA_ENABLE_CLEAR_PURCHASE_DATA 0
 
 // ========== IAP产品ID配置 ==========
 // 说明：
