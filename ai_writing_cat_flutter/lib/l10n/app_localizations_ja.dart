@@ -370,6 +370,33 @@ class AppLocalizationsJa extends AppLocalizations {
   String get essay => '作文';
 
   @override
+  String get medium => '標準';
+
+  @override
+  String get longer => '長め';
+
+  @override
+  String get selectStyle => 'スタイルを選択';
+
+  @override
+  String get expansionLength => '拡張の長さ';
+
+  @override
+  String get targetLanguage => '翻訳先の言語';
+
+  @override
+  String get generatedContentTitle => '生成内容';
+
+  @override
+  String get generatedContentPlaceholder => '生成結果がここに表示されます';
+
+  @override
+  String get stopGenerating => '停止';
+
+  @override
+  String get overwriteOriginal => '原文を上書き';
+
+  @override
   String get words => '文字';
 
   @override

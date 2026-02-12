@@ -790,6 +790,60 @@ abstract class AppLocalizations {
   /// **'作文'**
   String get essay;
 
+  /// No description provided for @medium.
+  ///
+  /// In zh, this message translates to:
+  /// **'适中'**
+  String get medium;
+
+  /// No description provided for @longer.
+  ///
+  /// In zh, this message translates to:
+  /// **'更长'**
+  String get longer;
+
+  /// No description provided for @selectStyle.
+  ///
+  /// In zh, this message translates to:
+  /// **'选择风格'**
+  String get selectStyle;
+
+  /// No description provided for @expansionLength.
+  ///
+  /// In zh, this message translates to:
+  /// **'扩写长度'**
+  String get expansionLength;
+
+  /// No description provided for @targetLanguage.
+  ///
+  /// In zh, this message translates to:
+  /// **'目标语言'**
+  String get targetLanguage;
+
+  /// No description provided for @generatedContentTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'生成内容'**
+  String get generatedContentTitle;
+
+  /// No description provided for @generatedContentPlaceholder.
+  ///
+  /// In zh, this message translates to:
+  /// **'生成结果会显示在这里'**
+  String get generatedContentPlaceholder;
+
+  /// No description provided for @stopGenerating.
+  ///
+  /// In zh, this message translates to:
+  /// **'停止'**
+  String get stopGenerating;
+
+  /// No description provided for @overwriteOriginal.
+  ///
+  /// In zh, this message translates to:
+  /// **'覆盖原文'**
+  String get overwriteOriginal;
+
   /// No description provided for @words.
   ///
   /// In zh, this message translates to:

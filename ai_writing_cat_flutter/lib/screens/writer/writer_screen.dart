@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../constants/app_colors.dart';
 import '../../l10n/app_localizations.dart';
@@ -15,28 +16,89 @@ enum WritingType {
   translate;
 }
 
+class WriterScreenState {
+  final List<WritingCategory> categories;
+  final bool isLoading;
+  final bool hasText;
+
+  const WriterScreenState({
+    required this.categories,
+    required this.isLoading,
+    required this.hasText,
+  });
+
+  factory WriterScreenState.initial() {
+    return const WriterScreenState(
+      categories: <WritingCategory>[],
+      isLoading: true,
+      hasText: false,
+    );
+  }
+
+  WriterScreenState copyWith({
+    List<WritingCategory>? categories,
+    bool? isLoading,
+    bool? hasText,
+  }) {
+    return WriterScreenState(
+      categories: categories ?? this.categories,
+      isLoading: isLoading ?? this.isLoading,
+      hasText: hasText ?? this.hasText,
+    );
+  }
+}
+
+class WriterScreenNotifier extends Notifier<WriterScreenState> {
+  final DataManager _dataManager = DataManager();
+
+  @override
+  WriterScreenState build() {
+    return WriterScreenState.initial();
+  }
+
+  Future<void> loadCategories() async {
+    state = state.copyWith(isLoading: true);
+    try {
+      await _dataManager.init();
+      final categories = await _dataManager.loadWritingCategories();
+      state = state.copyWith(categories: categories, isLoading: false);
+    } catch (e) {
+      debugPrint('Error loading writing categories: $e');
+      state = state.copyWith(isLoading: false);
+    }
+  }
+
+  void updateHasText(bool hasText) {
+    if (state.hasText != hasText) {
+      state = state.copyWith(hasText: hasText);
+    }
+  }
+}
+
+final writerScreenProvider =
+    NotifierProvider.autoDispose<WriterScreenNotifier, WriterScreenState>(
+  WriterScreenNotifier.new,
+);
+
 /// 写作页面 - 像素级还原 iOS 项目的 AIUAWriterViewController
-class WriterScreen extends StatefulWidget {
+class WriterScreen extends ConsumerStatefulWidget {
   const WriterScreen({super.key});
 
   @override
-  State<WriterScreen> createState() => _WriterScreenState();
+  ConsumerState<WriterScreen> createState() => _WriterScreenState();
 }
 
-class _WriterScreenState extends State<WriterScreen> {
+class _WriterScreenState extends ConsumerState<WriterScreen> {
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
-  final DataManager _dataManager = DataManager();
-  
-  List<WritingCategory> _categories = [];
-  bool _isLoading = true;
-  bool _hasText = false;
 
   @override
   void initState() {
     super.initState();
-    _loadCategories();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(writerScreenProvider.notifier).loadCategories();
+    });
     _textController.addListener(_onTextChanged);
   }
 
@@ -49,41 +111,13 @@ class _WriterScreenState extends State<WriterScreen> {
     super.dispose();
   }
 
-  Future<void> _loadCategories() async {
-    try {
-      // 确保 DataManager 已初始化
-      await _dataManager.init();
-      final categories = await _dataManager.loadWritingCategories();
-      if (mounted) {
-        setState(() {
-          _categories = categories;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      debugPrint('Error loading writing categories: $e');
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
   void _onTextChanged() {
-    final hasText = _textController.text.isNotEmpty;
-    if (hasText != _hasText) {
-      setState(() {
-        _hasText = hasText;
-      });
-    }
+    ref.read(writerScreenProvider.notifier).updateHasText(_textController.text.isNotEmpty);
   }
 
   void _clearText() {
     _textController.clear();
-    setState(() {
-      _hasText = false;
-    });
+    ref.read(writerScreenProvider.notifier).updateHasText(false);
   }
 
   void _startCreating() {
@@ -102,9 +136,7 @@ class _WriterScreenState extends State<WriterScreen> {
   void _handleCategoryItemTap(WritingCategoryItem item) {
     final fullText = '${item.title}：${item.content}';
     _textController.text = fullText;
-    setState(() {
-      _hasText = true;
-    });
+    ref.read(writerScreenProvider.notifier).updateHasText(true);
     _focusNode.requestFocus();
     
     // 滚动到顶部
@@ -119,6 +151,7 @@ class _WriterScreenState extends State<WriterScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final state = ref.watch(writerScreenProvider);
     
     return Scaffold(
       backgroundColor: isDark 
@@ -139,7 +172,7 @@ class _WriterScreenState extends State<WriterScreen> {
           ),
         ],
       ),
-      body: _isLoading
+      body: state.isLoading
           ? const Center(child: CircularProgressIndicator())
           : GestureDetector(
               onTap: () => FocusScope.of(context).unfocus(),
@@ -147,7 +180,7 @@ class _WriterScreenState extends State<WriterScreen> {
               child: ListView.builder(
                 controller: _scrollController,
                 padding: EdgeInsets.zero,
-                itemCount: _categories.length + 2, // +1 for input cell, +1 for divider
+                itemCount: state.categories.length + 2, // +1 for input cell, +1 for divider
                 itemBuilder: (context, index) {
                   if (index == 0) {
                     return _buildInputCell(context, l10n, isDark);
@@ -159,7 +192,7 @@ class _WriterScreenState extends State<WriterScreen> {
                       color: AppColors.getDivider(context),
                     );
                   } else {
-                    return _buildCategorySection(context, _categories[index - 2], isDark);
+                    return _buildCategorySection(context, state.categories[index - 2], isDark);
                   }
                 },
               ),
@@ -210,7 +243,7 @@ class _WriterScreenState extends State<WriterScreen> {
                 ),
               ),
               // 清空按钮
-              if (_hasText)
+              if (ref.watch(writerScreenProvider).hasText)
                 Positioned(
                   right: 8,
                   bottom: 8,
@@ -237,9 +270,9 @@ class _WriterScreenState extends State<WriterScreen> {
           SizedBox(
             height: 44,
             child: ElevatedButton(
-              onPressed: _hasText ? _startCreating : null,
+              onPressed: ref.watch(writerScreenProvider).hasText ? _startCreating : null,
               style: ElevatedButton.styleFrom(
-                backgroundColor: _hasText 
+                backgroundColor: ref.watch(writerScreenProvider).hasText 
                     ? AppColors.primary 
                     : const Color(0xFFCCCCCC),
                 disabledBackgroundColor: const Color(0xFFCCCCCC),

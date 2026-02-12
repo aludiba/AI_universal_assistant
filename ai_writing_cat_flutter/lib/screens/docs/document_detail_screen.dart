@@ -1,11 +1,173 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../constants/app_colors.dart';
+import '../../l10n/app_localizations.dart';
 import '../../providers/document_provider.dart';
-import '../../constants/app_styles.dart';
+import '../../models/document_model.dart';
+import '../../services/data_manager.dart';
+import '../../services/deepseek_service.dart';
+
+enum DocumentToolbarAction {
+  continueWrite,
+  rewrite,
+  expand,
+  translate,
+}
+
+enum DocumentBottomPanel {
+  none,
+  selection,
+  generation,
+}
+
+class DocumentDetailUiState {
+  final bool isLoading;
+  final bool notFound;
+  final bool isDirty;
+  final bool isSaving;
+  final DocumentBottomPanel panel;
+  final DocumentToolbarAction? action;
+  final String selectedStyle;
+  final String selectedLength;
+  final String selectedLanguage;
+  final bool isGenerating;
+  final String generatedContent;
+
+  const DocumentDetailUiState({
+    required this.isLoading,
+    required this.notFound,
+    required this.isDirty,
+    required this.isSaving,
+    required this.panel,
+    required this.action,
+    required this.selectedStyle,
+    required this.selectedLength,
+    required this.selectedLanguage,
+    required this.isGenerating,
+    required this.generatedContent,
+  });
+
+  factory DocumentDetailUiState.initial() {
+    return const DocumentDetailUiState(
+      isLoading: true,
+      notFound: false,
+      isDirty: false,
+      isSaving: false,
+      panel: DocumentBottomPanel.none,
+      action: null,
+      selectedStyle: 'general',
+      selectedLength: 'medium',
+      selectedLanguage: 'english',
+      isGenerating: false,
+      generatedContent: '',
+    );
+  }
+
+  DocumentDetailUiState copyWith({
+    bool? isLoading,
+    bool? notFound,
+    bool? isDirty,
+    bool? isSaving,
+    DocumentBottomPanel? panel,
+    DocumentToolbarAction? action,
+    bool clearAction = false,
+    String? selectedStyle,
+    String? selectedLength,
+    String? selectedLanguage,
+    bool? isGenerating,
+    String? generatedContent,
+  }) {
+    return DocumentDetailUiState(
+      isLoading: isLoading ?? this.isLoading,
+      notFound: notFound ?? this.notFound,
+      isDirty: isDirty ?? this.isDirty,
+      isSaving: isSaving ?? this.isSaving,
+      panel: panel ?? this.panel,
+      action: clearAction ? null : (action ?? this.action),
+      selectedStyle: selectedStyle ?? this.selectedStyle,
+      selectedLength: selectedLength ?? this.selectedLength,
+      selectedLanguage: selectedLanguage ?? this.selectedLanguage,
+      isGenerating: isGenerating ?? this.isGenerating,
+      generatedContent: generatedContent ?? this.generatedContent,
+    );
+  }
+}
+
+class DocumentDetailUiNotifier extends Notifier<DocumentDetailUiState> {
+  @override
+  DocumentDetailUiState build() {
+    return DocumentDetailUiState.initial();
+  }
+
+  void finishLoading({required bool notFound}) {
+    state = state.copyWith(isLoading: false, notFound: notFound);
+  }
+
+  void setDirty(bool value) {
+    if (state.isDirty != value) {
+      state = state.copyWith(isDirty: value);
+    }
+  }
+
+  void setSaving(bool value) {
+    state = state.copyWith(isSaving: value);
+  }
+
+  void openSelection(DocumentToolbarAction action) {
+    state = state.copyWith(action: action, panel: DocumentBottomPanel.selection);
+  }
+
+  void showGeneration() {
+    state = state.copyWith(panel: DocumentBottomPanel.generation);
+  }
+
+  void hidePanels() {
+    state = state.copyWith(panel: DocumentBottomPanel.none, clearAction: true);
+  }
+
+  void selectStyle(String value) {
+    state = state.copyWith(selectedStyle: value);
+  }
+
+  void selectLength(String value) {
+    state = state.copyWith(selectedLength: value);
+  }
+
+  void selectLanguage(String value) {
+    state = state.copyWith(selectedLanguage: value);
+  }
+
+  void startGenerating() {
+    state = state.copyWith(
+      isGenerating: true,
+      panel: DocumentBottomPanel.generation,
+      generatedContent: '',
+    );
+  }
+
+  void finishGenerating(String content) {
+    state = state.copyWith(
+      isGenerating: false,
+      panel: DocumentBottomPanel.generation,
+      generatedContent: content,
+    );
+  }
+
+  void stopGenerating() {
+    state = state.copyWith(isGenerating: false);
+  }
+}
+
+final documentDetailUiProvider =
+    NotifierProvider.autoDispose<DocumentDetailUiNotifier, DocumentDetailUiState>(
+  DocumentDetailUiNotifier.new,
+);
 
 /// 文档详情页面
-class DocumentDetailScreen extends StatelessWidget {
+class DocumentDetailScreen extends ConsumerStatefulWidget {
   final String documentId;
   
   const DocumentDetailScreen({
@@ -14,107 +176,579 @@ class DocumentDetailScreen extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final provider = context.watch<DocumentProvider>();
-    final document = provider.getDocumentById(documentId);
-    
-    // 初始化详情状态
-    if (document != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        provider.initDocumentDetail(documentId);
-      });
+  ConsumerState<DocumentDetailScreen> createState() => _DocumentDetailScreenState();
+}
+
+class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
+  final DataManager _dataManager = DataManager();
+  final DeepSeekService _deepSeekService = DeepSeekService();
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _contentController = TextEditingController();
+  final FocusNode _titleFocusNode = FocusNode();
+  final FocusNode _contentFocusNode = FocusNode();
+  DocumentModel? _currentDocument;
+  bool _saveInProgress = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController.addListener(_onTextChanged);
+    _contentController.addListener(_onTextChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _initializeDocument());
+  }
+
+  @override
+  void dispose() {
+    _deepSeekService.cancelCurrentRequest();
+    _titleController.removeListener(_onTextChanged);
+    _contentController.removeListener(_onTextChanged);
+    _titleController.dispose();
+    _contentController.dispose();
+    _titleFocusNode.dispose();
+    _contentFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _onTextChanged() {
+    ref.read(documentDetailUiProvider.notifier).setDirty(true);
+  }
+
+  Future<void> _initializeDocument() async {
+    final uiNotifier = ref.read(documentDetailUiProvider.notifier);
+    try {
+      final provider = context.read<DocumentProvider>();
+      DocumentModel? document = provider.getDocumentById(widget.documentId);
+      document ??= await _dataManager.getDocumentById(widget.documentId);
+
+      if (!mounted) return;
+      if (document == null) {
+        uiNotifier.finishLoading(notFound: true);
+        return;
+      }
+
+      _currentDocument = document;
+      _titleController.text = document.title;
+      _contentController.text = document.content;
+      uiNotifier.setDirty(false);
+      uiNotifier.finishLoading(notFound: false);
+    } catch (_) {
+      if (!mounted) return;
+      uiNotifier.finishLoading(notFound: true);
     }
-    
-    if (document == null) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('文档详情'),
-        ),
-        body: const Center(
-          child: Text('文档不存在'),
-        ),
+  }
+
+  Future<void> _saveIfNeeded({bool showMessage = false}) async {
+    if (_saveInProgress) return;
+    final uiState = ref.read(documentDetailUiProvider);
+    if (!uiState.isDirty || _currentDocument == null) return;
+
+    _saveInProgress = true;
+    final uiNotifier = ref.read(documentDetailUiProvider.notifier);
+    uiNotifier.setSaving(true);
+    try {
+      if (_isDocumentEmpty()) {
+        await context.read<DocumentProvider>().deleteDocument(_currentDocument!.id);
+      } else {
+        final updated = _currentDocument!.copyWith(
+          title: _titleController.text.trim(),
+          content: _contentController.text,
+          updatedAt: DateTime.now(),
+        );
+        await context.read<DocumentProvider>().updateDocument(updated);
+        _currentDocument = updated;
+      }
+      uiNotifier.setDirty(false);
+      if (mounted && showMessage) {
+        final l10n = AppLocalizations.of(context)!;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.savedSuccess)),
+        );
+      }
+    } catch (_) {
+      if (mounted && showMessage) {
+        final l10n = AppLocalizations.of(context)!;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.failure)),
+        );
+      }
+    } finally {
+      uiNotifier.setSaving(false);
+      _saveInProgress = false;
+    }
+  }
+
+  bool _isDocumentEmpty() {
+    final title = _titleController.text.trim();
+    final content = _contentController.text.trim();
+    return title.isEmpty && content.isEmpty;
+  }
+
+  Future<void> _handleExit() async {
+    if (_currentDocument == null) return;
+    if (_isDocumentEmpty()) {
+      await context.read<DocumentProvider>().deleteDocument(_currentDocument!.id);
+      ref.read(documentDetailUiProvider.notifier).setDirty(false);
+      return;
+    }
+    await _saveIfNeeded();
+  }
+
+  Future<void> _showMoreActions() async {
+    final doc = _currentDocument;
+    if (doc == null) return;
+    final l10n = AppLocalizations.of(context)!;
+
+    final fullTitle = _titleController.text.trim();
+    final displayTitle = fullTitle.isEmpty ? l10n.untitledDocument : fullTitle;
+    final content = _contentController.text;
+    final docProvider = context.read<DocumentProvider>();
+
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: Text(l10n.export),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  await _dataManager.exportDocument(displayTitle, content);
+                },
+              ),
+              ListTile(
+                title: Text(l10n.copy),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  await Clipboard.setData(
+                    ClipboardData(
+                      text: '$displayTitle\n${content.isEmpty ? '' : '\n$content'}',
+                    ),
+                  );
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(l10n.copiedToClipboard)),
+                  );
+                },
+              ),
+              ListTile(
+                title: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  final ok = await _confirmDelete();
+                  if (!ok) return;
+                  await docProvider.deleteDocument(doc.id);
+                  if (!mounted) return;
+                  if (context.canPop()) {
+                    context.pop();
+                  }
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<bool> _confirmDelete() async {
+    final l10n = AppLocalizations.of(context)!;
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.deleteConfirm),
+        content: Text(l10n.deleteDocumentPrompt(_titleController.text.trim().isEmpty ? l10n.untitledDocument : _titleController.text.trim())),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+    return result == true;
+  }
+
+  void _onToolbarAction(DocumentToolbarAction action) {
+    final l10n = AppLocalizations.of(context)!;
+    if (_contentController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.enterMainText)),
+      );
+      return;
+    }
+    _dismissKeyboard();
+    ref.read(documentDetailUiProvider.notifier).openSelection(action);
+  }
+
+  Future<void> _startGeneration() async {
+    final uiNotifier = ref.read(documentDetailUiProvider.notifier);
+    final uiState = ref.read(documentDetailUiProvider);
+    final action = uiState.action;
+    if (action == null) return;
+
+    _dismissKeyboard();
+    uiNotifier.startGenerating();
+
+    try {
+      final baseContent = _contentController.text.trim();
+      var result = '';
+      switch (action) {
+        case DocumentToolbarAction.continueWrite:
+          result = await _deepSeekService.continueWriting(
+            content: baseContent,
+            style: uiState.selectedStyle,
+          );
+          break;
+        case DocumentToolbarAction.rewrite:
+          result = await _deepSeekService.rewriteText(
+            content: baseContent,
+            style: uiState.selectedStyle,
+          );
+          break;
+        case DocumentToolbarAction.expand:
+          result = await _deepSeekService.expandText(
+            content: baseContent,
+            length: uiState.selectedLength,
+            style: uiState.selectedStyle,
+          );
+          break;
+        case DocumentToolbarAction.translate:
+          result = await _deepSeekService.translateText(
+            content: baseContent,
+            targetLanguage: uiState.selectedLanguage,
+          );
+          break;
+      }
+      if (result.isEmpty || !mounted) return;
+      uiNotifier.finishGenerating(result);
+    } catch (e) {
+      if (!mounted) return;
+      uiNotifier.stopGenerating();
+      final msg = e.toString();
+      if (!msg.contains('ClientException')) {
+        final l10n = AppLocalizations.of(context)!;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${l10n.creationFailed}: $msg')),
+        );
+      }
+    }
+  }
+
+  void _stopGeneration() {
+    _deepSeekService.cancelCurrentRequest();
+    ref.read(documentDetailUiProvider.notifier).stopGenerating();
+  }
+
+  void _insertGeneratedText() {
+    final uiState = ref.read(documentDetailUiProvider);
+    if (uiState.generatedContent.isEmpty) return;
+
+    final selectedRange = _contentController.selection;
+    if (selectedRange.isValid && !selectedRange.isCollapsed) {
+      final newText = _contentController.text.replaceRange(
+        selectedRange.start,
+        selectedRange.end,
+        uiState.generatedContent,
+      );
+      _contentController.text = newText;
+      _contentController.selection = TextSelection.collapsed(
+        offset: (selectedRange.start + uiState.generatedContent.length).toInt(),
+      );
+    } else {
+      final base = _contentController.text;
+      _contentController.text = base.isEmpty
+          ? uiState.generatedContent
+          : '$base\n${uiState.generatedContent}';
+      _contentController.selection = TextSelection.collapsed(
+        offset: _contentController.text.length,
       );
     }
-    
-    final titleController = provider.getDetailController(documentId, 'title');
-    final contentController = provider.getDetailController(documentId, 'content');
-    final hasChanges = provider.hasDocumentChanges(documentId);
-    
+    ref.read(documentDetailUiProvider.notifier).setDirty(true);
+  }
+
+  void _overwriteWithGeneratedText() {
+    final uiState = ref.read(documentDetailUiProvider);
+    if (uiState.generatedContent.isEmpty) return;
+    _contentController.text = uiState.generatedContent;
+    _contentController.selection = TextSelection.collapsed(
+      offset: _contentController.text.length,
+    );
+    ref.read(documentDetailUiProvider.notifier).setDirty(true);
+  }
+
+  void _dismissKeyboard() {
+    FocusScope.of(context).unfocus();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final uiState = ref.watch(documentDetailUiProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    if (uiState.isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (uiState.notFound) {
+      return Scaffold(
+        appBar: AppBar(title: Text(l10n.documentDetails)),
+        body: Center(child: Text(l10n.documentNotFound)),
+      );
+    }
+
     return PopScope(
-      onPopInvokedWithResult: (didPop, result) async {
-        if (didPop && hasChanges) {
-          await provider.saveDocumentDetail(documentId);
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) {
+          await _handleExit();
         }
       },
       child: Scaffold(
+        backgroundColor: isDark ? AppColors.backgroundDark : Colors.white,
+        resizeToAvoidBottomInset: false,
         appBar: AppBar(
-          title: const Text('编辑文档'),
+          title: Text(l10n.editDocument),
           actions: [
-            IconButton(
-              icon: const Icon(Icons.copy),
-              onPressed: () => _copyContent(context, contentController),
-            ),
-            IconButton(
-              icon: const Icon(Icons.share),
-              onPressed: () => _shareDocument(context),
-            ),
-            if (hasChanges)
+            if (uiState.isSaving)
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12),
+                child: Center(
+                  child: SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+              )
+            else if (uiState.isDirty)
               IconButton(
-                icon: const Icon(Icons.save),
-                onPressed: () => _saveDocument(context, provider),
+                icon: const Icon(Icons.save_outlined),
+                onPressed: () => _saveIfNeeded(showMessage: true),
+              ),
+            IconButton(
+              icon: const Icon(Icons.more_horiz),
+              onPressed: _showMoreActions,
+            ),
+          ],
+        ),
+        bottomNavigationBar: _buildToolbar(context, uiState),
+        body: Stack(
+          children: [
+            GestureDetector(
+              onTap: _dismissKeyboard,
+              behavior: HitTestBehavior.translucent,
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                    child: TextField(
+                      controller: _titleController,
+                      focusNode: _titleFocusNode,
+                      maxLines: 2,
+                      minLines: 1,
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.getTextPrimary(context),
+                      ),
+                      decoration: InputDecoration(
+                        isDense: true,
+                        filled: false,
+                        border: InputBorder.none,
+                        hintText: l10n.enterTitle,
+                        hintStyle: TextStyle(color: AppColors.getTextSecondary(context)),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    height: 1,
+                    color: AppColors.getDivider(context),
+                  ),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                      child: TextField(
+                        controller: _contentController,
+                        focusNode: _contentFocusNode,
+                        maxLines: null,
+                        keyboardType: TextInputType.multiline,
+                        style: TextStyle(
+                          fontSize: 16,
+                          height: 1.5,
+                          color: AppColors.getTextPrimary(context),
+                        ),
+                        decoration: InputDecoration(
+                          isDense: true,
+                          filled: false,
+                          border: InputBorder.none,
+                          hintText: l10n.enterMainText,
+                          hintStyle: TextStyle(color: AppColors.getTextSecondary(context)),
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (uiState.panel == DocumentBottomPanel.selection)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: _buildSelectionPanel(context, uiState),
+              ),
+            if (uiState.panel == DocumentBottomPanel.generation)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: _buildGenerationPanel(context, uiState),
               ),
           ],
         ),
-        body: ListView(
-          padding: const EdgeInsets.all(AppStyles.paddingMedium),
+      ),
+    );
+  }
+
+  Widget _buildToolbar(BuildContext context, DocumentDetailUiState uiState) {
+    final l10n = AppLocalizations.of(context)!;
+    final items = <({IconData icon, String label, DocumentToolbarAction action})>[
+      (icon: Icons.edit_note, label: l10n.continueWriting, action: DocumentToolbarAction.continueWrite),
+      (icon: Icons.auto_fix_high, label: l10n.rewrite, action: DocumentToolbarAction.rewrite),
+      (icon: Icons.add_chart, label: l10n.expandWriting, action: DocumentToolbarAction.expand),
+      (icon: Icons.translate, label: l10n.translate, action: DocumentToolbarAction.translate),
+    ];
+
+    return SafeArea(
+      top: false,
+      child: Container(
+        height: 60,
+        color: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF252525)
+            : const Color(0xFFF2F2F2),
+        child: Row(
+          children: items
+              .map(
+                (item) => Expanded(
+                  child: InkWell(
+                    onTap: () => _onToolbarAction(item.action),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Icon(
+                          item.icon,
+                          size: 18,
+                          color: uiState.action == item.action
+                              ? AppColors.primary
+                              : AppColors.getTextPrimary(context),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          item.label,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: uiState.action == item.action
+                                ? AppColors.primary
+                                : AppColors.getTextPrimary(context),
+                            fontWeight: uiState.action == item.action
+                                ? FontWeight.w600
+                                : FontWeight.w400,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              )
+              .toList(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSelectionPanel(BuildContext context, DocumentDetailUiState uiState) {
+    final l10n = AppLocalizations.of(context)!;
+    final notifier = ref.read(documentDetailUiProvider.notifier);
+    final action = uiState.action;
+    String title = l10n.selectStyle;
+    List<String> options = const <String>['general', 'news', 'academic', 'official', 'novel', 'essay'];
+    String selected = uiState.selectedStyle;
+    void Function(String) onSelect = notifier.selectStyle;
+
+    if (action == DocumentToolbarAction.expand) {
+      title = l10n.expansionLength;
+      options = const <String>['medium', 'longer'];
+      selected = uiState.selectedLength;
+      onSelect = notifier.selectLength;
+    } else if (action == DocumentToolbarAction.translate) {
+      title = l10n.targetLanguage;
+      options = const <String>['english', 'chinese', 'japanese'];
+      selected = uiState.selectedLanguage;
+      onSelect = notifier.selectLanguage;
+    }
+
+    return Material(
+      color: Theme.of(context).brightness == Brightness.dark
+          ? const Color(0xFF202020)
+          : const Color(0xFFFAFAFA),
+      elevation: 8,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 标题输入
-            TextField(
-              controller: titleController,
-              decoration: const InputDecoration(
-                hintText: '请输入标题',
-                border: InputBorder.none,
-              ),
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            
-            const Divider(),
-            
-            // 内容输入
-            TextField(
-              controller: contentController,
-              decoration: const InputDecoration(
-                hintText: '请输入内容',
-                border: InputBorder.none,
-              ),
-              maxLines: null,
-              keyboardType: TextInputType.multiline,
-            ),
-            
-            const SizedBox(height: AppStyles.paddingLarge),
-            
-            // 统计信息
-            Container(
-              padding: const EdgeInsets.all(AppStyles.paddingMedium),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(AppStyles.radiusMedium),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildStatItem(
-                    '字数',
-                    contentController.text.length.toString(),
+            Row(
+              children: [
+                IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                  onPressed: notifier.hidePanels,
+                  icon: const Icon(Icons.chevron_left),
+                ),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.getTextPrimary(context),
                   ),
-                  _buildStatItem(
-                    '段落',
-                    contentController.text.split('\n').length.toString(),
-                  ),
-                ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: options
+                  .map(
+                    (item) => ChoiceChip(
+                      label: Text(_localizedOption(l10n, item)),
+                      selected: selected == item,
+                      onSelected: (_) => onSelect(item),
+                    ),
+                  )
+                  .toList(),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              height: 44,
+              child: ElevatedButton(
+                onPressed: _startGeneration,
+                child: Text(l10n.generate),
               ),
             ),
           ],
@@ -122,50 +756,132 @@ class DocumentDetailScreen extends StatelessWidget {
       ),
     );
   }
-  
-  Widget _buildStatItem(String label, String value) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
+
+  Widget _buildGenerationPanel(BuildContext context, DocumentDetailUiState uiState) {
+    final l10n = AppLocalizations.of(context)!;
+    final showOverwrite = uiState.action == DocumentToolbarAction.rewrite ||
+        uiState.action == DocumentToolbarAction.expand ||
+        uiState.action == DocumentToolbarAction.translate;
+    final canOperate = uiState.generatedContent.isNotEmpty && !uiState.isGenerating;
+
+    return Material(
+      color: Theme.of(context).brightness == Brightness.dark
+          ? const Color(0xFF202020)
+          : const Color(0xFFFAFAFA),
+      elevation: 8,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                  onPressed: uiState.isGenerating
+                      ? null
+                      : () => ref.read(documentDetailUiProvider.notifier).openSelection(uiState.action!),
+                  icon: const Icon(Icons.chevron_left),
+                ),
+                Text(
+                  l10n.generatedContentTitle,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.getTextPrimary(context),
+                  ),
+                ),
+                const Spacer(),
+                if (uiState.isGenerating)
+                  TextButton.icon(
+                    onPressed: _stopGeneration,
+                    icon: const Icon(Icons.stop_circle_outlined, color: Colors.red),
+                    label: Text(l10n.stopGenerating, style: const TextStyle(color: Colors.red)),
+                  ),
+              ],
+            ),
+            Container(
+              constraints: const BoxConstraints(minHeight: 96, maxHeight: 150),
+              decoration: BoxDecoration(
+                color: AppColors.getCardBackground(context),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.getDivider(context)),
+              ),
+              padding: const EdgeInsets.all(10),
+              child: SingleChildScrollView(
+                child: Text(
+                  uiState.generatedContent.isEmpty
+                      ? (uiState.isGenerating ? l10n.generatingShort : l10n.generatedContentPlaceholder)
+                      : uiState.generatedContent,
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.45,
+                    color: AppColors.getTextPrimary(context),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: uiState.isGenerating ? null : _startGeneration,
+                    child: Text(l10n.regenerate),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: canOperate ? _insertGeneratedText : null,
+                    child: Text(l10n.insert),
+                  ),
+                ),
+                if (showOverwrite) ...[
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: canOperate ? _overwriteWithGeneratedText : null,
+                      child: Text(l10n.overwriteOriginal),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
         ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.grey[600],
-            fontSize: 14,
-          ),
-        ),
-      ],
+      ),
     );
   }
-  
-  Future<void> _saveDocument(BuildContext context, DocumentProvider provider) async {
-    await provider.saveDocumentDetail(documentId);
-    
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('保存成功')),
-      );
+
+  String _localizedOption(AppLocalizations l10n, String key) {
+    switch (key) {
+      case 'general':
+        return l10n.general;
+      case 'news':
+        return l10n.news;
+      case 'academic':
+        return l10n.academic;
+      case 'official':
+        return l10n.official;
+      case 'novel':
+        return l10n.novel;
+      case 'essay':
+        return l10n.essay;
+      case 'medium':
+        return l10n.medium;
+      case 'longer':
+        return l10n.longer;
+      case 'english':
+        return l10n.english;
+      case 'chinese':
+        return l10n.chinese;
+      case 'japanese':
+        return l10n.japanese;
+      default:
+        return key;
     }
-  }
-  
-  void _copyContent(BuildContext context, TextEditingController contentController) {
-    Clipboard.setData(ClipboardData(text: contentController.text));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('已复制到剪贴板')),
-    );
-  }
-  
-  void _shareDocument(BuildContext context) {
-    // TODO: 实现分享功能
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('分享功能开发中')),
-    );
   }
 }

@@ -369,6 +369,33 @@ class AppLocalizationsZh extends AppLocalizations {
   String get essay => '作文';
 
   @override
+  String get medium => '适中';
+
+  @override
+  String get longer => '更长';
+
+  @override
+  String get selectStyle => '选择风格';
+
+  @override
+  String get expansionLength => '扩写长度';
+
+  @override
+  String get targetLanguage => '目标语言';
+
+  @override
+  String get generatedContentTitle => '生成内容';
+
+  @override
+  String get generatedContentPlaceholder => '生成结果会显示在这里';
+
+  @override
+  String get stopGenerating => '停止';
+
+  @override
+  String get overwriteOriginal => '覆盖原文';
+
+  @override
   String get words => '字';
 
   @override

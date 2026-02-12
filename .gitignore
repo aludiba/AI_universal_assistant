@@ -1,6 +1,7 @@
 AIUniversalAssistant/Pods/
-ai_writing_cat_flutter/ios/Pods/
-ai_writing_cat_flutter/ios/Flutter/
+ai_writing_cat_flutter/ios
+ai_writing_cat_flutter/android
+ai_writing_cat_flutter/ohos
 ai_writing_cat_flutter/.idea/
 ai_writing_cat_flutter/.dart_tool/
 ai_writing_cat_flutter/ios/.symlinks/

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, FlutterError, FlutterErrorDetails;
 import 'dart:ui' show PlatformDispatcher;
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
+import 'package:provider/provider.dart' as legacy_provider;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'l10n/app_localizations.dart';
 import 'providers/app_provider.dart';
@@ -56,17 +57,19 @@ void main() async {
     
     debugPrint('🎨 创建 Provider 树...');
     runApp(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider.value(value: appProvider),
-          ChangeNotifierProvider(create: (_) => DocumentProvider()),
-          ChangeNotifierProvider(create: (_) => TemplateProvider()..init()),
-          ChangeNotifierProvider(create: (_) => HotProvider()..init(locale: appProvider.locale)),
-          ChangeNotifierProvider(create: (_) => WritingProvider()),
-          ChangeNotifierProvider(create: (_) => HotWritingProvider()),
-          ChangeNotifierProvider(create: (_) => HotSearchProvider()),
-        ],
-        child: const MyApp(),
+      ProviderScope(
+        child: legacy_provider.MultiProvider(
+          providers: [
+            legacy_provider.ChangeNotifierProvider.value(value: appProvider),
+            legacy_provider.ChangeNotifierProvider(create: (_) => DocumentProvider()),
+            legacy_provider.ChangeNotifierProvider(create: (_) => TemplateProvider()..init()),
+            legacy_provider.ChangeNotifierProvider(create: (_) => HotProvider()..init(locale: appProvider.locale)),
+            legacy_provider.ChangeNotifierProvider(create: (_) => WritingProvider()),
+            legacy_provider.ChangeNotifierProvider(create: (_) => HotWritingProvider()),
+            legacy_provider.ChangeNotifierProvider(create: (_) => HotSearchProvider()),
+          ],
+          child: const MyApp(),
+        ),
       ),
     );
     debugPrint('✅ 应用启动完成');
@@ -125,6 +128,8 @@ class MyApp extends StatefulWidget {
       brightness: Brightness.light,
       primaryColor: AppColors.primary,
       scaffoldBackgroundColor: AppColors.background,
+      splashFactory: NoSplash.splashFactory,
+      highlightColor: Colors.transparent,
       colorScheme: ColorScheme.light(
         primary: AppColors.primary,
         secondary: AppColors.primaryLight,
@@ -179,6 +184,8 @@ class MyApp extends StatefulWidget {
       brightness: Brightness.dark,
       primaryColor: AppColors.primary,
       scaffoldBackgroundColor: AppColors.backgroundDark,
+      splashFactory: NoSplash.splashFactory,
+      highlightColor: Colors.transparent,
       colorScheme: ColorScheme.dark(
         primary: AppColors.primary,
         secondary: AppColors.primaryLight,
@@ -232,7 +239,7 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AppProvider>(
+    return legacy_provider.Consumer<AppProvider>(
       builder: (context, appProvider, _) {
         return MaterialApp.router(
           onGenerateTitle: (context) => AppLocalizations.of(context)!.appName,

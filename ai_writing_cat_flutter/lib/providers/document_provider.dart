@@ -33,6 +33,7 @@ class DocumentProvider with ChangeNotifier {
   Future<DocumentModel> createDocument({
     String title = '',
     String content = '',
+    bool refreshList = true,
   }) async {
     final now = DateTime.now();
     final document = DocumentModel(
@@ -44,7 +45,9 @@ class DocumentProvider with ChangeNotifier {
     );
     
     await _dataManager.insertDocument(document);
-    await loadDocuments();
+    if (refreshList) {
+      await loadDocuments();
+    }
     
     return document;
   }

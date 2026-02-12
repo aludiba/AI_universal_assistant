@@ -20,6 +20,7 @@ class DocsScreen extends StatefulWidget {
 
 class _DocsScreenState extends State<DocsScreen> {
   final DataManager _dataManager = DataManager();
+  bool _isCreatingDocument = false;
 
   @override
   void initState() {
@@ -93,6 +94,8 @@ class _DocsScreenState extends State<DocsScreen> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           onTap: _createNewDocument,
           child: Container(
@@ -179,6 +182,8 @@ class _DocsScreenState extends State<DocsScreen> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
           onTap: () {
             context.pushNamed(AppRoute.docDetail.name, pathParameters: {'id': doc.id}).then((_) {
               provider.loadDocuments();
@@ -258,16 +263,25 @@ class _DocsScreenState extends State<DocsScreen> {
   }
   
   void _createNewDocument() async {
+    if (_isCreatingDocument) return;
+    _isCreatingDocument = true;
     final provider = context.read<DocumentProvider>();
-    final l10n = AppLocalizations.of(context)!;
-    final doc = await provider.createDocument(title: l10n.newDocument);
-    
-    if (mounted) {
-      context
-          .pushNamed(AppRoute.docDetail.name, pathParameters: {'id': doc.id})
-          .then((_) {
-        provider.loadDocuments();
-      });
+    try {
+      final doc = await provider.createDocument(
+        title: '',
+        refreshList: false,
+      );
+
+      if (!mounted) return;
+      await context.pushNamed(
+        AppRoute.docDetail.name,
+        pathParameters: {'id': doc.id},
+      );
+      if (mounted) {
+        await provider.loadDocuments();
+      }
+    } finally {
+      _isCreatingDocument = false;
     }
   }
 

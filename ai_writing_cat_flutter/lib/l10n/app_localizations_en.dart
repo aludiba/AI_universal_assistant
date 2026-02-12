@@ -372,6 +372,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get essay => 'Essay';
 
   @override
+  String get medium => 'Medium';
+
+  @override
+  String get longer => 'Longer';
+
+  @override
+  String get selectStyle => 'Select style';
+
+  @override
+  String get expansionLength => 'Expansion length';
+
+  @override
+  String get targetLanguage => 'Target language';
+
+  @override
+  String get generatedContentTitle => 'Generated content';
+
+  @override
+  String get generatedContentPlaceholder =>
+      'Generated content will appear here';
+
+  @override
+  String get stopGenerating => 'Stop';
+
+  @override
+  String get overwriteOriginal => 'Overwrite original';
+
+  @override
   String get words => 'words';
 
   @override
