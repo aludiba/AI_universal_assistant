@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../config/app_config.dart';
 import '../services/data_manager.dart';
 import '../services/iap_service.dart';
 import '../models/subscription_model.dart';
@@ -20,7 +21,7 @@ class AppProvider with ChangeNotifier {
   WordPackStats? get wordPackStats => _wordPackStats;
   
   /// 是否是VIP
-  bool get isVip => _subscription?.isVip ?? false;
+  bool get isVip => !AppConfig.vipCheckEnabled || (_subscription?.isVip ?? false);
   
   /// 剩余字数
   int get remainingWords => _wordPackStats?.remainingWords ?? 0;
@@ -84,6 +85,9 @@ class AppProvider with ChangeNotifier {
   
   /// 消耗字数
   Future<bool> consumeWords(int words) async {
+    if (!AppConfig.vipCheckEnabled) {
+      return true;
+    }
     final success = await _dataManager.consumeWords(words);
     if (success) {
       await refreshWordPackStats();
@@ -93,6 +97,9 @@ class AppProvider with ChangeNotifier {
   
   /// 检查是否有足够的字数
   bool hasEnoughWords(int required) {
+    if (!AppConfig.vipCheckEnabled) {
+      return true;
+    }
     return remainingWords >= required;
   }
   

@@ -11,7 +11,6 @@
 #import "AIUADataManager.h"
 #import "AIUAWritingDetailViewController.h"
 #import "AIUAWritingRecordsViewController.h"
-#import "AIUAVIPManager.h"
 
 @interface AIUAWriterViewController ()<UITableViewDelegate, UITableViewDataSource>
 
@@ -67,16 +66,10 @@
     WeakType(self);
     self.inputCell.onStartCreate = ^(NSString *text) {
         StrongType(self);
-        // 检查VIP权限
-        [[AIUAVIPManager sharedManager] checkVIPPermissionWithViewController:strongself featureName:nil completion:^(BOOL hasPermission) {
-            if (hasPermission) {
-                // 有权限，开始创作
-                AIUAWritingDetailViewController *writingDetailVC = [[AIUAWritingDetailViewController alloc] initWithPrompt:text apiKey:APIKEY];
-                writingDetailVC.hidesBottomBarWhenPushed = YES;
-                [strongself.navigationController pushViewController:writingDetailVC animated:YES];
-            }
-            // 无权限，已显示弹窗
-        }];
+        // 自由创作入口不做会员门禁，后续由字数校验决定是否可生成
+        AIUAWritingDetailViewController *writingDetailVC = [[AIUAWritingDetailViewController alloc] initWithPrompt:text apiKey:APIKEY];
+        writingDetailVC.hidesBottomBarWhenPushed = YES;
+        [strongself.navigationController pushViewController:writingDetailVC animated:YES];
     };
 }
 

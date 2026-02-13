@@ -7,6 +7,7 @@
 
 #import "AIUAVIPManager.h"
 #import "AIUAIAPManager.h"
+#import "AIUAWordPackManager.h"
 #import "AIUATrialManager.h"
 #import "AIUAMembershipViewController.h"
 #import "AIUAMacros.h"
@@ -29,8 +30,12 @@
 
 - (BOOL)isVIPUser {
 #if AIUA_VIP_CHECK_ENABLED
-    // 开启会员检测，正常检查VIP状态
-    return [[AIUAIAPManager sharedManager] isVIPMember];
+    // 订阅会员与字数包为两条产品线：
+    // 1) 订阅会员：拥有完整会员权限
+    // 2) 非会员但有可用字数包：在字数耗尽前，按会员权限可用功能
+    BOOL hasSubscriptionPrivilege = [[AIUAIAPManager sharedManager] isVIPMember];
+    BOOL hasWordPackPrivilege = [[AIUAWordPackManager sharedManager] purchasedWords] > 0;
+    return hasSubscriptionPrivilege || hasWordPackPrivilege;
 #else
     // 关闭会员检测，所有用户视为VIP
     return YES;
@@ -43,7 +48,12 @@
     BOOL isVIP = [self isVIPUser];
     
     if (isVIP) {
-        // 是VIP，直接执行
+        // 有订阅或字数包权益时，确保退出试用会话，避免误走“试用不扣字”分支
+        AIUATrialManager *trialManager = [AIUATrialManager sharedManager];
+        if ([trialManager isInTrialSession]) {
+            [trialManager endTrialSession];
+        }
+        // 有权益，直接执行
         if (completion) {
             completion(YES);
         }

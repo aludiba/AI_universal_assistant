@@ -915,6 +915,108 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'前往写作模块'**
   String get goToWritingModule;
+
+  /// No description provided for @theme.
+  ///
+  /// In zh, this message translates to:
+  /// **'主题'**
+  String get theme;
+
+  /// No description provided for @require.
+  ///
+  /// In zh, this message translates to:
+  /// **'要求'**
+  String get require;
+
+  /// No description provided for @enter_creation_theme.
+  ///
+  /// In zh, this message translates to:
+  /// **'请输入创作主题'**
+  String get enter_creation_theme;
+
+  /// No description provided for @enter_specific_requirements.
+  ///
+  /// In zh, this message translates to:
+  /// **'请输入具体要求'**
+  String get enter_specific_requirements;
+
+  /// No description provided for @maximum_word_count.
+  ///
+  /// In zh, this message translates to:
+  /// **'最大字数'**
+  String get maximum_word_count;
+
+  /// No description provided for @enter_topic.
+  ///
+  /// In zh, this message translates to:
+  /// **'请输入主题'**
+  String get enter_topic;
+
+  /// No description provided for @prompt.
+  ///
+  /// In zh, this message translates to:
+  /// **'提示'**
+  String get prompt;
+
+  /// No description provided for @creationDetails.
+  ///
+  /// In zh, this message translates to:
+  /// **'创作详情'**
+  String get creationDetails;
+
+  /// No description provided for @creatingInProgress.
+  ///
+  /// In zh, this message translates to:
+  /// **'正在创作中...'**
+  String get creatingInProgress;
+
+  /// No description provided for @creationContent.
+  ///
+  /// In zh, this message translates to:
+  /// **'创作内容'**
+  String get creationContent;
+
+  /// No description provided for @unfinishedCreation.
+  ///
+  /// In zh, this message translates to:
+  /// **'未完成创作'**
+  String get unfinishedCreation;
+
+  /// No description provided for @recreate.
+  ///
+  /// In zh, this message translates to:
+  /// **'重新创作'**
+  String get recreate;
+
+  /// No description provided for @confirmRegenerateContent.
+  ///
+  /// In zh, this message translates to:
+  /// **'确认重新生成当前内容吗？'**
+  String get confirmRegenerateContent;
+
+  /// No description provided for @format.
+  ///
+  /// In zh, this message translates to:
+  /// **'格式'**
+  String get format;
+
+  /// No description provided for @firstLine.
+  ///
+  /// In zh, this message translates to:
+  /// **'第一行为标题'**
+  String get firstLine;
+
+  /// No description provided for @bodyBelow.
+  ///
+  /// In zh, this message translates to:
+  /// **'正文在下方换行展示'**
+  String get bodyBelow;
+
+  /// No description provided for @insufficientWordsMessage.
+  ///
+  /// In zh, this message translates to:
+  /// **'本次预计消耗 {required} 字，当前仅剩 {available} 字。'**
+  String insufficientWordsMessage(Object available, Object required);
 }
 
 class _AppLocalizationsDelegate

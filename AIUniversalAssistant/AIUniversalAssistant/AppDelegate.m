@@ -65,6 +65,8 @@
     
     // 初始化 IAP 管理器
     [[AIUAIAPManager sharedManager] startObservingPaymentQueue];
+    // 仅冷启动开启一次自动恢复窗口（用于无本地订阅时的自动恢复）
+    [[AIUAIAPManager sharedManager] beginLaunchRestoreWindow];
     NSLog(@"[启动] IAP管理器初始化完成");
     
     // 立即从收据验证订阅状态；无订阅时不做恢复，等用户选择网络弹窗后再在 applicationDidBecomeActive 中自动恢复
@@ -206,10 +208,10 @@
 }
 
 - (void)applicationDidBecomeActive:(UIApplication *)application {
-    // 从本地收据提取订阅信息
-    [[AIUAIAPManager sharedManager] checkSubscriptionStatus];
-    
-    // 若仍无订阅（如重装后首次打开无网络导致恢复失败），切回前台时自动重试恢复（限流 30 秒）
+    // 仅在“冷启动恢复窗口”内自动重试恢复（限流 30 秒）：
+    // 1) 冷启动
+    // 2) 首次安装/重装后用户选择网络返回
+    // 其余场景（如进入会员页）不自动恢复，避免影响测试
     [[AIUAIAPManager sharedManager] retryRestoreIfNoSubscriptionWithCompletion:^(BOOL success, NSInteger restoredCount, NSString * _Nullable errorMessage) {
         if (success) {
             NSLog(@"[App] ✅ 自动恢复购买成功");

@@ -135,6 +135,23 @@
   "enterKeywordsToSearchTemplates": "输入关键字搜索模板",
   "searchHistory": "搜索历史",
   "noRelatedTemplatesFound": "未找到相关模板",
-  "goToWritingModule": "前往写作模块"
+  "goToWritingModule": "前往写作模块",
+  "theme": "主题",
+  "require": "要求",
+  "enter_creation_theme": "请输入创作主题",
+  "enter_specific_requirements": "请输入具体要求",
+  "maximum_word_count": "最大字数",
+  "enter_topic": "请输入主题",
+  "prompt": "提示",
+  "creationDetails": "创作详情",
+  "creatingInProgress": "正在创作中...",
+  "creationContent": "创作内容",
+  "unfinishedCreation": "未完成创作",
+  "recreate": "重新创作",
+  "confirmRegenerateContent": "确认重新生成当前内容吗？",
+  "format": "格式",
+  "firstLine": "第一行为标题",
+  "bodyBelow": "正文在下方换行展示",
+  "insufficientWordsMessage": "本次预计消耗 {required} 字，当前仅剩 {available} 字。"
 }
 

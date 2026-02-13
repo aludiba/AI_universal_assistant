@@ -135,7 +135,24 @@
   "enterKeywordsToSearchTemplates": "キーワードを入力してテンプレートを検索",
   "searchHistory": "検索履歴",
   "noRelatedTemplatesFound": "関連するテンプレートが見つかりません",
-  "goToWritingModule": "作成モジュールへ"
+  "goToWritingModule": "作成モジュールへ",
+  "theme": "テーマ",
+  "require": "要件",
+  "enter_creation_theme": "作成テーマを入力",
+  "enter_specific_requirements": "具体的な要件を入力",
+  "maximum_word_count": "最大文字数",
+  "enter_topic": "テーマを入力",
+  "prompt": "プロンプト",
+  "creationDetails": "作成詳細",
+  "creatingInProgress": "作成中...",
+  "creationContent": "作成内容",
+  "unfinishedCreation": "未完了の作成",
+  "recreate": "再作成",
+  "confirmRegenerateContent": "現在の内容を再生成しますか？",
+  "format": "形式",
+  "firstLine": "1行目はタイトル",
+  "bodyBelow": "本文は改行して下に続ける",
+  "insufficientWordsMessage": "今回の生成には約{required}文字が必要ですが、残りは{available}文字です。"
 }
 
 

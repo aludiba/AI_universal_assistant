@@ -435,4 +435,57 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get goToWritingModule => 'Go to Writing Module';
+
+  @override
+  String get theme => 'Theme';
+
+  @override
+  String get require => 'Requirements';
+
+  @override
+  String get enter_creation_theme => 'Enter creation theme';
+
+  @override
+  String get enter_specific_requirements => 'Enter specific requirements';
+
+  @override
+  String get maximum_word_count => 'Max words';
+
+  @override
+  String get enter_topic => 'Enter topic';
+
+  @override
+  String get prompt => 'Prompt';
+
+  @override
+  String get creationDetails => 'Creation Details';
+
+  @override
+  String get creatingInProgress => 'Creating...';
+
+  @override
+  String get creationContent => 'Generated Content';
+
+  @override
+  String get unfinishedCreation => 'Unfinished Creation';
+
+  @override
+  String get recreate => 'Recreate';
+
+  @override
+  String get confirmRegenerateContent => 'Regenerate the current content?';
+
+  @override
+  String get format => 'Format';
+
+  @override
+  String get firstLine => 'First line should be the title';
+
+  @override
+  String get bodyBelow => 'Body should continue below on new lines';
+
+  @override
+  String insufficientWordsMessage(Object available, Object required) {
+    return 'This generation needs about $required words, but only $available are available.';
+  }
 }

@@ -487,10 +487,27 @@ static NSString * kProductIDWordPack6M = nil;
 
 - (void)consumeWords:(NSInteger)words completion:(void (^)(BOOL, NSInteger))completion {
     NSLog(@"[WordPack] 尝试消耗 %ld 字", (long)words);
+
+    // 订阅会员在有效期内不限字数，不扣减任何字数余额
+    if ([[AIUAIAPManager sharedManager] isVIPMember]) {
+        NSLog(@"[WordPack] ✓ 订阅会员无限字数，记录消耗但不扣除余额");
+        [self recordConsumption:words];
+        if (completion) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                completion(YES, [self totalAvailableWords]);
+            });
+        }
+        return;
+    }
     
     // 检查是否处于试用会话中（已经使用了试用次数）
     AIUATrialManager *trialManager = [AIUATrialManager sharedManager];
     if ([trialManager isInTrialSession]) {
+        // 若用户已经拥有付费字数包，则不再走试用免扣逻辑，转为正常扣减
+        if ([self purchasedWords] > 0) {
+            NSLog(@"[WordPack] 检测到字数包权益，结束试用会话并按字数包扣减");
+            [trialManager endTrialSession];
+        } else {
         NSLog(@"[WordPack] ✓ 用户处于试用会话中，记录消耗但不扣除字数");
         // 试用会话中记录消耗统计，但不实际扣除字数
         [self recordConsumption:words];
@@ -500,6 +517,7 @@ static NSString * kProductIDWordPack6M = nil;
             });
         }
         return;
+        }
     }
     
     // 检查是否有足够字数
@@ -609,11 +627,21 @@ static NSString * kProductIDWordPack6M = nil;
 }
 
 - (BOOL)hasEnoughWords:(NSInteger)words {
+    // 订阅会员在有效期内不限字数
+    if ([[AIUAIAPManager sharedManager] isVIPMember]) {
+        return YES;
+    }
+
     // 检查是否处于试用会话中（已经使用了试用次数）
     AIUATrialManager *trialManager = [AIUATrialManager sharedManager];
     if ([trialManager isInTrialSession]) {
-        NSLog(@"[WordPack] 用户处于试用会话中，字数不受限制");
-        return YES;
+        // 若有字数包权益，结束试用会话并回到正常字数校验
+        if ([self purchasedWords] > 0) {
+            [trialManager endTrialSession];
+        } else {
+            NSLog(@"[WordPack] 用户处于试用会话中，字数不受限制");
+            return YES;
+        }
     }
     
     // 正常检查字数

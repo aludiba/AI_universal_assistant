@@ -8,6 +8,7 @@ import '../screens/docs/document_detail_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/hot/hot_screen.dart';
 import '../screens/hot/hot_search_screen.dart';
+import '../screens/hot/hot_writing_detail_screen.dart';
 import '../screens/hot/hot_writing_input_screen.dart';
 import '../screens/settings/membership_screen.dart';
 import '../screens/settings/settings_screen.dart';
@@ -20,6 +21,7 @@ enum AppRoute {
   hot,
   hotSearch,
   hotWrite,
+  hotWriteDetail,
   writer,
   aiWriting,
   templateDetail,
@@ -62,6 +64,15 @@ GoRouter createAppRouter() {
                     builder: (context, state) {
                       final item = state.extra as HotItemModel;
                       return HotWritingInputScreen(item: item);
+                    },
+                  ),
+                  GoRoute(
+                    path: 'write-detail',
+                    name: AppRoute.hotWriteDetail.name,
+                    parentNavigatorKey: rootNavigatorKey,
+                    builder: (context, state) {
+                      final args = state.extra as HotWritingDetailArgs;
+                      return HotWritingDetailScreen(args: args);
                     },
                   ),
                 ],

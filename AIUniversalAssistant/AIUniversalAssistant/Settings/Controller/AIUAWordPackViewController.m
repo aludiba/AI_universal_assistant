@@ -495,6 +495,7 @@
 
 - (void)updateWordsDisplay {
     AIUAWordPackManager *manager = [AIUAWordPackManager sharedManager];
+    BOOL isVIP = [[AIUAIAPManager sharedManager] isVIPMember];
     
     NSInteger vipWords = [manager vipGiftedWords];
     NSInteger purchasedWords = [manager purchasedWords];
@@ -503,7 +504,11 @@
     
     self.vipGiftedWordsLabel.text = [NSString stringWithFormat:L(@"vip_gifted_words"), [self formatNumber:vipWords]];
     self.purchasedWordsLabel.text = [NSString stringWithFormat:L(@"purchased_words"), [self formatNumber:purchasedWords]];
-    self.totalWordsLabel.text = [NSString stringWithFormat:L(@"total_remaining_words"), [self formatNumber:totalWords]];
+    if (isVIP) {
+        self.totalWordsLabel.text = [NSString stringWithFormat:L(@"total_remaining_words"), L(@"unlimited")];
+    } else {
+        self.totalWordsLabel.text = [NSString stringWithFormat:L(@"total_remaining_words"), [self formatNumber:totalWords]];
+    }
     
     // 更新即将过期提醒
     [self updateExpiringWarnings:expiringByDays];

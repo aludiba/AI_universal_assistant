@@ -135,6 +135,23 @@
   "enterKeywordsToSearchTemplates": "Enter keywords to search templates",
   "searchHistory": "Search History",
   "noRelatedTemplatesFound": "No related templates found",
-  "goToWritingModule": "Go to Writing Module"
+  "goToWritingModule": "Go to Writing Module",
+  "theme": "Theme",
+  "require": "Requirements",
+  "enter_creation_theme": "Enter creation theme",
+  "enter_specific_requirements": "Enter specific requirements",
+  "maximum_word_count": "Max words",
+  "enter_topic": "Enter topic",
+  "prompt": "Prompt",
+  "creationDetails": "Creation Details",
+  "creatingInProgress": "Creating...",
+  "creationContent": "Generated Content",
+  "unfinishedCreation": "Unfinished Creation",
+  "recreate": "Recreate",
+  "confirmRegenerateContent": "Regenerate the current content?",
+  "format": "Format",
+  "firstLine": "First line should be the title",
+  "bodyBelow": "Body should continue below on new lines",
+  "insufficientWordsMessage": "This generation needs about {required} words, but only {available} are available."
 }
 

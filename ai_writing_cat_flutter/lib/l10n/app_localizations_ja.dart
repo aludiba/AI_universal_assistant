@@ -431,4 +431,57 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get goToWritingModule => '作成モジュールへ';
+
+  @override
+  String get theme => 'テーマ';
+
+  @override
+  String get require => '要件';
+
+  @override
+  String get enter_creation_theme => '作成テーマを入力';
+
+  @override
+  String get enter_specific_requirements => '具体的な要件を入力';
+
+  @override
+  String get maximum_word_count => '最大文字数';
+
+  @override
+  String get enter_topic => 'テーマを入力';
+
+  @override
+  String get prompt => 'プロンプト';
+
+  @override
+  String get creationDetails => '作成詳細';
+
+  @override
+  String get creatingInProgress => '作成中...';
+
+  @override
+  String get creationContent => '作成内容';
+
+  @override
+  String get unfinishedCreation => '未完了の作成';
+
+  @override
+  String get recreate => '再作成';
+
+  @override
+  String get confirmRegenerateContent => '現在の内容を再生成しますか？';
+
+  @override
+  String get format => '形式';
+
+  @override
+  String get firstLine => '1行目はタイトル';
+
+  @override
+  String get bodyBelow => '本文は改行して下に続ける';
+
+  @override
+  String insufficientWordsMessage(Object available, Object required) {
+    return '今回の生成には約$required文字が必要ですが、残りは$available文字です。';
+  }
 }

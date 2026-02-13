@@ -20,6 +20,7 @@
 #import <MBProgressHUD/MBProgressHUD.h>
 #import "AIUAWordPackManager.h"
 #import "AIUARewardAdManager.h"
+#import "AIUAVIPManager.h"
 
 @interface AIUASettingsViewController () <UITableViewDelegate, UITableViewDataSource>
 
@@ -77,7 +78,7 @@
 
 #pragma mark - VIP Gate
 - (BOOL)ensureVIPOrPrompt {
-    BOOL isVIP = [[AIUAIAPManager sharedManager] isVIPMember];
+    BOOL isVIP = [[AIUAVIPManager sharedManager] isVIPUser];
     if (!isVIP) {
         UIAlertController *alert = [UIAlertController alertControllerWithTitle:L(@"vip_unlock_required")
                                                                        message:L(@"vip_general_locked_message")
@@ -112,17 +113,15 @@
 - (void)setupData {
     // 预计算会员状态文案，避免Cell里二次计算导致的视觉延迟
     NSString *memberSubtitle = [self getMembershipStatusText];
-    BOOL isVIP = [[AIUAIAPManager sharedManager] isVIPMember];
+    BOOL isVIP = [[AIUAVIPManager sharedManager] isVIPUser];
     
     // 基础菜单项
     NSMutableArray *menuItems = [NSMutableArray array];
     [menuItems addObject:@{@"title": L(@"member_privileges"), @"icon": @"crown.fill", @"color": @"#FFD700", @"action": @"memberPrivileges", @"subtitle": memberSubtitle ?: @""}];
     [menuItems addObject:@{@"title": L(@"creation_records"), @"icon": @"doc.text.fill", @"color": @"#3B82F6", @"action": @"creationRecords"}];
     
-    // 只有VIP会员才显示字数包购买和看激励视频入口
-    if (isVIP) {
-        [menuItems addObject:@{@"title": L(@"writing_word_packs"), @"icon": @"cube.fill", @"color": @"#10B981", @"action": @"wordPacks"}];
-    }
+    // 字数包购买入口对所有用户开放（非会员也可购买）
+    [menuItems addObject:@{@"title": L(@"writing_word_packs"), @"icon": @"cube.fill", @"color": @"#10B981", @"action": @"wordPacks"}];
     
     [menuItems addObject:@{@"title": L(@"clear_cache"), @"icon": @"trash.fill", @"color": @"#F97316", @"action": @"clearCache"}];
     
@@ -134,7 +133,7 @@
     [menuItems addObject:@{@"title": L(@"rate_app"), @"icon": @"star.fill", @"color": @"#EF4444", @"action": @"rateApp"}];
     [menuItems addObject:@{@"title": L(@"share_app"), @"icon": @"square.and.arrow.up.fill", @"color": @"#06B6D4", @"action": @"shareApp"}];
     
-    // 只有VIP会员且开启广告时才显示看激励视频入口
+    // 有订阅或字数包权益且开启广告时才显示看激励视频入口
     #if AIUA_AD_ENABLED
     if (isVIP) {
         [menuItems addObject:@{@"title": L(@"watch_reward_title"), @"icon": @"play.rectangle.on.rectangle.fill", @"color": @"#22C55E", @"action": @"watchReward"}];
@@ -209,7 +208,6 @@
     } else if ([action isEqualToString:@"creationRecords"]) {
         [self showCreationRecords];
     } else if ([action isEqualToString:@"wordPacks"]) {
-        if (![self ensureVIPOrPrompt]) return; // 非VIP禁止进入
         [self showWordPacks];
     } else if ([action isEqualToString:@"clearCache"]) {
         [self showClearCacheAlert];
@@ -250,13 +248,18 @@
         return L(@"not_vip_member");
     }
     
+    // 当前订阅类型为永久会员时，一律显示「永久会员 - 永久有效」（避免恢复后误显示过期时间）
+    if (iapManager.currentSubscriptionType == AIUASubscriptionProductTypeLifetimeBenefits) {
+        return [NSString stringWithFormat:@"%@ - %@", L(@"lifetime_member"), L(@"lifetime")];
+    }
+    
     if (iapManager.subscriptionExpiryDate) {
         NSTimeInterval timeInterval = [iapManager.subscriptionExpiryDate timeIntervalSinceNow];
-        // 永久有效（到期>50年）时仅显示「永久会员 - 永久有效」
+        // 到期时间>50年时也显示「永久会员 - 永久有效」
         if (timeInterval > 50 * 365 * 24 * 60 * 60) {
             return [NSString stringWithFormat:@"%@ - %@", L(@"lifetime_member"), L(@"lifetime")];
         }
-        // 非永久会员：只显示「会员 - 到期时间」，不显示周度/月度/年度等类型
+        // 非永久会员：只显示「会员 - 到期时间」
         NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
         formatter.dateFormat = @"yyyy-MM-dd";
         NSString *expiryDateString = [formatter stringFromDate:iapManager.subscriptionExpiryDate];
@@ -295,7 +298,7 @@
 
 - (void)watchReward {
     // VIP 门禁
-    if (![[AIUAIAPManager sharedManager] isVIPMember]) {
+    if (![[AIUAVIPManager sharedManager] isVIPUser]) {
         [self showAlertWithTitle:L(@"vip_unlock_required") message:L(@"vip_general_locked_message")];
         return;
     }

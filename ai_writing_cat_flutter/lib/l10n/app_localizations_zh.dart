@@ -430,4 +430,57 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get goToWritingModule => '前往写作模块';
+
+  @override
+  String get theme => '主题';
+
+  @override
+  String get require => '要求';
+
+  @override
+  String get enter_creation_theme => '请输入创作主题';
+
+  @override
+  String get enter_specific_requirements => '请输入具体要求';
+
+  @override
+  String get maximum_word_count => '最大字数';
+
+  @override
+  String get enter_topic => '请输入主题';
+
+  @override
+  String get prompt => '提示';
+
+  @override
+  String get creationDetails => '创作详情';
+
+  @override
+  String get creatingInProgress => '正在创作中...';
+
+  @override
+  String get creationContent => '创作内容';
+
+  @override
+  String get unfinishedCreation => '未完成创作';
+
+  @override
+  String get recreate => '重新创作';
+
+  @override
+  String get confirmRegenerateContent => '确认重新生成当前内容吗？';
+
+  @override
+  String get format => '格式';
+
+  @override
+  String get firstLine => '第一行为标题';
+
+  @override
+  String get bodyBelow => '正文在下方换行展示';
+
+  @override
+  String insufficientWordsMessage(Object available, Object required) {
+    return '本次预计消耗 $required 字，当前仅剩 $available 字。';
+  }
 }

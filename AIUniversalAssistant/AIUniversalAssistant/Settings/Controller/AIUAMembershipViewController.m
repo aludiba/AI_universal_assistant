@@ -262,13 +262,14 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
     // 副标题或当前会员状态
     UILabel *subtitleLabel = [[UILabel alloc] init];
     if (isVIP) {
-        if (iapManager.subscriptionExpiryDate) {
+        // 当前订阅类型为永久会员时，一律显示「永久会员 - 永久有效」
+        if (iapManager.currentSubscriptionType == AIUASubscriptionProductTypeLifetimeBenefits) {
+            subtitleLabel.text = [NSString stringWithFormat:@"✓ %@ - %@", L(@"lifetime_member"), L(@"lifetime")];
+        } else if (iapManager.subscriptionExpiryDate) {
             NSTimeInterval timeInterval = [iapManager.subscriptionExpiryDate timeIntervalSinceNow];
             if (timeInterval > 50 * 365 * 24 * 60 * 60) {
-                // 永久有效时仅显示「永久会员 - 永久有效」
                 subtitleLabel.text = [NSString stringWithFormat:@"✓ %@ - %@", L(@"lifetime_member"), L(@"lifetime")];
             } else {
-                // 非永久会员：只显示「会员 - 到期时间」，不显示周度/月度/年度等类型
                 NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
                 formatter.dateFormat = @"yyyy-MM-dd";
                 NSString *expiryDateString = [formatter stringFromDate:iapManager.subscriptionExpiryDate];

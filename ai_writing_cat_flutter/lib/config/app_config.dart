@@ -13,7 +13,7 @@ class AppConfig {
   static const bool adEnabled = false; // Flutter版本暂不支持广告
   
   // VIP检测开关
-  static const bool vipCheckEnabled = true;
+  static const bool vipCheckEnabled = false;
   
   // IAP产品ID配置
   static const String iapProductLifetime = 'com.hujiaofen.writingCat.lifetimeBenefits';
