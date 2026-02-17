@@ -11,6 +11,7 @@ class DeepSeekService {
 
   http.Client? _currentClient;
   String _lineBuffer = '';
+  bool _streamCancelled = false;
 
   String get _baseUrl => AppConfig.deepseekBaseUrl;
   String get _apiKey => AppConfig.deepseekApiKey;
@@ -121,6 +122,43 @@ class DeepSeekService {
     return generateText(prompt: prompt);
   }
 
+  /// 续写（流式，对齐 iOS）
+  Stream<String> continueWritingStream({
+    required String content,
+    String style = '通用',
+  }) {
+    final prompt = '请根据以下内容进行续写，保持原文风格和逻辑连贯性。使用$style风格进行写作。\n\n$content';
+    return generateTextStream(prompt: prompt);
+  }
+
+  /// 改写（流式）
+  Stream<String> rewriteTextStream({
+    required String content,
+    String style = '通用',
+  }) {
+    final prompt = '请对以下内容进行改写，保持原意但优化表达方式。使用$style风格进行改写。\n\n$content';
+    return generateTextStream(prompt: prompt);
+  }
+
+  /// 扩写（流式）
+  Stream<String> expandTextStream({
+    required String content,
+    String length = '适中',
+    String style = '通用',
+  }) {
+    final prompt = '请对以下内容进行扩写，增加细节和丰富内容。请进行$length长度的扩写，使用$style风格。\n\n$content';
+    return generateTextStream(prompt: prompt);
+  }
+
+  /// 翻译（流式）
+  Stream<String> translateTextStream({
+    required String content,
+    required String targetLanguage,
+  }) {
+    final prompt = '请将以下内容翻译成$targetLanguage，确保翻译准确流畅，保持原文意思不变。\n\n$content';
+    return generateTextStream(prompt: prompt);
+  }
+
   /// iOS 对齐：完整流式生成（支持字数限制）
   Stream<String> generateFullStreamWritingWithPrompt({
     required String prompt,
@@ -153,11 +191,16 @@ class DeepSeekService {
     );
   }
 
-  /// 取消当前请求
-  void cancelCurrentRequest() {
+  void _closeClient() {
     _currentClient?.close();
     _currentClient = null;
     _lineBuffer = '';
+  }
+
+  /// 取消当前请求（用户点击停止时调用，流式迭代会正常结束不抛错）
+  void cancelCurrentRequest() {
+    _streamCancelled = true;
+    _closeClient();
   }
 
   /// 私有方法：发起请求
@@ -166,7 +209,7 @@ class DeepSeekService {
     int? maxTokens,
     double temperature = 1.5,
   }) async {
-    cancelCurrentRequest();
+    _closeClient();
     _currentClient = http.Client();
 
     try {
@@ -218,7 +261,8 @@ class DeepSeekService {
     int? maxTokens,
     double temperature = 1.5,
   }) async* {
-    cancelCurrentRequest();
+    _streamCancelled = false;
+    _closeClient();
     _currentClient = http.Client();
     _lineBuffer = '';
 
@@ -273,13 +317,12 @@ class DeepSeekService {
         throw Exception('流式请求失败(${streamedResponse.statusCode}): $body');
       }
     } on TimeoutException {
-      throw Exception('请求超时，请检查网络连接');
+      if (!_streamCancelled) throw Exception('请求超时，请检查网络连接');
     } catch (e) {
-      throw Exception('流式生成失败: $e');
+      if (!_streamCancelled) rethrow;
     } finally {
-      _currentClient?.close();
-      _currentClient = null;
-      _lineBuffer = '';
+      _closeClient();
+      _streamCancelled = false;
     }
   }
 

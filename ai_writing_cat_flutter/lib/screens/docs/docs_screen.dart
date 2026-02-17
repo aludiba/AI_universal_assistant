@@ -34,9 +34,9 @@ class _DocsScreenState extends State<DocsScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final scaffoldBackgroundColor = Theme.of(context).scaffoldBackgroundColor;
     return Scaffold(
-      backgroundColor: isDark ? AppColors.backgroundDark : Colors.white,
+      backgroundColor: scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(l10n.tabDocs),
       ),
@@ -52,7 +52,7 @@ class _DocsScreenState extends State<DocsScreen> {
 
           // iOS: UITableViewStyleGrouped + 自定义 cell/section header
           return Container(
-            color: isDark ? AppColors.backgroundDark : Colors.white,
+            color: scaffoldBackgroundColor,
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
@@ -133,10 +133,9 @@ class _DocsScreenState extends State<DocsScreen> {
   }
 
   Widget _buildMyDocumentsHeader(BuildContext context, AppLocalizations l10n) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       height: 50,
-      color: isDark ? AppColors.backgroundDark : Colors.white,
+      color: Theme.of(context).scaffoldBackgroundColor,
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       alignment: Alignment.bottomLeft,
       child: Text(
@@ -381,4 +380,3 @@ class _DocsScreenState extends State<DocsScreen> {
     }
   }
 }
-

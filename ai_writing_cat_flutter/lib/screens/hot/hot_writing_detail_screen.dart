@@ -57,6 +57,7 @@ class _HotWritingDetailScreenState extends State<HotWritingDetailScreen> {
   String? _currentWritingId;
   DocumentModel? _editingDocument;
   bool _isGenerating = true;
+  bool _userStoppedCreation = false;
 
   @override
   void initState() {
@@ -88,6 +89,7 @@ class _HotWritingDetailScreenState extends State<HotWritingDetailScreen> {
 
     setState(() {
       _isGenerating = true;
+      _userStoppedCreation = false;
       _rawText = '';
       _titleText = '';
       _contentText = '';
@@ -192,6 +194,7 @@ class _HotWritingDetailScreenState extends State<HotWritingDetailScreen> {
 
   Future<void> _stopGenerating() async {
     if (!_isGenerating) return;
+    _userStoppedCreation = true;
     _writer.cancelCurrentRequest();
     await _streamSub?.cancel();
     await _finalizeWriting();
@@ -310,16 +313,19 @@ class _HotWritingDetailScreenState extends State<HotWritingDetailScreen> {
     return (isFinal ? l10n.creationContent : l10n.creatingInProgress, lines.join('\n'));
   }
 
+  /// 移除 Markdown 符号（对齐 iOS AIUAToolsManager removeMarkdownSymbols）
+  /// 使用 replaceAllMapped 避免将 r'$1' 当作字面量输出导致内容出现 "$1"
   String _removeMarkdownSymbols(String text) {
     var value = text;
     value = value.replaceAll(RegExp(r'`{1,3}'), '');
     value = value.replaceAll(RegExp(r'^\s{0,3}#{1,6}\s*', multiLine: true), '');
-    value = value.replaceAll(RegExp(r'\*\*(.*?)\*\*'), r'$1');
-    value = value.replaceAll(RegExp(r'\*(.*?)\*'), r'$1');
-    value = value.replaceAll(RegExp(r'_(.*?)_'), r'$1');
-    value = value.replaceAll(RegExp(r'~~(.*?)~~'), r'$1');
+    value = value.replaceAllMapped(RegExp(r'\*\*(.*?)\*\*'), (m) => m.group(1)!);
+    value = value.replaceAllMapped(RegExp(r'\*(.*?)\*'), (m) => m.group(1)!);
+    value = value.replaceAllMapped(RegExp(r'_(.*?)_'), (m) => m.group(1)!);
+    value = value.replaceAllMapped(RegExp(r'~~(.*?)~~'), (m) => m.group(1)!);
     value = value.replaceAll(RegExp(r'^\s*[-*+]\s+', multiLine: true), '');
     value = value.replaceAll(RegExp(r'^\s*\d+\.\s+', multiLine: true), '');
+    value = value.replaceAll(RegExp(r'^\s*\$\d+\s*', multiLine: true), '');
     return value.trim();
   }
 
@@ -365,13 +371,19 @@ class _HotWritingDetailScreenState extends State<HotWritingDetailScreen> {
     final cardColor = Theme.of(context).cardColor;
     final borderColor = isDark ? Theme.of(context).dividerColor : _kDetailCardBorder;
     final displayTitle =
-        _titleText.isEmpty ? (_isGenerating ? l10n.creatingInProgress : l10n.creationContent) : _titleText;
+        _titleText.isEmpty ? (_isGenerating ? l10n.creatingInProgress : l10n.untitledDocument) : _titleText;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.creationDetails),
-      ),
-      body: Column(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        await _saveIfHasContentAndPop();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(l10n.creationDetails),
+        ),
+        body: Column(
         children: [
           Expanded(
             child: SingleChildScrollView(
@@ -397,9 +409,11 @@ class _HotWritingDetailScreenState extends State<HotWritingDetailScreen> {
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    Divider(height: 1, color: borderColor),
-                    const SizedBox(height: 20),
+                    if (_contentText.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      Divider(height: 1, color: borderColor),
+                      const SizedBox(height: 20),
+                    ],
                     SelectableText(
                       _contentText,
                       style: TextStyle(
@@ -414,19 +428,22 @@ class _HotWritingDetailScreenState extends State<HotWritingDetailScreen> {
             ),
           ),
           if (_isGenerating)
-            Padding(
-              padding: const EdgeInsets.only(top: 16, bottom: 8),
-              child: OutlinedButton.icon(
-                onPressed: _stopGenerating,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: _kDetailStopText,
-                  backgroundColor: _kDetailStopBg,
-                  side: const BorderSide(color: _kDetailStopBorder),
-                  minimumSize: const Size(120, 40),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 16, bottom: 12),
+                child: OutlinedButton.icon(
+                  onPressed: _stopGenerating,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: _kDetailStopText,
+                    backgroundColor: _kDetailStopBg,
+                    side: const BorderSide(color: _kDetailStopBorder),
+                    minimumSize: const Size(120, 40),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  icon: const Icon(Icons.stop, size: 16),
+                  label: Text(l10n.stopGenerating),
                 ),
-                icon: const Icon(Icons.stop, size: 16),
-                label: Text(l10n.stopGenerating),
               ),
             ),
           if (!_isGenerating)
@@ -474,7 +491,41 @@ class _HotWritingDetailScreenState extends State<HotWritingDetailScreen> {
             ),
         ],
       ),
+      ),
     );
+  }
+
+  /// 返回时若有内容则自动保存为文档再 pop；若用户点击过停止则只返回不保存
+  Future<void> _saveIfHasContentAndPop() async {
+    if (_userStoppedCreation) {
+      if (mounted) context.pop();
+      return;
+    }
+    final fullText = _buildFullText();
+    if (fullText.isEmpty) {
+      if (mounted) context.pop();
+      return;
+    }
+    final provider = context.read<DocumentProvider>();
+    final title = _titleText.isEmpty ? widget.args.item.title : _titleText;
+    final content = _contentText;
+    if (_editingDocument == null) {
+      _editingDocument = await provider.createDocument(
+        title: title,
+        content: content,
+        refreshList: true,
+      );
+    } else {
+      final updated = _editingDocument!.copyWith(
+        title: title,
+        content: content,
+        updatedAt: DateTime.now(),
+      );
+      await provider.updateDocument(updated);
+      _editingDocument = updated;
+    }
+    if (!mounted) return;
+    context.pop();
   }
 }
 

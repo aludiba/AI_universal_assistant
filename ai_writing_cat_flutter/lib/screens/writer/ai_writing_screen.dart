@@ -42,9 +42,12 @@ class AIWritingScreen extends StatelessWidget {
             ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(AppStyles.paddingMedium),
-        children: [
+      body: GestureDetector(
+        onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+        behavior: HitTestBehavior.translucent,
+        child: ListView(
+          padding: const EdgeInsets.all(AppStyles.paddingMedium),
+          children: [
           // 输入区域
           _buildInputSection(context, writingProvider),
           
@@ -59,6 +62,7 @@ class AIWritingScreen extends StatelessWidget {
           if (writingProvider.hasResult || writingProvider.isGenerating)
             _buildResultSection(context, writingProvider),
         ],
+        ),
       ),
     );
   }

@@ -53,6 +53,14 @@ class SettingsScreen extends StatelessWidget {
             context,
             title: l10n.appSettings,
             children: [
+              _buildListTile(
+                context,
+                icon: Icons.history_edu,
+                title: l10n.writingRecords,
+                onTap: () {
+                  context.pushNamed(AppRoute.writingRecords.name, extra: null);
+                },
+              ),
               _buildThemeTile(context),
               _buildLanguageTile(context),
               _buildListTile(

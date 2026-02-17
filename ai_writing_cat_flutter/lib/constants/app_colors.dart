@@ -9,7 +9,7 @@ class AppColors {
   
   // 背景色（支持暗黑模式）
   static const Color background = Colors.white;
-  static const Color backgroundDark = Color(0xFF121212);
+  static const Color backgroundDark = Colors.black;
   static const Color secondaryBackground = Color(0xFFF5F5F5);
   static const Color secondaryBackgroundDark = Color(0xFF1E1E1E);
   
@@ -71,4 +71,3 @@ class AppColors {
         : cardBackground;
   }
 }
-

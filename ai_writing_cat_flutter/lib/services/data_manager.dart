@@ -490,6 +490,20 @@ class DataManager {
     }).toList();
   }
 
+  /// 根据ID获取单条写作记录（用于文档详情保存时同步回创作记录）
+  Future<WritingRecordModel?> getWritingRecordById(String id) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'writing_records',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    if (maps.isEmpty) return null;
+    final data = Map<String, dynamic>.from(maps.first);
+    data['isCompleted'] = maps.first['isCompleted'] == 1;
+    return WritingRecordModel.fromJson(data);
+  }
+
   /// 根据类型加载写作记录
   Future<List<WritingRecordModel>> loadWritingsByType(String? type) async {
     final allWritings = await loadAllWritings();
@@ -498,6 +512,25 @@ class DataManager {
     } else {
       return allWritings;
     }
+  }
+
+  /// 根据模板ID加载写作记录（仅展示当前模板的创作记录，与 iOS 一致）
+  Future<List<WritingRecordModel>> loadWritingsByTemplateId(String? templateId) async {
+    if (templateId == null || templateId.isEmpty) {
+      return loadAllWritings();
+    }
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'writing_records',
+      where: 'templateId = ?',
+      whereArgs: [templateId],
+      orderBy: 'createdAt DESC',
+    );
+    return maps.map((map) {
+      final data = Map<String, dynamic>.from(map);
+      data['isCompleted'] = map['isCompleted'] == 1;
+      return WritingRecordModel.fromJson(data);
+    }).toList();
   }
 
   /// 根据ID删除写作记录
@@ -582,6 +615,21 @@ class DataManager {
     );
     if (maps.isEmpty) return null;
     return DocumentModel.fromJson(maps.first);
+  }
+
+  /// 从创作记录确保对应文档存在（用于打开编辑），有则返回，无则创建后返回
+  Future<DocumentModel> ensureDocumentFromWritingRecord(WritingRecordModel record) async {
+    final existing = await getDocumentById(record.id);
+    if (existing != null) return existing;
+    final doc = DocumentModel(
+      id: record.id,
+      title: record.templateTitle,
+      content: record.generatedContent ?? '',
+      createdAt: record.createdAt,
+      updatedAt: record.createdAt,
+    );
+    await insertDocument(doc);
+    return doc;
   }
 
   // ==================== 模板操作 ====================

@@ -150,13 +150,10 @@ class _WriterScreenState extends ConsumerState<WriterScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final state = ref.watch(writerScreenProvider);
     
     return Scaffold(
-      backgroundColor: isDark 
-          ? AppColors.backgroundDark 
-          : Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(l10n.tabWriter),
         backgroundColor: Colors.transparent,
@@ -183,7 +180,7 @@ class _WriterScreenState extends ConsumerState<WriterScreen> {
                 itemCount: state.categories.length + 2, // +1 for input cell, +1 for divider
                 itemBuilder: (context, index) {
                   if (index == 0) {
-                    return _buildInputCell(context, l10n, isDark);
+                    return _buildInputCell(context, l10n);
                   } else if (index == 1) {
                     // 输入部分和文案模板之间的分割线
                     return Divider(
@@ -192,7 +189,7 @@ class _WriterScreenState extends ConsumerState<WriterScreen> {
                       color: AppColors.getDivider(context),
                     );
                   } else {
-                    return _buildCategorySection(context, state.categories[index - 2], isDark);
+                    return _buildCategorySection(context, state.categories[index - 2]);
                   }
                 },
               ),
@@ -201,7 +198,7 @@ class _WriterScreenState extends ConsumerState<WriterScreen> {
   }
 
   /// 构建输入框 Cell - 像素级还原 iOS AIUAWritingInputCell
-  Widget _buildInputCell(BuildContext context, AppLocalizations l10n, bool isDark) {
+  Widget _buildInputCell(BuildContext context, AppLocalizations l10n) {
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
@@ -217,7 +214,7 @@ class _WriterScreenState extends ConsumerState<WriterScreen> {
             children: [
               Container(
                 decoration: BoxDecoration(
-                  color: isDark ? AppColors.backgroundDark : Colors.white,
+                  color: Theme.of(context).scaffoldBackgroundColor,
                   border: Border.all(
                     color: AppColors.getDivider(context),
                     width: 1.0,
@@ -300,14 +297,13 @@ class _WriterScreenState extends ConsumerState<WriterScreen> {
   Widget _buildCategorySection(
     BuildContext context,
     WritingCategory category,
-    bool isDark,
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Section Header
         Container(
-          color: isDark ? AppColors.backgroundDark : Colors.white,
+          color: Theme.of(context).scaffoldBackgroundColor,
           padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
           child: Text(
             category.title,
@@ -319,7 +315,7 @@ class _WriterScreenState extends ConsumerState<WriterScreen> {
           ),
         ),
         // Category Items
-        ...category.items.map((item) => _buildCategoryItem(context, item, isDark)),
+        ...category.items.map((item) => _buildCategoryItem(context, item)),
       ],
     );
   }
@@ -328,7 +324,6 @@ class _WriterScreenState extends ConsumerState<WriterScreen> {
   Widget _buildCategoryItem(
     BuildContext context,
     WritingCategoryItem item,
-    bool isDark,
   ) {
     return InkWell(
       onTap: () => _handleCategoryItemTap(item),

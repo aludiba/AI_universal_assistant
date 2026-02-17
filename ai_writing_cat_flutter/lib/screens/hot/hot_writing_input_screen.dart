@@ -84,11 +84,14 @@ class _HotWritingInputScreenState extends State<HotWritingInputScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      body: GestureDetector(
+        onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+        behavior: HitTestBehavior.translucent,
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Padding(
                 padding: const EdgeInsets.only(top: 16, bottom: 16),
@@ -116,6 +119,7 @@ class _HotWritingInputScreenState extends State<HotWritingInputScreen> {
             dividerColor,
           ),
         ],
+        ),
       ),
     );
   }
@@ -442,9 +446,8 @@ class _HotWritingInputScreenState extends State<HotWritingInputScreen> {
   }
 
   void _onRecordsTap() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(AppLocalizations.of(context)!.writingRecords)),
-    );
+    // 传入当前热门条目的 id，只展示该话题下的创作记录（与 iOS 一致）
+    context.pushNamed(AppRoute.writingRecords.name, extra: widget.item.id);
   }
 
   Future<void> _generate(BuildContext context, HotWritingProvider provider) async {

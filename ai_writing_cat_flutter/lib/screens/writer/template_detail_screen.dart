@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../models/template_model.dart';
 import '../../providers/template_provider.dart';
 import '../../providers/app_provider.dart';
+import '../../router/app_router.dart';
 import '../../services/deepseek_service.dart';
 import '../../constants/app_styles.dart';
 
@@ -32,6 +34,15 @@ class TemplateDetailScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(template.title),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.list),
+            onPressed: () {
+              context.pushNamed(
+                AppRoute.writingRecords.name,
+                extra: template.id,
+              );
+            },
+          ),
           Consumer<TemplateProvider>(
             builder: (context, provider, _) {
               return IconButton(
@@ -49,11 +60,14 @@ class TemplateDetailScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: Form(
-        key: formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(AppStyles.paddingMedium),
-          children: [
+      body: GestureDetector(
+        onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+        behavior: HitTestBehavior.translucent,
+        child: Form(
+          key: formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(AppStyles.paddingMedium),
+            children: [
             // 模板描述
             Text(
               template.description,
@@ -100,6 +114,7 @@ class TemplateDetailScreen extends StatelessWidget {
               _buildResultSection(context, generatedContent),
             ],
           ],
+        ),
         ),
       ),
     );

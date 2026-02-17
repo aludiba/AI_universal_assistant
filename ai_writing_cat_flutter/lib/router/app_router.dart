@@ -16,6 +16,7 @@ import '../screens/settings/word_pack_screen.dart';
 import '../screens/writer/ai_writing_screen.dart';
 import '../screens/writer/template_detail_screen.dart';
 import '../screens/writer/writer_screen.dart';
+import '../screens/writing_records_screen.dart';
 
 enum AppRoute {
   hot,
@@ -30,6 +31,7 @@ enum AppRoute {
   settings,
   membership,
   wordPack,
+  writingRecords,
 }
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -148,6 +150,16 @@ GoRouter createAppRouter() {
                     name: AppRoute.wordPack.name,
                     parentNavigatorKey: rootNavigatorKey,
                     builder: (context, state) => const WordPackScreen(),
+                  ),
+                  GoRoute(
+                    path: 'writing-records',
+                    name: AppRoute.writingRecords.name,
+                    parentNavigatorKey: rootNavigatorKey,
+                    builder: (context, state) {
+                      // 使用 extra 传递 templateId，避免跨分支时 query 丢失
+                      final templateId = state.extra as String?;
+                      return WritingRecordsScreen(templateId: templateId);
+                    },
                   ),
                 ],
               ),

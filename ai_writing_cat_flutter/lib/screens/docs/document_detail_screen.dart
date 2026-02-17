@@ -148,6 +148,14 @@ class DocumentDetailUiNotifier extends Notifier<DocumentDetailUiState> {
     );
   }
 
+  /// 流式输出时追加内容（对齐 iOS）
+  void appendGeneratedContent(String chunk) {
+    if (chunk.isEmpty) return;
+    state = state.copyWith(
+      generatedContent: state.generatedContent + chunk,
+    );
+  }
+
   void finishGenerating(String content) {
     state = state.copyWith(
       isGenerating: false,
@@ -186,8 +194,10 @@ class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
   final TextEditingController _contentController = TextEditingController();
   final FocusNode _titleFocusNode = FocusNode();
   final FocusNode _contentFocusNode = FocusNode();
+  final ScrollController _generationScrollController = ScrollController();
   DocumentModel? _currentDocument;
   bool _saveInProgress = false;
+  bool _titleExtractedFromGeneration = false;
 
   @override
   void initState() {
@@ -199,6 +209,7 @@ class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
 
   @override
   void dispose() {
+    _generationScrollController.dispose();
     _deepSeekService.cancelCurrentRequest();
     _titleController.removeListener(_onTextChanged);
     _contentController.removeListener(_onTextChanged);
@@ -256,6 +267,15 @@ class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
         );
         await context.read<DocumentProvider>().updateDocument(updated);
         _currentDocument = updated;
+        // 若该文档对应创作记录，同步标题与内容回创作记录表（与 iOS 一致）
+        final writingRecord = await _dataManager.getWritingRecordById(updated.id);
+        if (writingRecord != null) {
+          await _dataManager.updateWritingRecord(writingRecord.copyWith(
+            templateTitle: updated.title,
+            generatedContent: updated.content,
+            wordCount: updated.content.length,
+          ));
+        }
       }
       uiNotifier.setDirty(false);
       if (mounted && showMessage) {
@@ -394,40 +414,56 @@ class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
     if (action == null) return;
 
     _dismissKeyboard();
+    _titleExtractedFromGeneration = false;
     uiNotifier.startGenerating();
 
+    Stream<String> stream;
+    switch (action) {
+      case DocumentToolbarAction.continueWrite:
+        stream = _deepSeekService.continueWritingStream(
+          content: _contentController.text.trim(),
+          style: uiState.selectedStyle,
+        );
+        break;
+      case DocumentToolbarAction.rewrite:
+        stream = _deepSeekService.rewriteTextStream(
+          content: _contentController.text.trim(),
+          style: uiState.selectedStyle,
+        );
+        break;
+      case DocumentToolbarAction.expand:
+        stream = _deepSeekService.expandTextStream(
+          content: _contentController.text.trim(),
+          length: uiState.selectedLength,
+          style: uiState.selectedStyle,
+        );
+        break;
+      case DocumentToolbarAction.translate:
+        stream = _deepSeekService.translateTextStream(
+          content: _contentController.text.trim(),
+          targetLanguage: uiState.selectedLanguage,
+        );
+        break;
+    }
+
     try {
-      final baseContent = _contentController.text.trim();
-      var result = '';
-      switch (action) {
-        case DocumentToolbarAction.continueWrite:
-          result = await _deepSeekService.continueWriting(
-            content: baseContent,
-            style: uiState.selectedStyle,
-          );
-          break;
-        case DocumentToolbarAction.rewrite:
-          result = await _deepSeekService.rewriteText(
-            content: baseContent,
-            style: uiState.selectedStyle,
-          );
-          break;
-        case DocumentToolbarAction.expand:
-          result = await _deepSeekService.expandText(
-            content: baseContent,
-            length: uiState.selectedLength,
-            style: uiState.selectedStyle,
-          );
-          break;
-        case DocumentToolbarAction.translate:
-          result = await _deepSeekService.translateText(
-            content: baseContent,
-            targetLanguage: uiState.selectedLanguage,
-          );
-          break;
+      var accumulated = '';
+      await for (final chunk in stream) {
+        if (!mounted) return;
+        accumulated += chunk;
+        uiNotifier.appendGeneratedContent(chunk);
+        if (!_titleExtractedFromGeneration &&
+            _titleController.text.trim().isEmpty &&
+            accumulated.contains('\n')) {
+          _titleExtractedFromGeneration = true;
+          _tryExtractTitleFromContent(accumulated);
+        }
       }
-      if (result.isEmpty || !mounted) return;
-      uiNotifier.finishGenerating(result);
+      if (!mounted) return;
+      uiNotifier.finishGenerating(accumulated);
+      if (!_titleExtractedFromGeneration) {
+        _tryExtractTitleFromContent(accumulated);
+      }
     } catch (e) {
       if (!mounted) return;
       uiNotifier.stopGenerating();
@@ -471,6 +507,7 @@ class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
       );
     }
     ref.read(documentDetailUiProvider.notifier).setDirty(true);
+    _tryExtractTitleFromContent(_contentController.text);
   }
 
   void _overwriteWithGeneratedText() {
@@ -481,17 +518,67 @@ class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
       offset: _contentController.text.length,
     );
     ref.read(documentDetailUiProvider.notifier).setDirty(true);
+    _tryExtractTitleFromContent(_contentController.text);
   }
 
   void _dismissKeyboard() {
     FocusScope.of(context).unfocus();
   }
 
+  /// 移除简单 Markdown 符号（对齐 iOS AIUAToolsManager removeMarkdownSymbols）
+  /// 使用 replaceAllMapped 避免将 r'$1' 当作字面量输出导致内容出现 "$1"
+  String _removeMarkdownSymbols(String text) {
+    var value = text;
+    value = value.replaceAll(RegExp(r'`{1,3}'), '');
+    value = value.replaceAll(RegExp(r'^\s{0,3}#{1,6}\s*', multiLine: true), '');
+    value = value.replaceAllMapped(RegExp(r'\*\*(.*?)\*\*'), (m) => m.group(1)!);
+    value = value.replaceAllMapped(RegExp(r'\*(.*?)\*'), (m) => m.group(1)!);
+    value = value.replaceAllMapped(RegExp(r'_(.*?)_'), (m) => m.group(1)!);
+    value = value.replaceAllMapped(RegExp(r'~~(.*?)~~'), (m) => m.group(1)!);
+    value = value.replaceAll(RegExp(r'^\s*[-*+]\s+', multiLine: true), '');
+    value = value.replaceAll(RegExp(r'^\s*\d+\.\s+', multiLine: true), '');
+    value = value.replaceAll(RegExp(r'^\s*\$\d+\s*', multiLine: true), '');
+    return value.trim();
+  }
+
+  /// 从内容首行提取标题（对齐 iOS tryExtractTitleFromContent）
+  void _tryExtractTitleFromContent(String content) {
+    if (_titleController.text.trim().isNotEmpty) return;
+    final lines = content.split('\n');
+    if (lines.isEmpty) return;
+    final firstLine = lines.first.trim();
+    if (firstLine.length < 2 || firstLine.length > 100) return;
+    final cleanTitle = _removeMarkdownSymbols(firstLine);
+    if (cleanTitle.isEmpty) return;
+    _titleController.text = cleanTitle;
+    ref.read(documentDetailUiProvider.notifier).setDirty(true);
+  }
+
+  void _scrollGenerationToBottom() {
+    if (!_generationScrollController.hasClients) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_generationScrollController.hasClients) return;
+      final pos = _generationScrollController.position;
+      if (pos.maxScrollExtent > pos.pixels) {
+        _generationScrollController.animateTo(
+          pos.maxScrollExtent,
+          duration: const Duration(milliseconds: 150),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final uiState = ref.watch(documentDetailUiProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    ref.listen(documentDetailUiProvider, (prev, next) {
+      if (next.isGenerating &&
+          (prev?.generatedContent.length ?? 0) < next.generatedContent.length) {
+        _scrollGenerationToBottom();
+      }
+    });
 
     if (uiState.isLoading) {
       return const Scaffold(
@@ -513,7 +600,9 @@ class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: isDark ? AppColors.backgroundDark : Colors.white,
+        backgroundColor: Theme.of(context).brightness == Brightness.dark
+            ? Theme.of(context).scaffoldBackgroundColor
+            : Colors.white,
         resizeToAvoidBottomInset: false,
         appBar: AppBar(
           title: Text(l10n.editDocument),
@@ -555,6 +644,7 @@ class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
                       focusNode: _titleFocusNode,
                       maxLines: 2,
                       minLines: 1,
+                      textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.w700,
@@ -575,25 +665,35 @@ class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
                     color: AppColors.getDivider(context),
                   ),
                   Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                      child: TextField(
-                        controller: _contentController,
-                        focusNode: _contentFocusNode,
-                        maxLines: null,
-                        keyboardType: TextInputType.multiline,
-                        style: TextStyle(
-                          fontSize: 16,
-                          height: 1.5,
-                          color: AppColors.getTextPrimary(context),
-                        ),
-                        decoration: InputDecoration(
-                          isDense: true,
-                          filled: false,
-                          border: InputBorder.none,
-                          hintText: l10n.enterMainText,
-                          hintStyle: TextStyle(color: AppColors.getTextSecondary(context)),
-                          contentPadding: EdgeInsets.zero,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 300),
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            TextField(
+                              controller: _contentController,
+                              focusNode: _contentFocusNode,
+                              maxLines: null,
+                              minLines: 4,
+                              keyboardType: TextInputType.multiline,
+                              style: TextStyle(
+                                fontSize: 16,
+                                height: 1.5,
+                                color: AppColors.getTextPrimary(context),
+                              ),
+                              decoration: InputDecoration(
+                                isDense: true,
+                                filled: false,
+                                border: InputBorder.none,
+                                hintText: l10n.enterMainText,
+                                hintStyle: TextStyle(color: AppColors.getTextSecondary(context)),
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -763,94 +863,145 @@ class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
         uiState.action == DocumentToolbarAction.expand ||
         uiState.action == DocumentToolbarAction.translate;
     final canOperate = uiState.generatedContent.isNotEmpty && !uiState.isGenerating;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Material(
-      color: Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF202020)
-          : const Color(0xFFFAFAFA),
+      color: isDark ? const Color(0xFF202020) : const Color(0xFFFAFAFA),
       elevation: 8,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                IconButton(
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                  onPressed: uiState.isGenerating
-                      ? null
-                      : () => ref.read(documentDetailUiProvider.notifier).openSelection(uiState.action!),
-                  icon: const Icon(Icons.chevron_left),
-                ),
-                Text(
-                  l10n.generatedContentTitle,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.getTextPrimary(context),
+      child: SafeArea(
+        top: false,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  IconButton(
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    onPressed: uiState.isGenerating
+                        ? null
+                        : () => ref.read(documentDetailUiProvider.notifier).openSelection(uiState.action!),
+                    icon: Icon(Icons.chevron_left, color: isDark ? Colors.grey[400] : Colors.grey[600]),
                   ),
-                ),
-                const Spacer(),
-                if (uiState.isGenerating)
-                  TextButton.icon(
-                    onPressed: _stopGeneration,
-                    icon: const Icon(Icons.stop_circle_outlined, color: Colors.red),
-                    label: Text(l10n.stopGenerating, style: const TextStyle(color: Colors.red)),
-                  ),
-              ],
-            ),
-            Container(
-              constraints: const BoxConstraints(minHeight: 96, maxHeight: 150),
-              decoration: BoxDecoration(
-                color: AppColors.getCardBackground(context),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.getDivider(context)),
-              ),
-              padding: const EdgeInsets.all(10),
-              child: SingleChildScrollView(
-                child: Text(
-                  uiState.generatedContent.isEmpty
-                      ? (uiState.isGenerating ? l10n.generatingShort : l10n.generatedContentPlaceholder)
-                      : uiState.generatedContent,
-                  style: TextStyle(
-                    fontSize: 14,
-                    height: 1.45,
-                    color: AppColors.getTextPrimary(context),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: uiState.isGenerating ? null : _startGeneration,
-                    child: Text(l10n.regenerate),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: canOperate ? _insertGeneratedText : null,
-                    child: Text(l10n.insert),
-                  ),
-                ),
-                if (showOverwrite) ...[
                   const SizedBox(width: 8),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: canOperate ? _overwriteWithGeneratedText : null,
-                      child: Text(l10n.overwriteOriginal),
+                  Text(
+                    l10n.generatedContentTitle,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.getTextPrimary(context),
                     ),
                   ),
+                  const Spacer(),
+                  if (uiState.isGenerating)
+                    InkWell(
+                      onTap: _stopGeneration,
+                      borderRadius: BorderRadius.circular(6),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF4B0505) : const Color(0xFFFEF2F2),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: isDark ? const Color(0xFF781414) : const Color(0xFFFECACA),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.stop_rounded, size: 18, color: Colors.red.shade400),
+                            const SizedBox(width: 6),
+                            Text(
+                              l10n.stopGenerating,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.red.shade400,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                 ],
-              ],
-            ),
-          ],
+              ),
+              const SizedBox(height: 8),
+              Container(
+                constraints: const BoxConstraints(minHeight: 120, maxHeight: 200),
+                decoration: BoxDecoration(
+                  color: AppColors.getCardBackground(context),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: AppColors.getDivider(context)),
+                ),
+                padding: const EdgeInsets.all(12),
+                child: SingleChildScrollView(
+                  controller: _generationScrollController,
+                  child: Text(
+                    uiState.generatedContent.isEmpty
+                        ? (uiState.isGenerating ? l10n.generatingShort : l10n.generatedContentPlaceholder)
+                        : uiState.generatedContent,
+                    style: TextStyle(
+                      fontSize: 14,
+                      height: 1.45,
+                      color: uiState.generatedContent.isEmpty
+                          ? AppColors.getTextSecondary(context)
+                          : AppColors.getTextPrimary(context),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: uiState.isGenerating ? null : _startGeneration,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.getTextPrimary(context),
+                        side: BorderSide(color: AppColors.getDivider(context)),
+                        backgroundColor: AppColors.getCardBackground(context),
+                      ),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(l10n.regenerate),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: TextButton(
+                      onPressed: canOperate ? _insertGeneratedText : null,
+                      style: TextButton.styleFrom(
+                        foregroundColor: canOperate
+                            ? AppColors.primary
+                            : AppColors.getTextSecondary(context),
+                        backgroundColor: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE8E8E8),
+                      ),
+                      child: Text(l10n.insert),
+                    ),
+                  ),
+                  if (showOverwrite) ...[
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: TextButton(
+                        onPressed: canOperate ? _overwriteWithGeneratedText : null,
+                        style: TextButton.styleFrom(
+                          foregroundColor: canOperate
+                              ? AppColors.primary
+                              : AppColors.getTextSecondary(context),
+                          backgroundColor: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE8E8E8),
+                        ),
+                        child: Text(l10n.overwriteOriginal),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
