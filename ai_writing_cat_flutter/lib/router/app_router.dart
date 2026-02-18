@@ -10,7 +10,9 @@ import '../screens/hot/hot_screen.dart';
 import '../screens/hot/hot_search_screen.dart';
 import '../screens/hot/hot_writing_detail_screen.dart';
 import '../screens/hot/hot_writing_input_screen.dart';
+import '../screens/settings/about_screen.dart';
 import '../screens/settings/membership_screen.dart';
+import '../screens/settings/policy_webview_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/settings/word_pack_screen.dart';
 import '../screens/writer/ai_writing_screen.dart';
@@ -32,6 +34,8 @@ enum AppRoute {
   membership,
   wordPack,
   writingRecords,
+  about,
+  policyWebView,
 }
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -159,6 +163,24 @@ GoRouter createAppRouter() {
                       // 使用 extra 传递 templateId，避免跨分支时 query 丢失
                       final templateId = state.extra as String?;
                       return WritingRecordsScreen(templateId: templateId);
+                    },
+                  ),
+                  GoRoute(
+                    path: 'about',
+                    name: AppRoute.about.name,
+                    parentNavigatorKey: rootNavigatorKey,
+                    builder: (context, state) => const AboutScreen(),
+                  ),
+                  GoRoute(
+                    path: 'policy',
+                    name: AppRoute.policyWebView.name,
+                    parentNavigatorKey: rootNavigatorKey,
+                    builder: (context, state) {
+                      final args = state.extra as PolicyWebViewArgs;
+                      return PolicyWebViewScreen(
+                        title: args.title,
+                        assetPath: args.assetPath,
+                      );
                     },
                   ),
                 ],

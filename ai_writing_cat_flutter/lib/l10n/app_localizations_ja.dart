@@ -484,4 +484,26 @@ class AppLocalizationsJa extends AppLocalizations {
   String insufficientWordsMessage(Object available, Object required) {
     return '今回の生成には約$required文字が必要ですが、残りは$available文字です。';
   }
+
+  @override
+  String app_version(Object version) {
+    return 'バージョン $version';
+  }
+
+  @override
+  String get app_intro_title => 'アプリ紹介';
+
+  @override
+  String get app_intro_content =>
+      'AI創作ニャンは、AI技術を基盤としたスマート執筆アシスタントで、続きを書く、書き直し、拡張、翻訳など、さまざまな執筆機能を提供し、執筆効率と品質の向上をサポートします。';
+
+  @override
+  String get main_features_title => '主な機能';
+
+  @override
+  String get main_features_content =>
+      '• AI補助執筆\n• スマート続き書き・書き直し\n• 多言語翻訳\n• ドキュメント管理\n• 作成記録';
+
+  @override
+  String get copyright_text => '© 2026 AI創作ニャン\n全著作権所有';
 }

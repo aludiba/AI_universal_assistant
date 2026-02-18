@@ -488,4 +488,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String insufficientWordsMessage(Object available, Object required) {
     return 'This generation needs about $required words, but only $available are available.';
   }
+
+  @override
+  String app_version(Object version) {
+    return 'Version $version';
+  }
+
+  @override
+  String get app_intro_title => 'App Introduction';
+
+  @override
+  String get app_intro_content =>
+      'AI Writing Master is an intelligent writing assistant based on AI technology, providing you with various writing functions such as continuation, rewriting, expansion, translation, etc., to help you improve writing efficiency and quality.';
+
+  @override
+  String get main_features_title => 'Main Features';
+
+  @override
+  String get main_features_content =>
+      '• AI-Assisted Writing\n• Smart Continuation & Rewriting\n• Multi-language Translation\n• Document Management\n• Creation Records';
+
+  @override
+  String get copyright_text => '© 2026 AI Writing Master\nAll Rights Reserved';
 }

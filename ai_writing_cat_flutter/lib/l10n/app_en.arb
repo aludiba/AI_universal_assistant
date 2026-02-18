@@ -152,6 +152,12 @@
   "format": "Format",
   "firstLine": "First line should be the title",
   "bodyBelow": "Body should continue below on new lines",
-  "insufficientWordsMessage": "This generation needs about {required} words, but only {available} are available."
+  "insufficientWordsMessage": "This generation needs about {required} words, but only {available} are available.",
+  "app_version": "Version {version}",
+  "app_intro_title": "App Introduction",
+  "app_intro_content": "AI Writing Master is an intelligent writing assistant based on AI technology, providing you with various writing functions such as continuation, rewriting, expansion, translation, etc., to help you improve writing efficiency and quality.",
+  "main_features_title": "Main Features",
+  "main_features_content": "• AI-Assisted Writing\n• Smart Continuation & Rewriting\n• Multi-language Translation\n• Document Management\n• Creation Records",
+  "copyright_text": "© 2026 AI Writing Master\nAll Rights Reserved"
 }
 

@@ -55,7 +55,6 @@ class _HotWritingDetailScreenState extends State<HotWritingDetailScreen> {
   String _titleText = '';
   String _contentText = '';
   String? _currentWritingId;
-  DocumentModel? _editingDocument;
   bool _isGenerating = true;
   bool _userStoppedCreation = false;
 
@@ -171,25 +170,42 @@ class _HotWritingDetailScreenState extends State<HotWritingDetailScreen> {
     final fullText = _buildFullText();
     if (fullText.isEmpty) return;
 
+    // 删除旧的创作记录和对应文档（重写场景）
     if (_currentWritingId != null) {
       await _dataManager.deleteWritingWithID(_currentWritingId!);
+      await _dataManager.deleteDocument(_currentWritingId!);
       _currentWritingId = null;
     }
 
     final newId = _dataManager.generateUniqueID();
     _currentWritingId = newId;
+    final now = DateTime.now();
+    final title = _titleText.isEmpty ? widget.args.item.title : _titleText;
 
     final record = WritingRecordModel(
       id: newId,
       templateId: widget.args.item.id,
-      templateTitle: _titleText.isEmpty ? widget.args.item.title : _titleText,
+      templateTitle: title,
       prompt: widget.args.prompt,
       generatedContent: fullText,
       wordCount: outputWords,
-      createdAt: DateTime.now(),
+      createdAt: now,
       isCompleted: true,
     );
     await _dataManager.saveWritingToPlist(record);
+
+    // 与 iOS 对齐：创作记录和文档共享同一 ID，文档列表和创作记录列表展示同一数据
+    final doc = DocumentModel(
+      id: newId,
+      title: title,
+      content: _contentText,
+      createdAt: now,
+      updatedAt: now,
+    );
+    await _dataManager.insertDocument(doc);
+    if (mounted) {
+      await context.read<DocumentProvider>().loadDocuments();
+    }
   }
 
   Future<void> _stopGenerating() async {
@@ -225,7 +241,11 @@ class _HotWritingDetailScreenState extends State<HotWritingDetailScreen> {
     await _streamSub?.cancel();
     if (_currentWritingId != null) {
       await _dataManager.deleteWritingWithID(_currentWritingId!);
+      await _dataManager.deleteDocument(_currentWritingId!);
       _currentWritingId = null;
+    }
+    if (mounted) {
+      await context.read<DocumentProvider>().loadDocuments();
     }
 
     setState(() {
@@ -257,33 +277,12 @@ class _HotWritingDetailScreenState extends State<HotWritingDetailScreen> {
   }
 
   Future<void> _edit() async {
-    final fullText = _buildFullText();
-    if (fullText.isEmpty) return;
-
-    final provider = context.read<DocumentProvider>();
-    final title = _titleText.isEmpty ? widget.args.item.title : _titleText;
-    final content = _contentText;
-
-    if (_editingDocument == null) {
-      _editingDocument = await provider.createDocument(
-        title: title,
-        content: content,
-        refreshList: false,
-      );
-    } else {
-      final updated = _editingDocument!.copyWith(
-        title: title,
-        content: content,
-        updatedAt: DateTime.now(),
-      );
-      await provider.updateDocument(updated);
-      _editingDocument = updated;
-    }
-
-    if (!mounted || _editingDocument == null) return;
+    // 文档已在 _saveWritingRecord 中以相同 ID 创建，直接跳转编辑
+    if (_currentWritingId == null || _currentWritingId!.isEmpty) return;
+    if (!mounted) return;
     context.pushNamed(
       AppRoute.docDetail.name,
-      pathParameters: {'id': _editingDocument!.id},
+      pathParameters: {'id': _currentWritingId!},
     );
   }
 
@@ -495,37 +494,15 @@ class _HotWritingDetailScreenState extends State<HotWritingDetailScreen> {
     );
   }
 
-  /// 返回时若有内容则自动保存为文档再 pop；若用户点击过停止则只返回不保存
+  /// 返回时直接 pop。
+  /// 文档和创作记录已在 _saveWritingRecord 中同步保存（与 iOS 一致）。
+  /// 若正在生成中，取消请求后返回。
   Future<void> _saveIfHasContentAndPop() async {
-    if (_userStoppedCreation) {
-      if (mounted) context.pop();
-      return;
+    if (_isGenerating) {
+      _writer.cancelCurrentRequest();
+      await _streamSub?.cancel();
     }
-    final fullText = _buildFullText();
-    if (fullText.isEmpty) {
-      if (mounted) context.pop();
-      return;
-    }
-    final provider = context.read<DocumentProvider>();
-    final title = _titleText.isEmpty ? widget.args.item.title : _titleText;
-    final content = _contentText;
-    if (_editingDocument == null) {
-      _editingDocument = await provider.createDocument(
-        title: title,
-        content: content,
-        refreshList: true,
-      );
-    } else {
-      final updated = _editingDocument!.copyWith(
-        title: title,
-        content: content,
-        updatedAt: DateTime.now(),
-      );
-      await provider.updateDocument(updated);
-      _editingDocument = updated;
-    }
-    if (!mounted) return;
-    context.pop();
+    if (mounted) context.pop();
   }
 }
 

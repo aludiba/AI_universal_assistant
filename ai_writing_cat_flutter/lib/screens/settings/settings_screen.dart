@@ -1,455 +1,332 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:package_info_plus/package_info_plus.dart';
-import '../../providers/app_provider.dart';
-import '../../constants/app_styles.dart';
-import '../../l10n/app_localizations.dart';
-import '../../router/app_router.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-/// 设置页面
-class SettingsScreen extends StatelessWidget {
+import '../../constants/app_colors.dart';
+import '../../l10n/app_localizations.dart';
+import '../../providers/app_provider.dart';
+import '../../providers/document_provider.dart';
+import '../../providers/hot_provider.dart';
+import '../../router/app_router.dart';
+import '../../services/data_manager.dart';
+
+enum _SettingsAction {
+  memberPrivileges,
+  creationRecords,
+  wordPacks,
+  clearCache,
+  rateApp,
+  shareApp,
+  contactUs,
+  aboutUs,
+}
+
+class _SettingsItem {
+  const _SettingsItem({
+    required this.title,
+    required this.icon,
+    required this.iconBgColor,
+    required this.action,
+    this.subtitle,
+  });
+
+  final String title;
+  final IconData icon;
+  final Color iconBgColor;
+  final _SettingsAction action;
+  final String? subtitle;
+}
+
+/// 设置页面（对齐 iOS：单列表卡片样式、8 个功能项）
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  final DataManager _dataManager = DataManager();
+
+  String _cacheSizeText = '...';
+  bool _cacheLoading = false;
+  bool _isClearingCache = false;
+
+  // 监听数据变化时自动刷新缓存大小
+  DocumentProvider? _docProvider;
+  HotProvider? _hotProvider;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCacheSize();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 绑定 DocumentProvider 监听
+    final newDocProvider = Provider.of<DocumentProvider>(context, listen: false);
+    if (_docProvider != newDocProvider) {
+      _docProvider?.removeListener(_loadCacheSize);
+      _docProvider = newDocProvider;
+      _docProvider!.addListener(_loadCacheSize);
+    }
+    // 绑定 HotProvider 监听
+    final newHotProvider = Provider.of<HotProvider>(context, listen: false);
+    if (_hotProvider != newHotProvider) {
+      _hotProvider?.removeListener(_loadCacheSize);
+      _hotProvider = newHotProvider;
+      _hotProvider!.addListener(_loadCacheSize);
+    }
+  }
+
+  @override
+  void dispose() {
+    _docProvider?.removeListener(_loadCacheSize);
+    _hotProvider?.removeListener(_loadCacheSize);
+    super.dispose();
+  }
+
+  Future<void> _loadCacheSize() async {
+    if (_cacheLoading) return;
+    setState(() => _cacheLoading = true);
+    try {
+      final cacheSize = await _dataManager.calculateCacheSize();
+      final text = _dataManager.formatCacheSize(cacheSize);
+      if (mounted) setState(() => _cacheSizeText = text);
+    } catch (_) {
+      if (mounted) setState(() => _cacheSizeText = '--');
+    } finally {
+      if (mounted) setState(() => _cacheLoading = false);
+    }
+  }
+
+  String _membershipStatusText(AppProvider appProvider, AppLocalizations l10n) {
+    final sub = appProvider.subscription;
+    if (!appProvider.isVip) return l10n.normalUser;
+    if (sub == null) return l10n.vipMember;
+    if (sub.isLifetime) return '${l10n.vipMember} - ${l10n.permanentValid}';
+    if (sub.expiryDate != null) {
+      final dateText = DateFormat('yyyy-MM-dd', l10n.localeName).format(sub.expiryDate!);
+      return '${l10n.vipMember} - $dateText';
+    }
+    return l10n.vipMember;
+  }
+
+  List<_SettingsItem> _buildItems(AppProvider appProvider, AppLocalizations l10n) {
+    return [
+      _SettingsItem(
+        title: l10n.memberPrivileges,
+        icon: Icons.workspace_premium,
+        iconBgColor: const Color(0xFFFFD700),
+        action: _SettingsAction.memberPrivileges,
+        subtitle: _membershipStatusText(appProvider, l10n),
+      ),
+      _SettingsItem(
+        title: l10n.writingRecords,
+        icon: Icons.description,
+        iconBgColor: const Color(0xFF3B82F6),
+        action: _SettingsAction.creationRecords,
+      ),
+      _SettingsItem(
+        title: l10n.writingWordPacks,
+        icon: Icons.inventory_2,
+        iconBgColor: const Color(0xFF10B981),
+        action: _SettingsAction.wordPacks,
+      ),
+      _SettingsItem(
+        title: l10n.clearCache,
+        icon: Icons.delete,
+        iconBgColor: const Color(0xFFF97316),
+        action: _SettingsAction.clearCache,
+        subtitle: _cacheSizeText,
+      ),
+      _SettingsItem(
+        title: l10n.rateApp,
+        icon: Icons.star,
+        iconBgColor: const Color(0xFFEF4444),
+        action: _SettingsAction.rateApp,
+      ),
+      _SettingsItem(
+        title: l10n.shareApp,
+        icon: Icons.ios_share,
+        iconBgColor: const Color(0xFF06B6D4),
+        action: _SettingsAction.shareApp,
+      ),
+      _SettingsItem(
+        title: l10n.contactUs,
+        icon: Icons.email,
+        iconBgColor: const Color(0xFFF59E0B),
+        action: _SettingsAction.contactUs,
+      ),
+      _SettingsItem(
+        title: l10n.aboutUs,
+        icon: Icons.info,
+        iconBgColor: const Color(0xFF8B5CF6),
+        action: _SettingsAction.aboutUs,
+      ),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final provider = context.watch<AppProvider>();
+    final items = _buildItems(provider, l10n);
+
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.tabSettings),
       ),
-      body: ListView(
-        children: [
-          // VIP信息卡片
-          _buildVIPCard(context),
-          
-          const SizedBox(height: AppStyles.paddingMedium),
-          
-          // 功能列表
-          _buildSection(
-            context,
-            title: l10n.membershipAndWords,
-            children: [
-              _buildListTile(
-                context,
-                icon: Icons.card_membership,
-                title: l10n.memberPrivileges,
-                onTap: () {
-                  context.pushNamed(AppRoute.membership.name);
-                },
-              ),
-              _buildListTile(
-                context,
-                icon: Icons.auto_awesome,
-                title: l10n.writingWordPacks,
-                onTap: () {
-                  context.pushNamed(AppRoute.wordPack.name);
-                },
-              ),
-            ],
-          ),
-          
-          _buildSection(
-            context,
-            title: l10n.appSettings,
-            children: [
-              _buildListTile(
-                context,
-                icon: Icons.history_edu,
-                title: l10n.writingRecords,
-                onTap: () {
-                  context.pushNamed(AppRoute.writingRecords.name, extra: null);
-                },
-              ),
-              _buildThemeTile(context),
-              _buildLanguageTile(context),
-              _buildListTile(
-                context,
-                icon: Icons.cleaning_services,
-                title: l10n.clearCache,
-                onTap: () => _clearCache(context),
-              ),
-            ],
-          ),
-          
-          _buildSection(
-            context,
-            title: l10n.aboutSection,
-            children: [
-              _buildListTile(
-                context,
-                icon: Icons.star_outline,
-                title: l10n.rateApp,
-                onTap: () {
-                  // TODO: 打开应用商店评分
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l10n.thanksForSupport)),
-                  );
-                },
-              ),
-              _buildListTile(
-                context,
-                icon: Icons.share,
-                title: l10n.shareApp,
-                onTap: () {
-                  // TODO: 分享应用
-                },
-              ),
-              _buildListTile(
-                context,
-                icon: Icons.contact_support,
-                title: l10n.contactUs,
-                onTap: () {
-                  _showContactDialog(context);
-                },
-              ),
-              _buildListTile(
-                context,
-                icon: Icons.info_outline,
-                title: l10n.aboutUs,
-                onTap: () => _showAboutDialog(context),
-              ),
-              _buildListTile(
-                context,
-                icon: Icons.article,
-                title: l10n.userAgreement,
-                onTap: () {
-                  // TODO: 显示用户协议
-                },
-              ),
-              _buildListTile(
-                context,
-                icon: Icons.privacy_tip,
-                title: l10n.privacyPolicy,
-                onTap: () {
-                  // TODO: 显示隐私政策
-                },
-              ),
-            ],
-          ),
-          
-          // 版本信息
-          FutureBuilder<PackageInfo>(
-            future: PackageInfo.fromPlatform(),
-            builder: (context, snapshot) {
-              final version = snapshot.data?.version ?? '1.0.0';
-              return Padding(
-                padding: const EdgeInsets.all(AppStyles.paddingLarge),
-                child: Center(
-                  child: Text(
-                    'v$version',
-                    style: AppStyles.bodySmall.copyWith(
-                      color: Colors.grey[500],
+      body: ListView.builder(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        itemCount: items.length,
+        itemBuilder: (context, index) => _buildSettingsCell(context, items[index]),
+      ),
+    );
+  }
+
+  Widget _buildSettingsCell(BuildContext context, _SettingsItem item) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
+      child: Material(
+        color: AppColors.getCardBackground(context),
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => _handleAction(item.action),
+          child: SizedBox(
+            height: 72,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: item.iconBgColor,
+                      borderRadius: BorderRadius.circular(8),
                     ),
+                    child: Icon(item.icon, size: 18, color: Colors.white),
                   ),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-  
-  Widget _buildVIPCard(BuildContext context) {
-    return Consumer<AppProvider>(
-      builder: (context, provider, _) {
-        final l10n = AppLocalizations.of(context)!;
-        final isVip = provider.isVip;
-        final subscription = provider.subscription;
-        
-        return Container(
-          margin: const EdgeInsets.all(AppStyles.paddingMedium),
-          padding: const EdgeInsets.all(AppStyles.paddingLarge),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: isVip
-                  ? [Colors.amber[700]!, Colors.amber[500]!]
-                  : [Colors.grey[400]!, Colors.grey[300]!],
-            ),
-            borderRadius: BorderRadius.circular(AppStyles.radiusLarge),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                isVip ? Icons.workspace_premium : Icons.person_outline,
-                size: 48,
-                color: Colors.white,
-              ),
-              const SizedBox(width: AppStyles.paddingMedium),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      isVip ? l10n.vipMember : l10n.normalUser,
-                      style: AppStyles.titleMedium.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      isVip && subscription != null
-                          ? subscription.isLifetime
-                              ? l10n.permanentValid
-                              : l10n.remainingDays(subscription.remainingDays)
-                          : l10n.vipBenefitsHint,
-                      style: AppStyles.bodyMedium.copyWith(
-                        color: Colors.white.withValues(alpha: 0.9),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (!isVip)
-                ElevatedButton(
-                  onPressed: () {
-                    context.pushNamed(AppRoute.membership.name);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.amber[700],
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: item.subtitle == null || item.subtitle!.isEmpty
+                        ? Text(
+                            item.title,
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: AppColors.getTextPrimary(context),
+                            ),
+                          )
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.title,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: AppColors.getTextPrimary(context),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                item.subtitle!,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.getTextSecondary(context),
+                                ),
+                              ),
+                            ],
+                          ),
                   ),
-                  child: Text(l10n.openMembership),
-                ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-  
-  Widget _buildSection(
-    BuildContext context, {
-    required String title,
-    required List<Widget> children,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppStyles.paddingLarge,
-            AppStyles.paddingMedium,
-            AppStyles.paddingLarge,
-            AppStyles.paddingSmall,
-          ),
-          child: Text(
-            title,
-            style: AppStyles.bodyMedium.copyWith(
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        ...children,
-      ],
-    );
-  }
-  
-  Widget _buildListTile(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    String? trailing,
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (trailing != null)
-            Text(
-              trailing,
-              style: AppStyles.bodyMedium.copyWith(
-                color: Colors.grey[600],
+                  Icon(
+                    Icons.chevron_right,
+                    size: 18,
+                    color: AppColors.getTextSecondary(context),
+                  ),
+                ],
               ),
             ),
-          const SizedBox(width: 4),
-          Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
-        ],
-      ),
-      onTap: onTap,
-    );
-  }
-  
-  Widget _buildThemeTile(BuildContext context) {
-    return Consumer<AppProvider>(
-      builder: (context, provider, _) {
-        final l10n = AppLocalizations.of(context)!;
-        String themeName = l10n.themeSystem;
-        switch (provider.themeMode) {
-          case ThemeMode.light:
-            themeName = l10n.themeLight;
-            break;
-          case ThemeMode.dark:
-            themeName = l10n.themeDark;
-            break;
-          default:
-            themeName = l10n.themeSystem;
-        }
-        
-        return ListTile(
-          leading: const Icon(Icons.brightness_6),
-          title: Text(l10n.themeMode),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                themeName,
-                style: AppStyles.bodyMedium.copyWith(
-                  color: Colors.grey[600],
-                ),
-              ),
-              const SizedBox(width: 4),
-              Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
-            ],
           ),
-          onTap: () => _showThemeDialog(context, provider),
-        );
-      },
-    );
-  }
-  
-  Widget _buildLanguageTile(BuildContext context) {
-    return Consumer<AppProvider>(
-      builder: (context, provider, _) {
-        final l10n = AppLocalizations.of(context)!;
-        String languageName = l10n.simplifiedChinese;
-        if (provider.locale?.languageCode == 'en') {
-          languageName = l10n.english;
-        } else if (provider.locale?.languageCode == 'ja') {
-          languageName = l10n.japanese;
-        }
-        
-        return ListTile(
-          leading: const Icon(Icons.language),
-          title: Text(l10n.language),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                languageName,
-                style: AppStyles.bodyMedium.copyWith(
-                  color: Colors.grey[600],
-                ),
-              ),
-              const SizedBox(width: 4),
-              Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
-            ],
-          ),
-          onTap: () => _showLanguageDialog(context, provider),
-        );
-      },
-    );
-  }
-  
-  void _showThemeDialog(BuildContext context, AppProvider provider) {
-    final l10n = AppLocalizations.of(context)!;
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.selectTheme),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            RadioListTile<ThemeMode>(
-              title: Text(l10n.themeSystem),
-              value: ThemeMode.system,
-              groupValue: provider.themeMode,
-              onChanged: (value) {
-                if (value != null) {
-                  provider.setThemeMode(value);
-                  Navigator.pop(context);
-                }
-              },
-            ),
-            RadioListTile<ThemeMode>(
-              title: Text(l10n.themeLight),
-              value: ThemeMode.light,
-              groupValue: provider.themeMode,
-              onChanged: (value) {
-                if (value != null) {
-                  provider.setThemeMode(value);
-                  Navigator.pop(context);
-                }
-              },
-            ),
-            RadioListTile<ThemeMode>(
-              title: Text(l10n.themeDark),
-              value: ThemeMode.dark,
-              groupValue: provider.themeMode,
-              onChanged: (value) {
-                if (value != null) {
-                  provider.setThemeMode(value);
-                  Navigator.pop(context);
-                }
-              },
-            ),
-          ],
         ),
       ),
     );
   }
-  
-  void _showLanguageDialog(BuildContext context, AppProvider provider) {
-    final l10n = AppLocalizations.of(context)!;
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.selectLanguage),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: Text(l10n.simplifiedChinese),
-              onTap: () {
-                provider.setLocale(const Locale('zh'));
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              title: Text(l10n.english),
-              onTap: () {
-                provider.setLocale(const Locale('en'));
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              title: Text(l10n.japanese),
-              onTap: () {
-                provider.setLocale(const Locale('ja'));
-                Navigator.pop(context);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
+
+  Future<void> _handleAction(_SettingsAction action) async {
+    switch (action) {
+      case _SettingsAction.memberPrivileges:
+        context.pushNamed(AppRoute.membership.name);
+        return;
+      case _SettingsAction.creationRecords:
+        context.pushNamed(AppRoute.writingRecords.name, extra: null);
+        return;
+      case _SettingsAction.wordPacks:
+        context.pushNamed(AppRoute.wordPack.name);
+        return;
+      case _SettingsAction.clearCache:
+        _showClearCacheDialog();
+        return;
+      case _SettingsAction.rateApp:
+        await _rateApp();
+        return;
+      case _SettingsAction.shareApp:
+        await _shareApp();
+        return;
+      case _SettingsAction.contactUs:
+        _showContactDialog(context);
+        return;
+      case _SettingsAction.aboutUs:
+        context.pushNamed(AppRoute.about.name);
+        return;
+    }
   }
-  
-  void _clearCache(BuildContext context) {
+
+  Future<void> _rateApp() async {
     final l10n = AppLocalizations.of(context)!;
+    final uri = Uri.parse('https://apps.apple.com/app/id6755778624');
+    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.failure)),
+      );
+    }
+  }
+
+  Future<void> _shareApp() async {
+    final l10n = AppLocalizations.of(context)!;
+    final shareText = '${l10n.appName}\n\n${l10n.aboutDescription(l10n.appName)}\n\n'
+        'https://apps.apple.com/app/id6755778624';
+    await Share.share(shareText);
+  }
+
+  void _showClearCacheDialog() {
+    if (_isClearingCache) return;
+    final l10n = AppLocalizations.of(context)!;
+    final message = '${l10n.clearCacheConfirm}\n\n$_cacheSizeText';
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: Text(l10n.clearCache),
-        content: Text(l10n.clearCacheConfirm),
+        content: Text(message),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () {
-              // TODO: 清理缓存
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(l10n.cacheCleared)),
-              );
+              Navigator.pop(dialogContext);
+              _clearCache();
             },
             child: Text(l10n.confirm),
           ),
@@ -457,42 +334,50 @@ class SettingsScreen extends StatelessWidget {
       ),
     );
   }
-  
+
+  Future<void> _clearCache() async {
+    if (_isClearingCache) return;
+    final l10n = AppLocalizations.of(context)!;
+    setState(() => _isClearingCache = true);
+    try {
+      final result = await _dataManager.clearCache();
+      if (!mounted) return;
+      if (result['success'] == true) {
+        // 刷新内存中的文档列表和最近使用列表
+        await Future.wait([
+          Provider.of<DocumentProvider>(context, listen: false).loadDocuments(),
+          Provider.of<HotProvider>(context, listen: false).refreshRecentUsed(),
+        ]);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.cacheCleared)),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text((result['errorMessage'] as String?) ?? l10n.failure)),
+        );
+      }
+      await _loadCacheSize();
+    } finally {
+      if (mounted) setState(() => _isClearingCache = false);
+    }
+  }
+
   void _showContactDialog(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: Text(l10n.contactUs),
         content: Text(l10n.contactDialogContent),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: Text(l10n.confirm),
           ),
         ],
       ),
     );
   }
-  
-  void _showAboutDialog(BuildContext context) async {
-    final packageInfo = await PackageInfo.fromPlatform();
-    
-    if (context.mounted) {
-      final l10n = AppLocalizations.of(context)!;
-      final year = DateTime.now().year.toString();
-      showAboutDialog(
-        context: context,
-        applicationName: l10n.appName,
-        applicationVersion: packageInfo.version,
-        applicationIcon: const FlutterLogo(size: 48),
-        children: [
-          Text(l10n.aboutDescription(l10n.appName)),
-          const SizedBox(height: 8),
-          Text(l10n.copyright(year, l10n.appName)),
-        ],
-      );
-    }
-  }
+
 }
 

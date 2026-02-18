@@ -1017,6 +1017,42 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'本次预计消耗 {required} 字，当前仅剩 {available} 字。'**
   String insufficientWordsMessage(Object available, Object required);
+
+  /// No description provided for @app_version.
+  ///
+  /// In zh, this message translates to:
+  /// **'版本 {version}'**
+  String app_version(Object version);
+
+  /// No description provided for @app_intro_title.
+  ///
+  /// In zh, this message translates to:
+  /// **'应用简介'**
+  String get app_intro_title;
+
+  /// No description provided for @app_intro_content.
+  ///
+  /// In zh, this message translates to:
+  /// **'AI创作喵是一款基于AI技术的智能写作助手，为您提供续写、改写、扩写、翻译等多种写作功能，帮助您提升写作效率和质量。'**
+  String get app_intro_content;
+
+  /// No description provided for @main_features_title.
+  ///
+  /// In zh, this message translates to:
+  /// **'主要功能'**
+  String get main_features_title;
+
+  /// No description provided for @main_features_content.
+  ///
+  /// In zh, this message translates to:
+  /// **'• AI辅助写作\n• 智能续写改写\n• 多语言翻译\n• 文档管理\n• 创作记录'**
+  String get main_features_content;
+
+  /// No description provided for @copyright_text.
+  ///
+  /// In zh, this message translates to:
+  /// **'© 2026 AI创作喵\n保留所有权利'**
+  String get copyright_text;
 }
 
 class _AppLocalizationsDelegate

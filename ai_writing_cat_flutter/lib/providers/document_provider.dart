@@ -29,7 +29,7 @@ class DocumentProvider with ChangeNotifier {
     }
   }
   
-  /// 创建新文档
+  /// 创建新文档（与 iOS 一致：同时写入创作记录表，两列表同源）
   Future<DocumentModel> createDocument({
     String title = '',
     String content = '',
@@ -43,12 +43,13 @@ class DocumentProvider with ChangeNotifier {
       createdAt: now,
       updatedAt: now,
     );
-    
+
     await _dataManager.insertDocument(document);
+    await _dataManager.ensureWritingRecordFromDocument(document);
     if (refreshList) {
       await loadDocuments();
     }
-    
+
     return document;
   }
   

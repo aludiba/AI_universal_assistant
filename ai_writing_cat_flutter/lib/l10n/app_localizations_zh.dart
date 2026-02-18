@@ -483,4 +483,26 @@ class AppLocalizationsZh extends AppLocalizations {
   String insufficientWordsMessage(Object available, Object required) {
     return '本次预计消耗 $required 字，当前仅剩 $available 字。';
   }
+
+  @override
+  String app_version(Object version) {
+    return '版本 $version';
+  }
+
+  @override
+  String get app_intro_title => '应用简介';
+
+  @override
+  String get app_intro_content =>
+      'AI创作喵是一款基于AI技术的智能写作助手，为您提供续写、改写、扩写、翻译等多种写作功能，帮助您提升写作效率和质量。';
+
+  @override
+  String get main_features_title => '主要功能';
+
+  @override
+  String get main_features_content =>
+      '• AI辅助写作\n• 智能续写改写\n• 多语言翻译\n• 文档管理\n• 创作记录';
+
+  @override
+  String get copyright_text => '© 2026 AI创作喵\n保留所有权利';
 }

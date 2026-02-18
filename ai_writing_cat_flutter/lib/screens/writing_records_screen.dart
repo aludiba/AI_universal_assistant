@@ -90,9 +90,8 @@ class _WritingRecordsScreenState extends State<WritingRecordsScreen> {
       if (!mounted) return;
       await context.read<DocumentProvider>().loadDocuments();
       if (!mounted) return;
-      context.pushNamed(AppRoute.docDetail.name, pathParameters: {'id': record.id}).then((_) {
-        _loadRecords();
-      });
+      await context.pushNamed(AppRoute.docDetail.name, pathParameters: {'id': record.id});
+      if (mounted) await _loadRecords();
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -153,8 +152,12 @@ class _WritingRecordsScreenState extends State<WritingRecordsScreen> {
       direction: DismissDirection.endToStart,
       confirmDismiss: (_) => _confirmDelete(record),
       onDismissed: (_) async {
+        // 与 iOS 一致：删除创作记录时同时删除同 id 的文档，并刷新文档列表
+        await _dataManager.deleteDocument(record.id);
         await _dataManager.deleteWritingWithID(record.id);
         if (mounted) {
+          await context.read<DocumentProvider>().loadDocuments();
+          if (!mounted) return;
           setState(() => _records.removeWhere((r) => r.id == record.id));
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(l10n.deletedSuccess)),

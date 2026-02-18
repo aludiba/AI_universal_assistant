@@ -577,17 +577,39 @@ class DataManager {
   /// 更新文档
   Future<void> updateDocument(DocumentModel document) async {
     final db = await database;
+    // 兼容保留：更新 documents 表
     await db.update(
       'documents',
       document.toJson(),
       where: 'id = ?',
       whereArgs: [document.id],
     );
+
+    // iOS 对齐：文档与创作记录同源，更新文档时同步回写 writing_records
+    final existing = await getWritingRecordById(document.id);
+    final record = WritingRecordModel(
+      id: document.id,
+      templateId: existing?.templateId ?? '',
+      templateTitle: document.title,
+      prompt: existing?.prompt ?? '',
+      generatedContent: document.content,
+      wordCount: document.content.length,
+      // writing_records 无 updatedAt 字段，使用 createdAt 作为列表排序时间
+      createdAt: document.updatedAt,
+      isCompleted: existing?.isCompleted ?? true,
+    );
+    await saveWritingToPlist(record);
   }
 
   /// 删除文档
   Future<void> deleteDocument(String id) async {
     final db = await database;
+    // iOS 对齐：文档与创作记录同源，删除文档时删除同 id 创作记录
+    await db.delete(
+      'writing_records',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
     await db.delete(
       'documents',
       where: 'id = ?',
@@ -597,24 +619,43 @@ class DataManager {
 
   /// 获取所有文档
   Future<List<DocumentModel>> getAllDocuments() async {
+    // iOS 对齐：文档列表直接来自创作记录同一份数据
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
-      'documents',
-      orderBy: 'updatedAt DESC',
+      'writing_records',
+      orderBy: 'createdAt DESC',
     );
-    return maps.map((map) => DocumentModel.fromJson(map)).toList();
+    return maps.map((map) {
+      final createdAt = DateTime.tryParse((map['createdAt'] as String?) ?? '') ?? DateTime.now();
+      return DocumentModel(
+        id: (map['id'] as String?) ?? '',
+        title: (map['templateTitle'] as String?) ?? '',
+        content: (map['generatedContent'] as String?) ?? '',
+        createdAt: createdAt,
+        updatedAt: createdAt,
+      );
+    }).toList();
   }
 
   /// 根据ID获取文档
   Future<DocumentModel?> getDocumentById(String id) async {
+    // iOS 对齐：文档详情读取与创作记录同一份数据
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
-      'documents',
+      'writing_records',
       where: 'id = ?',
       whereArgs: [id],
     );
     if (maps.isEmpty) return null;
-    return DocumentModel.fromJson(maps.first);
+    final map = maps.first;
+    final createdAt = DateTime.tryParse((map['createdAt'] as String?) ?? '') ?? DateTime.now();
+    return DocumentModel(
+      id: (map['id'] as String?) ?? '',
+      title: (map['templateTitle'] as String?) ?? '',
+      content: (map['generatedContent'] as String?) ?? '',
+      createdAt: createdAt,
+      updatedAt: createdAt,
+    );
   }
 
   /// 从创作记录确保对应文档存在（用于打开编辑），有则返回，无则创建后返回
@@ -630,6 +671,24 @@ class DataManager {
     );
     await insertDocument(doc);
     return doc;
+  }
+
+  /// 从文档确保对应创作记录存在（与 iOS 一致：文档列表与创作记录列表同源）
+  /// 文档首页新建文档时调用，使该文档同时出现在创作记录列表
+  Future<void> ensureWritingRecordFromDocument(DocumentModel doc) async {
+    final existing = await getWritingRecordById(doc.id);
+    if (existing != null) return;
+    final record = WritingRecordModel(
+      id: doc.id,
+      templateId: '',
+      templateTitle: doc.title,
+      prompt: '',
+      generatedContent: doc.content,
+      wordCount: doc.content.length,
+      createdAt: doc.createdAt,
+      isCompleted: true,
+    );
+    await saveWritingToPlist(record);
   }
 
   // ==================== 模板操作 ====================
@@ -1133,7 +1192,9 @@ class DataManager {
   // ==================== 缓存管理 ====================
 
   /// 计算缓存总大小（字节）
-  /// 包括：最近使用、搜索历史、写作记录
+  /// 包括：最近使用、搜索历史、文档、写作记录
+  /// 注意：这里统计的是业务数据本身大小，不统计整个 sqlite 文件体积，
+  /// 避免出现“数据已清空但数据库文件仍占空间”的误差。
   Future<int> calculateCacheSize() async {
     int totalSize = 0;
     final documentsDir = await getApplicationDocumentsDirectory();
@@ -1155,6 +1216,12 @@ class DataManager {
       }
     }
 
+    // 兼容旧版本：若最近使用仍在本地存储字符串中，也计入缓存
+    final legacyRecentUsed = _getString('hot_recent_used');
+    if (legacyRecentUsed != null && legacyRecentUsed.isNotEmpty) {
+      totalSize += utf8.encode(legacyRecentUsed).length;
+    }
+
     // 计算搜索历史大小
     final history = loadSearchHistorySearches();
     if (history.isNotEmpty) {
@@ -1162,16 +1229,47 @@ class DataManager {
       totalSize += utf8.encode(jsonString).length;
     }
 
-    // 计算数据库文件大小
+    // 计算文档、写作记录（按实际业务字段字节估算）
     try {
-      final databasesPath = await getDatabasesPath();
-      final dbPath = p.join(databasesPath, 'ai_writing_cat.db');
-      final dbFile = File(dbPath);
-      if (await dbFile.exists()) {
-        totalSize += await dbFile.length();
+      final db = await database;
+
+      final docs = await db.query(
+        'documents',
+        columns: ['id', 'title', 'content', 'createdAt', 'updatedAt'],
+      );
+      for (final row in docs) {
+        totalSize += utf8.encode((row['id'] as String?) ?? '').length;
+        totalSize += utf8.encode((row['title'] as String?) ?? '').length;
+        totalSize += utf8.encode((row['content'] as String?) ?? '').length;
+        totalSize += utf8.encode((row['createdAt'] as String?) ?? '').length;
+        totalSize += utf8.encode((row['updatedAt'] as String?) ?? '').length;
+      }
+
+      final records = await db.query(
+        'writing_records',
+        columns: [
+          'id',
+          'templateId',
+          'templateTitle',
+          'prompt',
+          'generatedContent',
+          'wordCount',
+          'createdAt',
+          'isCompleted',
+        ],
+      );
+      for (final row in records) {
+        totalSize += utf8.encode((row['id'] as String?) ?? '').length;
+        totalSize += utf8.encode((row['templateId'] as String?) ?? '').length;
+        totalSize += utf8.encode((row['templateTitle'] as String?) ?? '').length;
+        totalSize += utf8.encode((row['prompt'] as String?) ?? '').length;
+        totalSize += utf8.encode((row['generatedContent'] as String?) ?? '').length;
+        totalSize += utf8.encode('${row['wordCount'] ?? ''}').length;
+        totalSize += utf8.encode((row['createdAt'] as String?) ?? '').length;
+        totalSize += utf8.encode('${row['isCompleted'] ?? ''}').length;
       }
     } catch (e) {
-      debugPrint('计算数据库大小失败: $e');
+      debugPrint('计算文档/写作记录大小失败: $e');
     }
 
     return totalSize;
@@ -1197,18 +1295,15 @@ class DataManager {
     return '${sizeInGB.toStringAsFixed(2)} GB';
   }
 
-  /// 清理缓存文件
-  /// 清除：最近使用、搜索历史、写作记录
-  /// 保留：收藏文件
+  /// 清理缓存（与 iOS 对齐）
+  /// 清除：文档、最近使用、搜索历史、写作记录
+  /// 保留：收藏（我的关注）
   Future<Map<String, dynamic>> clearCache() async {
     final errors = <String>[];
     final documentsDir = await getApplicationDocumentsDirectory();
 
-    // 需要清除的文件列表
-    final cacheFiles = [
-      'hot_recent_used.json',
-    ];
-
+    // 1. 清除最近使用（与 iOS AIUARecentUsed.plist 对应）
+    final cacheFiles = ['hot_recent_used.json'];
     for (final fileName in cacheFiles) {
       final filePath = p.join(documentsDir.path, fileName);
       final file = File(filePath);
@@ -1223,8 +1318,12 @@ class DataManager {
         }
       }
     }
+    // 兼容旧版本 prefs
+    try {
+      await _remove('hot_recent_used');
+    } catch (_) {}
 
-    // 清除搜索历史
+    // 2. 清除搜索历史（与 iOS SearchHistory.plist 对应）
     try {
       await clearSearchHistory();
       debugPrint('[DataManager] 成功清除搜索历史');
@@ -1234,13 +1333,15 @@ class DataManager {
       debugPrint('[DataManager] $errorMsg');
     }
 
-    // 清除写作记录（清空数据库中的写作记录表）
+    // 3. 清除文档表、写作记录表（与 iOS AIUAWritings 等对应；文档一并清理）
     try {
       final db = await database;
+      await db.delete('documents');
+      debugPrint('[DataManager] 成功清除文档');
       await db.delete('writing_records');
       debugPrint('[DataManager] 成功清除写作记录');
     } catch (e) {
-      final errorMsg = '清除写作记录失败: $e';
+      final errorMsg = '清除数据库表失败: $e';
       errors.add(errorMsg);
       debugPrint('[DataManager] $errorMsg');
     }

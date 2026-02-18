@@ -198,6 +198,8 @@ class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
   DocumentModel? _currentDocument;
   bool _saveInProgress = false;
   bool _titleExtractedFromGeneration = false;
+  /// 删除文档后调用 pop，此时不再保存
+  bool _poppingAfterDelete = false;
 
   @override
   void initState() {
@@ -303,8 +305,12 @@ class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
     return title.isEmpty && content.isEmpty;
   }
 
-  Future<void> _handleExit() async {
+  Future<void> _handleExit({bool shouldPersist = true}) async {
     if (_currentDocument == null) return;
+    if (!shouldPersist) {
+      _deepSeekService.cancelCurrentRequest();
+      return;
+    }
     if (_isDocumentEmpty()) {
       await context.read<DocumentProvider>().deleteDocument(_currentDocument!.id);
       ref.read(documentDetailUiProvider.notifier).setDirty(false);
@@ -359,8 +365,11 @@ class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
                   Navigator.pop(sheetContext);
                   final ok = await _confirmDelete();
                   if (!ok) return;
+                  // 与 iOS 一致：删除文档时同时删除同 id 的创作记录
+                  await _dataManager.deleteWritingWithID(doc.id);
                   await docProvider.deleteDocument(doc.id);
                   if (!mounted) return;
+                  setState(() => _poppingAfterDelete = true);
                   if (context.canPop()) {
                     context.pop();
                   }
@@ -508,6 +517,7 @@ class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
     }
     ref.read(documentDetailUiProvider.notifier).setDirty(true);
     _tryExtractTitleFromContent(_contentController.text);
+    ref.read(documentDetailUiProvider.notifier).hidePanels();
   }
 
   void _overwriteWithGeneratedText() {
@@ -519,6 +529,7 @@ class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
     );
     ref.read(documentDetailUiProvider.notifier).setDirty(true);
     _tryExtractTitleFromContent(_contentController.text);
+    ref.read(documentDetailUiProvider.notifier).hidePanels();
   }
 
   void _dismissKeyboard() {
@@ -593,11 +604,22 @@ class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
       );
     }
 
+    // 先保存再 pop，避免返回创作记录/文档列表时列表在保存完成前刷新导致内容不更新
     return PopScope(
+      canPop: _poppingAfterDelete,
       onPopInvokedWithResult: (didPop, _) async {
-        if (didPop) {
-          await _handleExit();
+        if (didPop) return;
+        if (_poppingAfterDelete) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) context.pop();
+          });
+          return;
         }
+        final isGenerating = ref.read(documentDetailUiProvider).isGenerating;
+        await _handleExit(shouldPersist: !isGenerating);
+        if (!mounted) return;
+        setState(() => _poppingAfterDelete = true);
+        context.pop();
       },
       child: Scaffold(
         backgroundColor: Theme.of(context).brightness == Brightness.dark

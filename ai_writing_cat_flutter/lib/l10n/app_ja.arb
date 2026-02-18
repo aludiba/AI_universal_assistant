@@ -152,7 +152,13 @@
   "format": "形式",
   "firstLine": "1行目はタイトル",
   "bodyBelow": "本文は改行して下に続ける",
-  "insufficientWordsMessage": "今回の生成には約{required}文字が必要ですが、残りは{available}文字です。"
+  "insufficientWordsMessage": "今回の生成には約{required}文字が必要ですが、残りは{available}文字です。",
+  "app_version": "バージョン {version}",
+  "app_intro_title": "アプリ紹介",
+  "app_intro_content": "AI創作ニャンは、AI技術を基盤としたスマート執筆アシスタントで、続きを書く、書き直し、拡張、翻訳など、さまざまな執筆機能を提供し、執筆効率と品質の向上をサポートします。",
+  "main_features_title": "主な機能",
+  "main_features_content": "• AI補助執筆\n• スマート続き書き・書き直し\n• 多言語翻訳\n• ドキュメント管理\n• 作成記録",
+  "copyright_text": "© 2026 AI創作ニャン\n全著作権所有"
 }
 
 

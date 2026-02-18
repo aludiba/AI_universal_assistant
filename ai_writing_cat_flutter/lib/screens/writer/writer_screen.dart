@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../constants/app_colors.dart';
 import '../../l10n/app_localizations.dart';
+import '../../models/hot_item_model.dart';
 import '../../models/writing_category_model.dart';
 import '../../services/data_manager.dart';
 import '../../router/app_router.dart';
+import '../hot/hot_writing_detail_screen.dart';
 
 /// 写作类型
 enum WritingType {
@@ -123,13 +125,24 @@ class _WriterScreenState extends ConsumerState<WriterScreen> {
   void _startCreating() {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
-    
+
+    final l10n = AppLocalizations.of(context)!;
+    // 与 iOS 一致：直接进入创作详情页（流式生成、保存等）
+    final freeItem = HotItemModel(
+      title: l10n.startCreating,
+      subtitle: '',
+      icon: '',
+      type: 'free',
+      categoryId: 'writer',
+      categoryTitle: l10n.tabWriter,
+    );
     context.pushNamed(
-      AppRoute.aiWriting.name,
-      queryParameters: {
-        'type': WritingType.free.name,
-        'initialContent': text,
-      },
+      AppRoute.hotWriteDetail.name,
+      extra: HotWritingDetailArgs(
+        item: freeItem,
+        prompt: text,
+        wordCount: 0,
+      ),
     );
   }
 
@@ -163,8 +176,8 @@ class _WriterScreenState extends ConsumerState<WriterScreen> {
             icon: const Icon(Icons.list),
             color: AppColors.getTextPrimary(context),
             onPressed: () {
-              // TODO: 导航到写作记录页面
-              // context.pushNamed(AppRoute.writingRecords.name);
+              // 与 iOS 一致：右上角创作记录入口，展示全部创作记录
+              context.pushNamed(AppRoute.writingRecords.name, extra: null);
             },
           ),
         ],
