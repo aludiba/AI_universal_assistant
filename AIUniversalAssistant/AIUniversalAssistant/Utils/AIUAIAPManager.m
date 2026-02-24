@@ -165,7 +165,7 @@ static NSString * const kAIUAUserClearedPurchaseData = @"AIUAUserClearedPurchase
 }
 
 - (void)preloadProducts {
-    // 如果已经有缓存的产品，无需重复获取
+    // 如果已经有缓存的产品，无需重复获取（冷启动时内存为空会重新请求）
     if (self.productsCache.count > 0) {
         NSLog(@"[IAP] 预加载：产品已在缓存中，跳过请求");
         return;
@@ -177,13 +177,19 @@ static NSString * const kAIUAUserClearedPurchaseData = @"AIUAUserClearedPurchase
         return;
     }
     
-    // 构建产品ID集合
-    NSSet *productIdentifiers = [NSSet setWithObjects:
-                                 [self productIdentifierForType:AIUASubscriptionProductTypeLifetimeBenefits],
-                                 [self productIdentifierForType:AIUASubscriptionProductTypeYearly],
-                                 [self productIdentifierForType:AIUASubscriptionProductTypeMonthly],
-                                 [self productIdentifierForType:AIUASubscriptionProductTypeWeekly],
-                                 nil];
+    // 订阅产品 ID
+    NSMutableSet *productIdentifiers = [NSMutableSet setWithObjects:
+                                        [self productIdentifierForType:AIUASubscriptionProductTypeLifetimeBenefits],
+                                        [self productIdentifierForType:AIUASubscriptionProductTypeYearly],
+                                        [self productIdentifierForType:AIUASubscriptionProductTypeMonthly],
+                                        [self productIdentifierForType:AIUASubscriptionProductTypeWeekly],
+                                        nil];
+    
+    // 字数包产品 ID（一并预加载）
+    AIUAWordPackManager *wordPackManager = [AIUAWordPackManager sharedManager];
+    [productIdentifiers addObject:[wordPackManager productIDForPackType:AIUAWordPackType500K]];
+    [productIdentifiers addObject:[wordPackManager productIDForPackType:AIUAWordPackType2M]];
+    [productIdentifiers addObject:[wordPackManager productIDForPackType:AIUAWordPackType6M]];
     
     // 异步请求产品信息（不阻塞启动流程）
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
@@ -191,7 +197,7 @@ static NSString * const kAIUAUserClearedPurchaseData = @"AIUAUserClearedPurchase
         request.delegate = self;
         [request start];
         
-        NSLog(@"[IAP] 预加载：异步请求产品信息");
+        NSLog(@"[IAP] 预加载：异步请求产品信息（订阅 + 字数包）");
     });
 }
 
