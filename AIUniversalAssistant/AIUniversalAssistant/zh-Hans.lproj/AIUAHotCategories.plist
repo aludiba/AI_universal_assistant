@@ -81,9 +81,9 @@
 			</dict>
 			<dict>
 				<key>title</key>
-				<string>古诗词创作</string>
+				<string>创意文案</string>
 				<key>subtitle</key>
-				<string>输入主题，我来为你赋诗一首</string>
+				<string>输入主题，快速生成有感染力的文案内容</string>
 				<key>icon</key>
 				<string>book</string>
 				<key>type</key>
@@ -207,9 +207,9 @@
 			</dict>
 			<dict>
 				<key>title</key>
-				<string>读书笔记</string>
+				<string>学习笔记</string>
 				<key>subtitle</key>
-				<string>高效完成读后感写作</string>
+				<string>高效整理课程要点与学习心得</string>
 				<key>icon</key>
 				<string>book.closed</string>
 				<key>type</key>

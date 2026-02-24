@@ -16,9 +16,9 @@
             <array>
                 <dict>
                     <key>title</key>
-                    <string>名著精读</string>
+                    <string>主题解读</string>
                     <key>content</key>
-                    <string>用通俗易懂的语言，为我解读《基督山伯爵》的核心思想与精彩情节</string>
+                    <string>用通俗易懂的语言，围绕“如何提升时间管理效率”写一篇结构清晰的观点解读</string>
                 </dict>
                 <dict>
                     <key>title</key>
@@ -65,9 +65,9 @@
                 </dict>
                 <dict>
                     <key>title</key>
-                    <string>电影评论</string>
+                    <string>作品评论</string>
                     <key>content</key>
-                    <string>为《肖申克的救赎》写一篇影评，重点分享这部电影带给我的深刻感受</string>
+                    <string>围绕一次公开演讲活动写一篇评论，重点分析亮点与可改进之处</string>
                 </dict>
                 <dict>
                     <key>title</key>

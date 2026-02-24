@@ -67,8 +67,8 @@
  #define AIUA_IAP_PRODUCT_WEEKLY      @"com.hujiaofen.writingCat.weekly"
 
  // 字数包产品ID配置（可选，如果定义了则使用，否则自动生成）
- #define AIUA_IAP_WORDPACK_500K       @"com.yourcompany.aiassistant.wordpack.500k"
- #define AIUA_IAP_WORDPACK_2M         @"com.yourcompany.aiassistant.wordpack.2m"
- #define AIUA_IAP_WORDPACK_6M         @"com.yourcompany.aiassistant.wordpack.6m"
+ #define AIUA_IAP_WORDPACK_500K       @"com.hujiaofen.writingCat.wordpack.500k"
+ #define AIUA_IAP_WORDPACK_2M         @"com.hujiaofen.writingCat.wordpack.2m"
+ #define AIUA_IAP_WORDPACK_6M         @"com.hujiaofen.writingCat.wordpack.6m"
 
 #endif /* AIUAConfigID_h */

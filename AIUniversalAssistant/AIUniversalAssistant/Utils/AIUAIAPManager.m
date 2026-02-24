@@ -128,11 +128,27 @@ static NSString * const kAIUAUserClearedPurchaseData = @"AIUAUserClearedPurchase
 }
 
 - (void)fetchProductsWithCompletion:(AIUAIAPProductsCompletion)completion {
-    // 如果已经有缓存的产品，直接返回
-    if (self.productsCache.count > 0) {
-        NSArray *products = self.productsCache.allValues;
+    // 仅当订阅产品缓存完整时才直接返回，避免“缓存存在但不完整”导致找不到产品
+    NSSet *subscriptionProductIdentifiers = [NSSet setWithObjects:
+                                             [self productIdentifierForType:AIUASubscriptionProductTypeLifetimeBenefits],
+                                             [self productIdentifierForType:AIUASubscriptionProductTypeYearly],
+                                             [self productIdentifierForType:AIUASubscriptionProductTypeMonthly],
+                                             [self productIdentifierForType:AIUASubscriptionProductTypeWeekly],
+                                             nil];
+    BOOL hasAllSubscriptionProducts = YES;
+    NSMutableArray<SKProduct *> *cachedSubscriptionProducts = [NSMutableArray array];
+    for (NSString *productID in subscriptionProductIdentifiers) {
+        SKProduct *cachedProduct = self.productsCache[productID];
+        if (cachedProduct) {
+            [cachedSubscriptionProducts addObject:cachedProduct];
+        } else {
+            hasAllSubscriptionProducts = NO;
+            break;
+        }
+    }
+    if (hasAllSubscriptionProducts && cachedSubscriptionProducts.count > 0) {
         if (completion) {
-            completion(products, nil);
+            completion([cachedSubscriptionProducts copy], nil);
         }
         return;
     }
@@ -191,13 +207,13 @@ static NSString * const kAIUAUserClearedPurchaseData = @"AIUAUserClearedPurchase
     [productIdentifiers addObject:[wordPackManager productIDForPackType:AIUAWordPackType2M]];
     [productIdentifiers addObject:[wordPackManager productIDForPackType:AIUAWordPackType6M]];
     
-    // 异步请求产品信息（不阻塞启动流程）
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        SKProductsRequest *request = [[SKProductsRequest alloc] initWithProductIdentifiers:productIdentifiers];
-        request.delegate = self;
-        [request start];
+    // 在主线程发起请求，并由属性强持有 request，避免请求对象过早释放
+    dispatch_async(dispatch_get_main_queue(), ^{
+        self.productsRequest = [[SKProductsRequest alloc] initWithProductIdentifiers:productIdentifiers];
+        self.productsRequest.delegate = self;
+        [self.productsRequest start];
         
-        NSLog(@"[IAP] 预加载：异步请求产品信息（订阅 + 字数包）");
+        NSLog(@"[IAP] 预加载：请求产品信息（订阅 + 字数包）");
     });
 }
 
@@ -331,9 +347,9 @@ static NSString * const kAIUAUserClearedPurchaseData = @"AIUAUserClearedPurchase
         self.pendingPurchaseProductID = productID;
         
         // 获取产品信息
-        SKProductsRequest *request = [[SKProductsRequest alloc] initWithProductIdentifiers:[NSSet setWithObject:productID]];
-        request.delegate = self;
-        [request start];
+        self.productsRequest = [[SKProductsRequest alloc] initWithProductIdentifiers:[NSSet setWithObject:productID]];
+        self.productsRequest.delegate = self;
+        [self.productsRequest start];
         
         // 注意：这里会异步等待产品信息返回后再购买
         // 在 productsRequest:didReceiveResponse: 中会处理购买
