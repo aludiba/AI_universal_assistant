@@ -57,8 +57,8 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
     // 开始监听支付队列
     [[AIUAIAPManager sharedManager] startObservingPaymentQueue];
     
-    // 获取产品信息
-    [self fetchProducts];
+    // 获取产品信息（优先使用缓存，同时异步更新最新信息）
+    [self fetchProductsWithCache];
 }
 
 - (void)dealloc {
@@ -66,22 +66,36 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
     [[AIUAIAPManager sharedManager] stopObservingPaymentQueue];
 }
 
-- (void)fetchProducts {
-    [AIUAMBProgressManager showHUD:self.view];
+- (void)fetchProductsWithCache {
+    // 首先尝试从缓存获取产品信息
+    NSArray<SKProduct *> *cachedProducts = [[AIUAIAPManager sharedManager] getCachedProducts];
+    
+    if (cachedProducts && cachedProducts.count > 0) {
+        // 有缓存，立即更新UI
+        NSLog(@"[IAP] 使用缓存的产品信息: %lu 个产品", (unsigned long)cachedProducts.count);
+        [self updateProductPrices:cachedProducts];
+    }
+    
+    // 异步获取最新产品信息（更新缓存）
+    // 如果有缓存，不显示 loading；如果没有缓存，显示 loading
+    if (!cachedProducts || cachedProducts.count == 0) {
+        [AIUAMBProgressManager showHUD:self.view];
+    }
     
     [[AIUAIAPManager sharedManager] fetchProductsWithCompletion:^(NSArray<SKProduct *> * _Nullable products, NSString * _Nullable errorMessage) {
         dispatch_async(dispatch_get_main_queue(), ^{
             [AIUAMBProgressManager hideHUD:self.view];
             
             if (products && products.count > 0) {
-                NSLog(@"[IAP] 成功获取 %lu 个产品", (unsigned long)products.count);
-                // 产品信息已缓存，可以在这里更新UI显示真实价格
+                NSLog(@"[IAP] 成功获取最新产品信息: %lu 个产品", (unsigned long)products.count);
+                // 更新UI显示最新价格
                 [self updateProductPrices:products];
             } else {
                 NSLog(@"[IAP] 获取产品失败: %@", errorMessage);
-                // 显示调试错误弹窗
-                [AIUAAlertHelper showDebugErrorAlert:errorMessage context:@"获取会员产品失败"];
-                // 在测试环境下，可能无法获取产品，这里不弹错误提示
+                // 如果没有缓存且获取失败，显示调试错误
+                if (!cachedProducts || cachedProducts.count == 0) {
+                    [AIUAAlertHelper showDebugErrorAlert:errorMessage context:@"获取会员产品失败"];
+                }
             }
         });
     }];

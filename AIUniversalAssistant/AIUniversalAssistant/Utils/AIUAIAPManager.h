@@ -46,6 +46,15 @@ typedef void(^AIUAIAPRestoreCompletion)(BOOL success, NSInteger restoredCount, N
 /// 获取产品信息
 - (void)fetchProductsWithCompletion:(AIUAIAPProductsCompletion)completion;
 
+/// 预加载产品信息（在 App 启动时调用，异步获取并缓存产品信息）
+- (void)preloadProducts;
+
+/// 从缓存获取产品信息（不包含网络请求）
+- (nullable NSArray<SKProduct *> *)getCachedProducts;
+
+/// 从缓存获取指定类型的产品
+- (nullable SKProduct *)getCachedProductForType:(AIUASubscriptionProductType)type;
+
 /// 获取字数包产品信息
 - (void)fetchWordPackProductsWithCompletion:(AIUAIAPProductsCompletion)completion;
 

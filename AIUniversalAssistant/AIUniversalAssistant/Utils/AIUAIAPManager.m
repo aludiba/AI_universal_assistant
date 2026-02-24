@@ -164,6 +164,49 @@ static NSString * const kAIUAUserClearedPurchaseData = @"AIUAUserClearedPurchase
     NSLog(@"[IAP] 请求的产品ID列表: %@", productIdentifiers);
 }
 
+- (void)preloadProducts {
+    // 如果已经有缓存的产品，无需重复获取
+    if (self.productsCache.count > 0) {
+        NSLog(@"[IAP] 预加载：产品已在缓存中，跳过请求");
+        return;
+    }
+    
+    // 检查设备是否支持IAP
+    if (![SKPaymentQueue canMakePayments]) {
+        NSLog(@"[IAP] 预加载：设备不支持IAP");
+        return;
+    }
+    
+    // 构建产品ID集合
+    NSSet *productIdentifiers = [NSSet setWithObjects:
+                                 [self productIdentifierForType:AIUASubscriptionProductTypeLifetimeBenefits],
+                                 [self productIdentifierForType:AIUASubscriptionProductTypeYearly],
+                                 [self productIdentifierForType:AIUASubscriptionProductTypeMonthly],
+                                 [self productIdentifierForType:AIUASubscriptionProductTypeWeekly],
+                                 nil];
+    
+    // 异步请求产品信息（不阻塞启动流程）
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        SKProductsRequest *request = [[SKProductsRequest alloc] initWithProductIdentifiers:productIdentifiers];
+        request.delegate = self;
+        [request start];
+        
+        NSLog(@"[IAP] 预加载：异步请求产品信息");
+    });
+}
+
+- (nullable NSArray<SKProduct *> *)getCachedProducts {
+    if (self.productsCache.count == 0) {
+        return nil;
+    }
+    return [self.productsCache.allValues copy];
+}
+
+- (nullable SKProduct *)getCachedProductForType:(AIUASubscriptionProductType)type {
+    NSString *productIdentifier = [self productIdentifierForType:type];
+    return self.productsCache[productIdentifier];
+}
+
 - (void)fetchWordPackProductsWithCompletion:(AIUAIAPProductsCompletion)completion {
     // 检查设备是否支持IAP
     if (![SKPaymentQueue canMakePayments]) {

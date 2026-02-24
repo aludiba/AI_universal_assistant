@@ -73,6 +73,10 @@
     [[AIUAIAPManager sharedManager] checkSubscriptionStatus];
     NSLog(@"[启动] 订阅状态检查完成");
     
+    // 预加载产品信息（首次启动时异步获取并缓存，下次冷启动时更新缓存）
+    [[AIUAIAPManager sharedManager] preloadProducts];
+    NSLog(@"[启动] 开始预加载产品信息");
+    
     if (AIUA_AD_ENABLED) {
         // 初始化穿山甲SDK
         [self initPangleSDK];
