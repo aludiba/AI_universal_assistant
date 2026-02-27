@@ -173,6 +173,8 @@
 "confirm_purchase_plan" = "确认购买 %@ ¥%@？";
 "subscription_success" = "订阅成功";
 "enjoy_vip_benefits" = "恭喜成为VIP会员，尽享所有权益！";
+"subscription_restored_existing" = "已恢复订阅";
+"subscription_restored_existing_message" = "检测到您已有该订阅，已为您恢复，未产生新的扣款。";
 "purchase_failed" = "购买失败";
 "purchase_cancelled" = "您已取消购买";
 "iap_not_supported" = "您的设备不支持应用内购买";

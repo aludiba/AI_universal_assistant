@@ -21,15 +21,19 @@ static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
 /// 用户主动清除购买数据后置为 YES，仅在用户点击「恢复购买」且恢复成功时清除，用于避免清除后冷启动/收据验证再次自动恢复
 static NSString * const kAIUAUserClearedPurchaseData = @"AIUAUserClearedPurchaseData";
 
+NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING";
+
 @interface AIUAIAPManager () <SKProductsRequestDelegate, SKPaymentTransactionObserver>
 
 @property (nonatomic, strong) NSMutableDictionary<NSString *, SKProduct *> *productsCache;
 @property (nonatomic, strong) SKProductsRequest *productsRequest;
 @property (nonatomic, copy) AIUAIAPProductsCompletion productsCompletion;
+@property (nonatomic, copy) NSSet<NSString *> *productsCompletionWordPackFilter; // 非空时表示只返回字数包产品，用于 fetchWordPackProducts 复用预加载请求
 @property (nonatomic, copy) AIUAIAPPurchaseCompletion purchaseCompletion;
 @property (nonatomic, copy) AIUAIAPRestoreCompletion restoreCompletion;
 @property (nonatomic, assign) NSInteger restoredPurchasesCount;
 @property (nonatomic, strong, nullable) NSString *pendingPurchaseProductID; // 待购买的产品ID（用于异步获取产品后继续购买）
+@property (nonatomic, copy, nullable) NSString *purchasingProductIdentifier; // 当前发起购买的产品ID，用于匹配交易回调，避免队列中其他交易误触发
 
 @property (nonatomic, assign, readwrite) BOOL isVIPMember;
 @property (nonatomic, assign, readwrite) AIUASubscriptionProductType currentSubscriptionType;
@@ -50,6 +54,9 @@ static NSString * const kAIUAUserClearedPurchaseData = @"AIUAUserClearedPurchase
 @property (nonatomic, assign) BOOL launchRestoreWindowActive;
 // 当前是否为自动恢复流程（用于完成后关闭窗口）
 @property (nonatomic, assign) BOOL autoRestoreInProgress;
+
+// 预加载因网络等原因失败，待 applicationDidBecomeActive 时自动重试
+@property (nonatomic, assign) BOOL preloadPendingDueToNetwork;
 
 @end
 
@@ -181,15 +188,21 @@ static NSString * const kAIUAUserClearedPurchaseData = @"AIUAUserClearedPurchase
 }
 
 - (void)preloadProducts {
-    // 如果已经有缓存的产品，无需重复获取（冷启动时内存为空会重新请求）
     if (self.productsCache.count > 0) {
         NSLog(@"[IAP] 预加载：产品已在缓存中，跳过请求");
+        self.preloadPendingDueToNetwork = NO;
         return;
     }
     
-    // 检查设备是否支持IAP
     if (![SKPaymentQueue canMakePayments]) {
         NSLog(@"[IAP] 预加载：设备不支持IAP");
+        return;
+    }
+    
+    self.preloadPendingDueToNetwork = NO;
+    
+    if (self.productsRequest) {
+        NSLog(@"[IAP] 预加载：已有产品请求进行中，跳过");
         return;
     }
     
@@ -240,19 +253,16 @@ static NSString * const kAIUAUserClearedPurchaseData = @"AIUAUserClearedPurchase
     
     // 获取字数包管理器
     AIUAWordPackManager *wordPackManager = [AIUAWordPackManager sharedManager];
-    
-    // 构建字数包产品ID集合
-    NSSet *productIdentifiers = [NSSet setWithObjects:
-                                 [wordPackManager productIDForPackType:AIUAWordPackType500K],
-                                 [wordPackManager productIDForPackType:AIUAWordPackType2M],
-                                 [wordPackManager productIDForPackType:AIUAWordPackType6M],
-                                 nil];
+    NSSet<NSString *> *wordPackIDs = [NSSet setWithObjects:
+                                      [wordPackManager productIDForPackType:AIUAWordPackType500K],
+                                      [wordPackManager productIDForPackType:AIUAWordPackType2M],
+                                      [wordPackManager productIDForPackType:AIUAWordPackType6M],
+                                      nil];
     
     // 检查缓存中是否已有所有字数包产品
     NSMutableArray<SKProduct *> *cachedProducts = [NSMutableArray array];
     BOOL allCached = YES;
-    
-    for (NSString *productID in productIdentifiers) {
+    for (NSString *productID in wordPackIDs) {
         SKProduct *product = self.productsCache[productID];
         if (product) {
             [cachedProducts addObject:product];
@@ -260,25 +270,35 @@ static NSString * const kAIUAUserClearedPurchaseData = @"AIUAUserClearedPurchase
             allCached = NO;
         }
     }
-    
-    // 如果所有产品都已缓存，直接返回
     if (allCached && cachedProducts.count > 0) {
         NSLog(@"[IAP] 字数包产品已在缓存中，直接返回");
-        if (completion) {
-            completion(cachedProducts, nil);
-        }
+        if (completion) completion(cachedProducts, nil);
         return;
     }
     
     self.productsCompletion = completion;
+    self.productsCompletionWordPackFilter = wordPackIDs;
     
-    // 请求产品信息
+    // 若已有请求在进行（如预加载），复用它，等待完成后在 didReceiveResponse 中按字数包过滤回调
+    if (self.productsRequest) {
+        NSLog(@"[IAP] 字数包请求：复用进行中的产品请求，等待完成后过滤");
+        return;
+    }
+    
+    // 与预加载一致：请求订阅+字数包，避免单独请求字数包时 StoreKit 返回空
+    NSMutableSet *productIdentifiers = [NSMutableSet setWithObjects:
+                                        [self productIdentifierForType:AIUASubscriptionProductTypeLifetimeBenefits],
+                                        [self productIdentifierForType:AIUASubscriptionProductTypeYearly],
+                                        [self productIdentifierForType:AIUASubscriptionProductTypeMonthly],
+                                        [self productIdentifierForType:AIUASubscriptionProductTypeWeekly],
+                                        nil];
+    [productIdentifiers addObjectsFromArray:wordPackIDs.allObjects];
+    
     self.productsRequest = [[SKProductsRequest alloc] initWithProductIdentifiers:productIdentifiers];
     self.productsRequest.delegate = self;
     [self.productsRequest start];
     
-    NSLog(@"[IAP] 开始请求字数包产品信息，Bundle ID: %@", [[NSBundle mainBundle] bundleIdentifier]);
-    NSLog(@"[IAP] 请求的字数包产品ID列表: %@", productIdentifiers);
+    NSLog(@"[IAP] 开始请求字数包产品信息（含订阅以与预加载一致），Bundle ID: %@", [[NSBundle mainBundle] bundleIdentifier]);
 }
 
 - (void)purchaseProduct:(AIUASubscriptionProductType)productType completion:(AIUAIAPPurchaseCompletion)completion {
@@ -360,6 +380,7 @@ static NSString * const kAIUAUserClearedPurchaseData = @"AIUAUserClearedPurchase
 }
 
 - (void)addPaymentForProduct:(SKProduct *)product {
+    self.purchasingProductIdentifier = product.productIdentifier;
     SKMutablePayment *payment = [SKMutablePayment paymentWithProduct:product];
     [[SKPaymentQueue defaultQueue] addPayment:payment];
     
@@ -605,6 +626,19 @@ static NSString * const kAIUAUserClearedPurchaseData = @"AIUAUserClearedPurchase
 
 #pragma mark - SKProductsRequestDelegate
 
+- (NSArray<SKProduct *> *)productsForCompletionFromResponse:(SKProductsResponse *)response {
+    if (!self.productsCompletionWordPackFilter || self.productsCompletionWordPackFilter.count == 0) {
+        return response.products ?: @[];
+    }
+    NSMutableArray<SKProduct *> *filtered = [NSMutableArray array];
+    for (SKProduct *p in response.products) {
+        if ([self.productsCompletionWordPackFilter containsObject:p.productIdentifier]) {
+            [filtered addObject:p];
+        }
+    }
+    return [filtered copy];
+}
+
 - (void)productsRequest:(SKProductsRequest *)request didReceiveResponse:(SKProductsResponse *)response {
     NSLog(@"[IAP] 收到产品信息响应");
     NSLog(@"[IAP] 可用产品数量: %lu", (unsigned long)response.products.count);
@@ -621,6 +655,8 @@ static NSString * const kAIUAUserClearedPurchaseData = @"AIUAUserClearedPurchase
         self.productsCache[product.productIdentifier] = product;
         NSLog(@"[IAP] 产品: %@ - %@ - %@", product.localizedTitle, product.price, product.priceLocale);
     }
+    
+    self.productsRequest = nil; // 请求已完成，允许后续预加载
     
     // 确保在主线程执行所有UI相关操作和回调
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -648,26 +684,31 @@ static NSString * const kAIUAUserClearedPurchaseData = @"AIUAUserClearedPurchase
                 if (self.purchaseCompletion) {
                     self.purchaseCompletion(NO, L(@"product_not_found"));
                     self.purchaseCompletion = nil;
+                    self.purchasingProductIdentifier = nil;
                 }
             }
             
             // 如果有productsCompletion，也需要处理（可能是同时触发的）
             if (self.productsCompletion) {
-                if (response.products.count > 0) {
-                    self.productsCompletion(response.products, nil);
+                NSArray<SKProduct *> *productsToReturn = [self productsForCompletionFromResponse:response];
+                if (productsToReturn.count > 0) {
+                    self.productsCompletion(productsToReturn, nil);
                 } else {
                     self.productsCompletion(nil, L(@"no_products_available"));
                 }
                 self.productsCompletion = nil;
+                self.productsCompletionWordPackFilter = nil;
             }
         } else if (self.productsCompletion) {
             // 没有待购买的产品，正常处理产品获取回调
-            if (response.products.count > 0) {
-                self.productsCompletion(response.products, nil);
+            NSArray<SKProduct *> *productsToReturn = [self productsForCompletionFromResponse:response];
+            if (productsToReturn.count > 0) {
+                self.productsCompletion(productsToReturn, nil);
             } else {
                 self.productsCompletion(nil, L(@"no_products_available"));
             }
             self.productsCompletion = nil;
+            self.productsCompletionWordPackFilter = nil;
         }
     });
 }
@@ -676,9 +717,33 @@ static NSString * const kAIUAUserClearedPurchaseData = @"AIUAUserClearedPurchase
     NSString *errorMessage = error.localizedDescription;
     NSLog(@"[IAP] 产品请求失败: %@", errorMessage);
     
-    // 确保在主线程执行所有UI相关操作和回调
+    self.productsRequest = nil; // 请求已结束，允许后续预加载
+    
+    BOOL isPreload = (!self.productsCompletion && !self.pendingPurchaseProductID);
+    BOOL isNetworkError = (errorMessage.length > 0 && (
+        [errorMessage containsString:@"断开"] ||
+        [errorMessage containsString:@"互联网"] ||
+        [errorMessage containsString:@"网络"] ||
+        [errorMessage containsString:@"connection"] ||
+        [errorMessage containsString:@"Connection"] ||
+        error.code == NSURLErrorNotConnectedToInternet ||
+        error.code == NSURLErrorNetworkConnectionLost));
+    
     dispatch_async(dispatch_get_main_queue(), ^{
-        // 显示调试错误弹窗
+        // 预加载因网络失败：不弹窗，标记待重试，网络恢复后自动重试
+        if (isPreload && isNetworkError) {
+            self.preloadPendingDueToNetwork = YES;
+            NSLog(@"[IAP] 预加载因网络失败，已标记，网络恢复后将自动重试");
+            return;
+        }
+        
+        // 预加载因其他原因失败：不弹窗，避免首次安装未选网络时打扰用户
+        if (isPreload) {
+            self.preloadPendingDueToNetwork = YES;
+            return;
+        }
+        
+        // 用户主动获取产品时失败，才显示弹窗
         [AIUAAlertHelper showDebugErrorAlert:errorMessage context:@"获取产品失败"];
         
         // 如果有待购买的产品ID，说明是购买触发的产品请求失败
@@ -690,6 +755,7 @@ static NSString * const kAIUAUserClearedPurchaseData = @"AIUAUserClearedPurchase
             if (self.purchaseCompletion) {
                 self.purchaseCompletion(NO, errorMessage ?: L(@"failed_to_fetch_products"));
                 self.purchaseCompletion = nil;
+                self.purchasingProductIdentifier = nil;
             }
         }
         
@@ -697,6 +763,7 @@ static NSString * const kAIUAUserClearedPurchaseData = @"AIUAUserClearedPurchase
         if (self.productsCompletion) {
             self.productsCompletion(nil, errorMessage);
             self.productsCompletion = nil;
+            self.productsCompletionWordPackFilter = nil;
         }
     });
 }
@@ -849,12 +916,21 @@ static NSString * const kAIUAUserClearedPurchaseData = @"AIUAUserClearedPurchase
     NSString *productIdentifier = transaction.payment.productIdentifier;
     BOOL isWordPack = [self isWordPackProductId:productIdentifier];
     
-    // 用户曾清除购买数据时，不根据收据或队列中的订阅交易恢复会员（只处理本次发起的字数包购买）
+    // 用户曾清除购买数据时，忽略队列中重放的历史订阅交易，但不拦截用户主动发起的新购买
+    // purchaseCompletion != nil 表示用户正在主动购买
     BOOL userClearedPurchase = [[NSUserDefaults standardUserDefaults] boolForKey:kAIUAUserClearedPurchaseData];
-    if (!isWordPack && userClearedPurchase) {
-        NSLog(@"[IAP] 用户已清除购买数据，忽略队列中的订阅交易 %@，不恢复会员", productIdentifier);
+    if (!isWordPack && userClearedPurchase && !self.purchaseCompletion) {
+        NSLog(@"[IAP] 用户已清除购买数据，忽略队列中重放的订阅交易 %@，不恢复会员", productIdentifier);
         [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
         return;
+    }
+    
+    // 用户主动购买订阅成功，清除「已清除购买数据」标记
+    if (!isWordPack && userClearedPurchase && self.purchaseCompletion) {
+        NSLog(@"[IAP] 用户主动购买订阅 %@，清除「已清除购买数据」标记", productIdentifier);
+        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+        [defaults removeObjectForKey:kAIUAUserClearedPurchaseData];
+        [defaults synchronize];
     }
     
     self.lastReceiptVerificationTime = nil;
@@ -871,9 +947,14 @@ static NSString * const kAIUAUserClearedPurchaseData = @"AIUAUserClearedPurchase
     // 完成交易
     [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
     
-    if (self.purchaseCompletion) {
-        self.purchaseCompletion(YES, nil);
+    // 仅当交易与当前购买意图匹配时才回调，避免队列中其他交易误触发「购买成功」
+    if (self.purchaseCompletion && self.purchasingProductIdentifier &&
+        [transaction.payment.productIdentifier isEqualToString:self.purchasingProductIdentifier]) {
+        // 用户曾清除数据且收到交易：多为 Apple 检测到已有订阅直接返回，未弹窗扣款，传递提示供 UI 展示「已恢复」而非「购买成功」
+        NSString *hint = (!isWordPack && userClearedPurchase) ? AIUARestoredExistingSubscriptionHint : nil;
+        self.purchaseCompletion(YES, hint);
         self.purchaseCompletion = nil;
+        self.purchasingProductIdentifier = nil;
     }
 }
 
@@ -887,9 +968,11 @@ static NSString * const kAIUAUserClearedPurchaseData = @"AIUAUserClearedPurchase
         errorMessage = L(@"purchase_cancelled");
     }
     
-    if (self.purchaseCompletion) {
+    if (self.purchaseCompletion && self.purchasingProductIdentifier &&
+        [transaction.payment.productIdentifier isEqualToString:self.purchasingProductIdentifier]) {
         self.purchaseCompletion(NO, errorMessage);
         self.purchaseCompletion = nil;
+        self.purchasingProductIdentifier = nil;
     }
 }
 
@@ -899,10 +982,18 @@ static NSString * const kAIUAUserClearedPurchaseData = @"AIUAUserClearedPurchase
     
     BOOL isWordPack = [self isWordPackProductId:productIdentifier];
     BOOL userClearedPurchase = [[NSUserDefaults standardUserDefaults] boolForKey:kAIUAUserClearedPurchaseData];
-    if (!isWordPack && userClearedPurchase) {
-        NSLog(@"[IAP] 用户已清除购买数据，忽略恢复的订阅交易 %@，不恢复会员", productIdentifier);
+    // 与 completeTransaction 一致：purchaseCompletion != nil 表示用户主动点击购买，Apple 可能返回 Restored（已拥有时不重复扣款）
+    if (!isWordPack && userClearedPurchase && !self.purchaseCompletion) {
+        NSLog(@"[IAP] 用户已清除购买数据，忽略队列中重放的恢复交易 %@，不恢复会员", productIdentifier);
         [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
         return;
+    }
+    
+    if (userClearedPurchase && self.purchaseCompletion) {
+        NSLog(@"[IAP] 用户主动购买触发恢复交易 %@，清除「已清除购买数据」标记", productIdentifier);
+        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+        [defaults removeObjectForKey:kAIUAUserClearedPurchaseData];
+        [defaults synchronize];
     }
     
     if (isWordPack) {
@@ -922,6 +1013,16 @@ static NSString * const kAIUAUserClearedPurchaseData = @"AIUAUserClearedPurchase
             [self unlockContentForProductIdentifier:productIdentifier];
             self.restoredPurchasesCount++;
         }
+    }
+    
+    // 用户点击购买时 Apple 可能直接返回 Restored（已拥有订阅不重复扣款），需回调告知成功；仅当交易与当前购买意图匹配时才回调
+    if (self.purchaseCompletion && self.purchasingProductIdentifier &&
+        [transaction.payment.productIdentifier isEqualToString:self.purchasingProductIdentifier]) {
+        // 用户曾清除数据且收到 Restored：Apple 检测到已有订阅直接返回，未弹窗扣款，传递提示供 UI 展示「已恢复」而非「购买成功」
+        NSString *hint = (!isWordPack && userClearedPurchase) ? AIUARestoredExistingSubscriptionHint : nil;
+        self.purchaseCompletion(YES, hint);
+        self.purchaseCompletion = nil;
+        self.purchasingProductIdentifier = nil;
     }
     
     [[SKPaymentQueue defaultQueue] finishTransaction:transaction];

@@ -41,7 +41,7 @@
 #define AIUA_AD_ENABLED          0    // 1: 开启广告并编译SDK  0: 关闭广告且不编译SDK
 
 // 会员订阅检测开关（如果不想进行会员订阅检测，设置为0，所有用户将被视为VIP）
-#define AIUA_VIP_CHECK_ENABLED   0    // 1: 开启会员检测  0: 关闭会员检测（所有用户视为VIP）
+#define AIUA_VIP_CHECK_ENABLED   1    // 1: 开启会员检测  0: 关闭会员检测（所有用户视为VIP）
 
 // 过期字数包提醒测试开关（用于测试过期提醒功能）
 #define AIUA_EXPIRING_WORDS_TEST_ENABLED   0    // 1: 开启测试数据  0: 关闭测试数据（使用真实数据）
@@ -51,7 +51,7 @@
 
 // 清除购买数据功能开关（开发/测试时设为1，发布时必须设为0）
 // 警告：此功能会清除所有订阅和字数包数据，仅用于测试！
-#define AIUA_ENABLE_CLEAR_PURCHASE_DATA 0
+#define AIUA_ENABLE_CLEAR_PURCHASE_DATA 1
 
 // ========== IAP产品ID配置 ==========
 // 说明：
@@ -67,8 +67,8 @@
  #define AIUA_IAP_PRODUCT_WEEKLY      @"com.hujiaofen.writingCat.weekly"
 
  // 字数包产品ID配置（可选，如果定义了则使用，否则自动生成）
- #define AIUA_IAP_WORDPACK_500K       @"com.hujiaofen.writingCat.wordpack.500k"
- #define AIUA_IAP_WORDPACK_2M         @"com.hujiaofen.writingCat.wordpack.2m"
- #define AIUA_IAP_WORDPACK_6M         @"com.hujiaofen.writingCat.wordpack.6m"
+ #define AIUA_IAP_WORDPACK_500K       @"com.yourcompany.aiassistant.wordpack.500k"
+ #define AIUA_IAP_WORDPACK_2M         @"com.yourcompany.aiassistant.wordpack.2m"
+ #define AIUA_IAP_WORDPACK_6M         @"com.yourcompany.aiassistant.wordpack.6m"
 
 #endif /* AIUAConfigID_h */

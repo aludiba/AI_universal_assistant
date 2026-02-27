@@ -18,8 +18,11 @@ typedef NS_ENUM(NSInteger, AIUASubscriptionProductType) {
     AIUASubscriptionProductTypeWeekly           
 };
 
-// 购买结果回调
+// 购买结果回调（success 时 errorMessage 通常为 nil；若为 AIUARestoredExistingSubscriptionHint 表示检测到已有订阅并恢复，未产生新扣款）
 typedef void(^AIUAIAPPurchaseCompletion)(BOOL success, NSString * _Nullable errorMessage);
+
+/// 当 success=YES 且 errorMessage 等于此常量时，表示「检测到已有订阅并恢复」，建议展示「已恢复」而非「购买成功」
+extern NSString * const AIUARestoredExistingSubscriptionHint;
 typedef void(^AIUAIAPProductsCompletion)(NSArray<SKProduct *> * _Nullable products, NSString * _Nullable errorMessage);
 typedef void(^AIUAIAPRestoreCompletion)(BOOL success, NSInteger restoredCount, NSString * _Nullable errorMessage);
 

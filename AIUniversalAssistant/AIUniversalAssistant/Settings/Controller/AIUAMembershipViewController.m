@@ -867,9 +867,12 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
             [AIUAMBProgressManager hideHUD:self.view];
             
             if (success) {
-                // 购买成功
-                [AIUAAlertHelper showAlertWithTitle:L(@"subscription_success")
-                                            message:L(@"enjoy_vip_benefits")
+                // 购买成功 或 检测到已有订阅并恢复（未弹窗扣款）
+                BOOL wasRestored = (errorMessage && [errorMessage isEqualToString:AIUARestoredExistingSubscriptionHint]);
+                NSString *title = wasRestored ? L(@"subscription_restored_existing") : L(@"subscription_success");
+                NSString *message = wasRestored ? L(@"subscription_restored_existing_message") : L(@"enjoy_vip_benefits");
+                [AIUAAlertHelper showAlertWithTitle:title
+                                            message:message
                                       cancelBtnText:nil
                                      confirmBtnText:L(@"confirm")
                                        inController:self

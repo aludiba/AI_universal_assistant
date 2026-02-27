@@ -73,9 +73,9 @@
     [[AIUAIAPManager sharedManager] checkSubscriptionStatus];
     NSLog(@"[启动] 订阅状态检查完成");
     
-    // 预加载产品信息（首次启动时异步获取并缓存，下次冷启动时更新缓存）
-    [[AIUAIAPManager sharedManager] preloadProducts];
-    NSLog(@"[启动] 开始预加载产品信息");
+    // 不在此处预加载产品信息：首次安装时用户尚未授权网络，请求必然失败。
+    // 与自动恢复订阅方案一致，统一在 applicationDidBecomeActive 中处理（用户选完网络回来时触发）。
+    NSLog(@"[启动] 产品预加载将在 applicationDidBecomeActive 中执行");
     
     if (AIUA_AD_ENABLED) {
         // 初始化穿山甲SDK
@@ -212,6 +212,9 @@
 }
 
 - (void)applicationDidBecomeActive:(UIApplication *)application {
+    // 首次安装后用户选择网络返回时，若产品预加载曾因无网络被推迟，在此重试
+    [[AIUAIAPManager sharedManager] preloadProducts];
+    
     // 仅在“冷启动恢复窗口”内自动重试恢复（限流 30 秒）：
     // 1) 冷启动
     // 2) 首次安装/重装后用户选择网络返回
