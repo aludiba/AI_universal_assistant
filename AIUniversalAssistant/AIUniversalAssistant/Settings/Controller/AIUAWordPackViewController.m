@@ -102,28 +102,11 @@
 #pragma mark - Fetch Products
 
 - (void)fetchWordPackProducts {
-    [self fetchWordPackProductsWithRetryCount:0];
-}
-
-- (void)fetchWordPackProductsWithRetryCount:(NSInteger)retryCount {
-    NSLog(@"[WordPack] 开始获取字数包产品信息%@", retryCount > 0 ? [NSString stringWithFormat:@"（第 %ld 次重试）", (long)(retryCount + 1)] : @"");
-    
     [[AIUAIAPManager sharedManager] fetchWordPackProductsWithCompletion:^(NSArray<SKProduct *> * _Nullable products, NSString * _Nullable errorMessage) {
         dispatch_async(dispatch_get_main_queue(), ^{
             if (products && products.count > 0) {
-                NSLog(@"[WordPack] 成功获取 %lu 个字数包产品", (unsigned long)products.count);
                 [self updateWordPackProductPrices:products];
             } else {
-                NSLog(@"[WordPack] 获取字数包产品失败: %@", errorMessage);
-                // 首次失败时自动重试一次（StoreKit 有时首次请求会返回空）
-                if (retryCount == 0) {
-                    __weak typeof(self) wself = self;
-                    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                        __strong typeof(wself) sself = wself;
-                        if (sself) [sself fetchWordPackProductsWithRetryCount:1];
-                    });
-                    return;
-                }
                 [AIUAAlertHelper showDebugErrorAlert:errorMessage context:@"获取字数包产品失败"];
             }
         });

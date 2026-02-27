@@ -27,13 +27,11 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
 
 @property (nonatomic, strong) NSMutableDictionary<NSString *, SKProduct *> *productsCache;
 @property (nonatomic, strong) SKProductsRequest *productsRequest;
-@property (nonatomic, copy) AIUAIAPProductsCompletion productsCompletion;
-@property (nonatomic, copy) NSSet<NSString *> *productsCompletionWordPackFilter; // 非空时表示只返回字数包产品，用于 fetchWordPackProducts 复用预加载请求
+@property (nonatomic, strong) NSMutableArray<AIUAIAPProductsCompletion> *pendingProductsCompletions;
 @property (nonatomic, copy) AIUAIAPPurchaseCompletion purchaseCompletion;
 @property (nonatomic, copy) AIUAIAPRestoreCompletion restoreCompletion;
 @property (nonatomic, assign) NSInteger restoredPurchasesCount;
-@property (nonatomic, strong, nullable) NSString *pendingPurchaseProductID; // 待购买的产品ID（用于异步获取产品后继续购买）
-@property (nonatomic, copy, nullable) NSString *purchasingProductIdentifier; // 当前发起购买的产品ID，用于匹配交易回调，避免队列中其他交易误触发
+@property (nonatomic, copy, nullable) NSString *purchasingProductIdentifier;
 
 @property (nonatomic, assign, readwrite) BOOL isVIPMember;
 @property (nonatomic, assign, readwrite) AIUASubscriptionProductType currentSubscriptionType;
@@ -77,6 +75,7 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
     self = [super init];
     if (self) {
         _productsCache = [NSMutableDictionary dictionary];
+        _pendingProductsCompletions = [NSMutableArray array];
         _paymentObserverRefCount = 0;
         [self loadLocalSubscriptionInfo];
     }
@@ -100,6 +99,90 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
     return [productId isEqualToString:AIUA_IAP_PRODUCT_LIFETIME] ||
            [lowercaseProductId containsString:@"lifetimebenefits"] ||
            ([lowercaseProductId containsString:@"lifetime"] && ![self isWordPackProductId:productId]);
+}
+
+#pragma mark - Product ID Sets
+
+- (NSSet<NSString *> *)subscriptionProductIdentifiers {
+    return [NSSet setWithObjects:
+            [self productIdentifierForType:AIUASubscriptionProductTypeLifetimeBenefits],
+            [self productIdentifierForType:AIUASubscriptionProductTypeYearly],
+            [self productIdentifierForType:AIUASubscriptionProductTypeMonthly],
+            [self productIdentifierForType:AIUASubscriptionProductTypeWeekly],
+            nil];
+}
+
+- (NSSet<NSString *> *)wordPackProductIdentifiers {
+    AIUAWordPackManager *wpm = [AIUAWordPackManager sharedManager];
+    return [NSSet setWithObjects:
+            [wpm productIDForPackType:AIUAWordPackType500K],
+            [wpm productIDForPackType:AIUAWordPackType2M],
+            [wpm productIDForPackType:AIUAWordPackType6M],
+            nil];
+}
+
+- (NSSet<NSString *> *)allProductIdentifiers {
+    NSMutableSet *ids = [[self subscriptionProductIdentifiers] mutableCopy];
+    [ids unionSet:[self wordPackProductIdentifiers]];
+    return [ids copy];
+}
+
+#pragma mark - Network Error Detection
+
+- (BOOL)isNetworkError:(NSError *)error {
+    if (!error) return NO;
+    NSString *msg = error.localizedDescription ?: @"";
+    return ([msg containsString:@"断开"] ||
+            [msg containsString:@"互联网"] ||
+            [msg containsString:@"网络"] ||
+            [msg containsString:@"connection"] ||
+            [msg containsString:@"Connection"] ||
+            error.code == NSURLErrorNotConnectedToInternet ||
+            error.code == NSURLErrorNetworkConnectionLost);
+}
+
+#pragma mark - Unified Product Request
+
+- (void)requestAllProductsWithCompletion:(nullable AIUAIAPProductsCompletion)completion {
+    if (completion) {
+        [self.pendingProductsCompletions addObject:completion];
+    }
+    
+    if (self.productsRequest) {
+        NSLog(@"[IAP] 产品请求已在进行中，排队等待");
+        return;
+    }
+    
+    if (![SKPaymentQueue canMakePayments]) {
+        NSLog(@"[IAP] 设备不支持IAP");
+        [self drainPendingProductsCompletionsWithProducts:nil error:L(@"iap_not_supported")];
+        return;
+    }
+    
+    NSSet *allIDs = [self allProductIdentifiers];
+    self.productsRequest = [[SKProductsRequest alloc] initWithProductIdentifiers:allIDs];
+    self.productsRequest.delegate = self;
+    [self.productsRequest start];
+    NSLog(@"[IAP] 发起产品信息请求，共 %lu 个产品", (unsigned long)allIDs.count);
+}
+
+- (void)drainPendingProductsCompletionsWithProducts:(nullable NSArray<SKProduct *> *)products error:(nullable NSString *)error {
+    NSArray<AIUAIAPProductsCompletion> *completions = [self.pendingProductsCompletions copy];
+    [self.pendingProductsCompletions removeAllObjects];
+    for (AIUAIAPProductsCompletion block in completions) {
+        block(products, error);
+    }
+}
+
+- (NSArray<SKProduct *> *)cachedProductsForIdentifiers:(NSSet<NSString *> *)identifiers {
+    NSMutableArray<SKProduct *> *result = [NSMutableArray array];
+    for (NSString *pid in identifiers) {
+        SKProduct *product = self.productsCache[pid];
+        if (product) {
+            [result addObject:product];
+        }
+    }
+    return [result copy];
 }
 
 #pragma mark - Public Methods
@@ -135,249 +218,112 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
 }
 
 - (void)fetchProductsWithCompletion:(AIUAIAPProductsCompletion)completion {
-    // 仅当订阅产品缓存完整时才直接返回，避免“缓存存在但不完整”导致找不到产品
-    NSSet *subscriptionProductIdentifiers = [NSSet setWithObjects:
-                                             [self productIdentifierForType:AIUASubscriptionProductTypeLifetimeBenefits],
-                                             [self productIdentifierForType:AIUASubscriptionProductTypeYearly],
-                                             [self productIdentifierForType:AIUASubscriptionProductTypeMonthly],
-                                             [self productIdentifierForType:AIUASubscriptionProductTypeWeekly],
-                                             nil];
-    BOOL hasAllSubscriptionProducts = YES;
-    NSMutableArray<SKProduct *> *cachedSubscriptionProducts = [NSMutableArray array];
-    for (NSString *productID in subscriptionProductIdentifiers) {
-        SKProduct *cachedProduct = self.productsCache[productID];
-        if (cachedProduct) {
-            [cachedSubscriptionProducts addObject:cachedProduct];
-        } else {
-            hasAllSubscriptionProducts = NO;
-            break;
-        }
-    }
-    if (hasAllSubscriptionProducts && cachedSubscriptionProducts.count > 0) {
-        if (completion) {
-            completion([cachedSubscriptionProducts copy], nil);
-        }
+    NSSet *subIDs = [self subscriptionProductIdentifiers];
+    NSArray *cached = [self cachedProductsForIdentifiers:subIDs];
+    if (cached.count == subIDs.count) {
+        if (completion) completion(cached, nil);
         return;
     }
-    
-    // 检查设备是否支持IAP
-    if (![SKPaymentQueue canMakePayments]) {
-        if (completion) {
-            completion(nil, L(@"iap_not_supported"));
-        }
-        return;
-    }
-    
-    self.productsCompletion = completion;
-    
-    // 构建产品ID集合
-    NSSet *productIdentifiers = [NSSet setWithObjects:
-                                 [self productIdentifierForType:AIUASubscriptionProductTypeLifetimeBenefits],
-                                 [self productIdentifierForType:AIUASubscriptionProductTypeYearly],
-                                 [self productIdentifierForType:AIUASubscriptionProductTypeMonthly],
-                                 [self productIdentifierForType:AIUASubscriptionProductTypeWeekly],
-                                 nil];
-    
-    // 请求产品信息
-    self.productsRequest = [[SKProductsRequest alloc] initWithProductIdentifiers:productIdentifiers];
-    self.productsRequest.delegate = self;
-    [self.productsRequest start];
-    
-    NSLog(@"[IAP] 开始请求产品信息，Bundle ID: %@", [[NSBundle mainBundle] bundleIdentifier]);
-    NSLog(@"[IAP] 请求的产品ID列表: %@", productIdentifiers);
+    __weak typeof(self) wself = self;
+    [self requestAllProductsWithCompletion:^(NSArray<SKProduct *> *products, NSString *error) {
+        __strong typeof(wself) sself = wself;
+        if (!sself || !completion) return;
+        NSArray *filtered = [sself cachedProductsForIdentifiers:subIDs];
+        completion(filtered.count > 0 ? filtered : nil, filtered.count > 0 ? nil : (error ?: L(@"no_products_available")));
+    }];
 }
 
 - (void)preloadProducts {
     if (self.productsCache.count > 0) {
-        NSLog(@"[IAP] 预加载：产品已在缓存中，跳过请求");
         self.preloadPendingDueToNetwork = NO;
         return;
     }
-    
-    if (![SKPaymentQueue canMakePayments]) {
-        NSLog(@"[IAP] 预加载：设备不支持IAP");
-        return;
-    }
-    
     self.preloadPendingDueToNetwork = NO;
-    
-    if (self.productsRequest) {
-        NSLog(@"[IAP] 预加载：已有产品请求进行中，跳过");
-        return;
-    }
-    
-    // 订阅产品 ID
-    NSMutableSet *productIdentifiers = [NSMutableSet setWithObjects:
-                                        [self productIdentifierForType:AIUASubscriptionProductTypeLifetimeBenefits],
-                                        [self productIdentifierForType:AIUASubscriptionProductTypeYearly],
-                                        [self productIdentifierForType:AIUASubscriptionProductTypeMonthly],
-                                        [self productIdentifierForType:AIUASubscriptionProductTypeWeekly],
-                                        nil];
-    
-    // 字数包产品 ID（一并预加载）
-    AIUAWordPackManager *wordPackManager = [AIUAWordPackManager sharedManager];
-    [productIdentifiers addObject:[wordPackManager productIDForPackType:AIUAWordPackType500K]];
-    [productIdentifiers addObject:[wordPackManager productIDForPackType:AIUAWordPackType2M]];
-    [productIdentifiers addObject:[wordPackManager productIDForPackType:AIUAWordPackType6M]];
-    
-    // 在主线程发起请求，并由属性强持有 request，避免请求对象过早释放
-    dispatch_async(dispatch_get_main_queue(), ^{
-        self.productsRequest = [[SKProductsRequest alloc] initWithProductIdentifiers:productIdentifiers];
-        self.productsRequest.delegate = self;
-        [self.productsRequest start];
-        
-        NSLog(@"[IAP] 预加载：请求产品信息（订阅 + 字数包）");
-    });
+    [self requestAllProductsWithCompletion:nil];
 }
 
 - (nullable NSArray<SKProduct *> *)getCachedProducts {
-    if (self.productsCache.count == 0) {
-        return nil;
-    }
-    return [self.productsCache.allValues copy];
+    return self.productsCache.count > 0 ? [self.productsCache.allValues copy] : nil;
 }
 
 - (nullable SKProduct *)getCachedProductForType:(AIUASubscriptionProductType)type {
-    NSString *productIdentifier = [self productIdentifierForType:type];
-    return self.productsCache[productIdentifier];
+    return self.productsCache[[self productIdentifierForType:type]];
 }
 
 - (void)fetchWordPackProductsWithCompletion:(AIUAIAPProductsCompletion)completion {
-    // 检查设备是否支持IAP
-    if (![SKPaymentQueue canMakePayments]) {
-        if (completion) {
-            completion(nil, L(@"iap_not_supported"));
-        }
+    NSSet *wpIDs = [self wordPackProductIdentifiers];
+    NSArray *cached = [self cachedProductsForIdentifiers:wpIDs];
+    if (cached.count == wpIDs.count) {
+        if (completion) completion(cached, nil);
         return;
     }
-    
-    // 获取字数包管理器
-    AIUAWordPackManager *wordPackManager = [AIUAWordPackManager sharedManager];
-    NSSet<NSString *> *wordPackIDs = [NSSet setWithObjects:
-                                      [wordPackManager productIDForPackType:AIUAWordPackType500K],
-                                      [wordPackManager productIDForPackType:AIUAWordPackType2M],
-                                      [wordPackManager productIDForPackType:AIUAWordPackType6M],
-                                      nil];
-    
-    // 检查缓存中是否已有所有字数包产品
-    NSMutableArray<SKProduct *> *cachedProducts = [NSMutableArray array];
-    BOOL allCached = YES;
-    for (NSString *productID in wordPackIDs) {
-        SKProduct *product = self.productsCache[productID];
-        if (product) {
-            [cachedProducts addObject:product];
-        } else {
-            allCached = NO;
-        }
-    }
-    if (allCached && cachedProducts.count > 0) {
-        NSLog(@"[IAP] 字数包产品已在缓存中，直接返回");
-        if (completion) completion(cachedProducts, nil);
-        return;
-    }
-    
-    self.productsCompletion = completion;
-    self.productsCompletionWordPackFilter = wordPackIDs;
-    
-    // 若已有请求在进行（如预加载），复用它，等待完成后在 didReceiveResponse 中按字数包过滤回调
-    if (self.productsRequest) {
-        NSLog(@"[IAP] 字数包请求：复用进行中的产品请求，等待完成后过滤");
-        return;
-    }
-    
-    // 与预加载一致：请求订阅+字数包，避免单独请求字数包时 StoreKit 返回空
-    NSMutableSet *productIdentifiers = [NSMutableSet setWithObjects:
-                                        [self productIdentifierForType:AIUASubscriptionProductTypeLifetimeBenefits],
-                                        [self productIdentifierForType:AIUASubscriptionProductTypeYearly],
-                                        [self productIdentifierForType:AIUASubscriptionProductTypeMonthly],
-                                        [self productIdentifierForType:AIUASubscriptionProductTypeWeekly],
-                                        nil];
-    [productIdentifiers addObjectsFromArray:wordPackIDs.allObjects];
-    
-    self.productsRequest = [[SKProductsRequest alloc] initWithProductIdentifiers:productIdentifiers];
-    self.productsRequest.delegate = self;
-    [self.productsRequest start];
-    
-    NSLog(@"[IAP] 开始请求字数包产品信息（含订阅以与预加载一致），Bundle ID: %@", [[NSBundle mainBundle] bundleIdentifier]);
+    __weak typeof(self) wself = self;
+    [self requestAllProductsWithCompletion:^(NSArray<SKProduct *> *products, NSString *error) {
+        __strong typeof(wself) sself = wself;
+        if (!sself || !completion) return;
+        NSArray *filtered = [sself cachedProductsForIdentifiers:wpIDs];
+        completion(filtered.count > 0 ? filtered : nil, filtered.count > 0 ? nil : (error ?: L(@"no_products_available")));
+    }];
 }
 
 - (void)purchaseProduct:(AIUASubscriptionProductType)productType completion:(AIUAIAPPurchaseCompletion)completion {
-    // 检查设备是否支持IAP
     if (![SKPaymentQueue canMakePayments]) {
-        if (completion) {
-            completion(NO, L(@"iap_not_supported"));
-        }
+        if (completion) completion(NO, L(@"iap_not_supported"));
         return;
     }
     
     self.purchaseCompletion = completion;
-    
     NSString *productIdentifier = [self productIdentifierForType:productType];
     SKProduct *product = self.productsCache[productIdentifier];
-    
-    if (!product) {
-        // 如果没有产品信息，先获取产品信息
-        [self fetchProductsWithCompletion:^(NSArray<SKProduct *> * _Nullable products, NSString * _Nullable errorMessage) {
-            if (products.count > 0) {
-                SKProduct *targetProduct = nil;
-                for (SKProduct *p in products) {
-                    if ([p.productIdentifier isEqualToString:productIdentifier]) {
-                        targetProduct = p;
-                        break;
-                    }
-                }
-                
-                if (targetProduct) {
-                    [self addPaymentForProduct:targetProduct];
-                } else {
-                    if (completion) {
-                        completion(NO, L(@"product_not_found"));
-                    }
-                }
-            } else {
-                if (completion) {
-                    completion(NO, errorMessage ?: L(@"failed_to_fetch_products"));
-                }
-            }
-        }];
+    if (product) {
+        [self addPaymentForProduct:product];
         return;
     }
     
-    [self addPaymentForProduct:product];
+    __weak typeof(self) wself = self;
+    [self requestAllProductsWithCompletion:^(NSArray<SKProduct *> *products, NSString *error) {
+        __strong typeof(wself) sself = wself;
+        if (!sself) return;
+        SKProduct *target = sself.productsCache[productIdentifier];
+        if (target) {
+            [sself addPaymentForProduct:target];
+        } else if (sself.purchaseCompletion) {
+            sself.purchaseCompletion(NO, error ?: L(@"product_not_found"));
+            sself.purchaseCompletion = nil;
+            sself.purchasingProductIdentifier = nil;
+        }
+    }];
 }
 
 - (void)purchaseConsumableProduct:(NSString *)productID completion:(AIUAIAPPurchaseCompletion)completion {
-    // 检查设备是否支持IAP
     if (![SKPaymentQueue canMakePayments]) {
-        if (completion) {
-            completion(NO, L(@"iap_not_supported"));
-        }
+        if (completion) completion(NO, L(@"iap_not_supported"));
         return;
     }
     
     self.purchaseCompletion = completion;
-    
-    // 先检查缓存
     SKProduct *product = self.productsCache[productID];
-    
-    if (!product) {
-        NSLog(@"[IAP] 消耗型产品未在缓存中，先获取产品信息: %@", productID);
-        
-        // 保存待购买的产品ID
-        self.pendingPurchaseProductID = productID;
-        
-        // 获取产品信息
-        self.productsRequest = [[SKProductsRequest alloc] initWithProductIdentifiers:[NSSet setWithObject:productID]];
-        self.productsRequest.delegate = self;
-        [self.productsRequest start];
-        
-        // 注意：这里会异步等待产品信息返回后再购买
-        // 在 productsRequest:didReceiveResponse: 中会处理购买
+    if (product) {
+        [self addPaymentForProduct:product];
         return;
     }
     
-    [self addPaymentForProduct:product];
+    __weak typeof(self) wself = self;
+    [self requestAllProductsWithCompletion:^(NSArray<SKProduct *> *products, NSString *error) {
+        __strong typeof(wself) sself = wself;
+        if (!sself) return;
+        SKProduct *target = sself.productsCache[productID];
+        if (target) {
+            [sself addPaymentForProduct:target];
+        } else if (sself.purchaseCompletion) {
+            sself.purchaseCompletion(NO, error ?: L(@"product_not_found"));
+            sself.purchaseCompletion = nil;
+            sself.purchasingProductIdentifier = nil;
+        }
+    }];
 }
+
+
 
 - (void)addPaymentForProduct:(SKProduct *)product {
     self.purchasingProductIdentifier = product.productIdentifier;
@@ -605,7 +551,6 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
             return @"";
     }
     
-    NSLog(@"[IAP] 产品类型 %ld 的产品ID: %@", (long)type, productID);
     return productID;
 }
 
@@ -626,90 +571,25 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
 
 #pragma mark - SKProductsRequestDelegate
 
-- (NSArray<SKProduct *> *)productsForCompletionFromResponse:(SKProductsResponse *)response {
-    if (!self.productsCompletionWordPackFilter || self.productsCompletionWordPackFilter.count == 0) {
-        return response.products ?: @[];
-    }
-    NSMutableArray<SKProduct *> *filtered = [NSMutableArray array];
-    for (SKProduct *p in response.products) {
-        if ([self.productsCompletionWordPackFilter containsObject:p.productIdentifier]) {
-            [filtered addObject:p];
-        }
-    }
-    return [filtered copy];
-}
-
 - (void)productsRequest:(SKProductsRequest *)request didReceiveResponse:(SKProductsResponse *)response {
-    NSLog(@"[IAP] 收到产品信息响应");
-    NSLog(@"[IAP] 可用产品数量: %lu", (unsigned long)response.products.count);
+    NSLog(@"[IAP] 收到产品信息响应，可用: %lu，无效: %lu",
+          (unsigned long)response.products.count,
+          (unsigned long)response.invalidProductIdentifiers.count);
     
     if (response.invalidProductIdentifiers.count > 0) {
-        NSLog(@"[IAP] ⚠️ 无效产品ID（请检查App Store Connect中的产品ID是否与代码中一致）: %@", response.invalidProductIdentifiers);
-        NSLog(@"[IAP] 当前Bundle ID: %@", [[NSBundle mainBundle] bundleIdentifier]);
-    } else {
-        NSLog(@"[IAP] ✅ 所有产品ID都有效");
+        NSLog(@"[IAP] ⚠️ 无效产品ID: %@", response.invalidProductIdentifiers);
     }
     
-    // 缓存产品信息
     for (SKProduct *product in response.products) {
         self.productsCache[product.productIdentifier] = product;
-        NSLog(@"[IAP] 产品: %@ - %@ - %@", product.localizedTitle, product.price, product.priceLocale);
     }
     
-    self.productsRequest = nil; // 请求已完成，允许后续预加载
+    self.productsRequest = nil;
     
-    // 确保在主线程执行所有UI相关操作和回调
     dispatch_async(dispatch_get_main_queue(), ^{
-        // 优先处理购买请求（如果有待购买的产品ID）
-        if (self.pendingPurchaseProductID) {
-            NSString *productID = self.pendingPurchaseProductID;
-            self.pendingPurchaseProductID = nil; // 清除待购买的产品ID
-            
-            // 查找对应的产品
-            SKProduct *targetProduct = nil;
-            for (SKProduct *product in response.products) {
-                if ([product.productIdentifier isEqualToString:productID]) {
-                    targetProduct = product;
-                    break;
-                }
-            }
-            
-            if (targetProduct) {
-                // 找到产品，继续购买流程
-                NSLog(@"[IAP] 找到待购买产品，继续购买流程: %@", productID);
-                [self addPaymentForProduct:targetProduct];
-            } else {
-                // 未找到产品，调用购买失败回调
-                NSLog(@"[IAP] 未找到待购买产品: %@", productID);
-                if (self.purchaseCompletion) {
-                    self.purchaseCompletion(NO, L(@"product_not_found"));
-                    self.purchaseCompletion = nil;
-                    self.purchasingProductIdentifier = nil;
-                }
-            }
-            
-            // 如果有productsCompletion，也需要处理（可能是同时触发的）
-            if (self.productsCompletion) {
-                NSArray<SKProduct *> *productsToReturn = [self productsForCompletionFromResponse:response];
-                if (productsToReturn.count > 0) {
-                    self.productsCompletion(productsToReturn, nil);
-                } else {
-                    self.productsCompletion(nil, L(@"no_products_available"));
-                }
-                self.productsCompletion = nil;
-                self.productsCompletionWordPackFilter = nil;
-            }
-        } else if (self.productsCompletion) {
-            // 没有待购买的产品，正常处理产品获取回调
-            NSArray<SKProduct *> *productsToReturn = [self productsForCompletionFromResponse:response];
-            if (productsToReturn.count > 0) {
-                self.productsCompletion(productsToReturn, nil);
-            } else {
-                self.productsCompletion(nil, L(@"no_products_available"));
-            }
-            self.productsCompletion = nil;
-            self.productsCompletionWordPackFilter = nil;
-        }
+        NSArray *products = response.products.count > 0 ? response.products : nil;
+        NSString *error = products ? nil : L(@"no_products_available");
+        [self drainPendingProductsCompletionsWithProducts:products error:error];
     });
 }
 
@@ -717,56 +597,22 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
     NSString *errorMessage = error.localizedDescription;
     NSLog(@"[IAP] 产品请求失败: %@", errorMessage);
     
-    self.productsRequest = nil; // 请求已结束，允许后续预加载
-    
-    BOOL isPreload = (!self.productsCompletion && !self.pendingPurchaseProductID);
-    BOOL isNetworkError = (errorMessage.length > 0 && (
-        [errorMessage containsString:@"断开"] ||
-        [errorMessage containsString:@"互联网"] ||
-        [errorMessage containsString:@"网络"] ||
-        [errorMessage containsString:@"connection"] ||
-        [errorMessage containsString:@"Connection"] ||
-        error.code == NSURLErrorNotConnectedToInternet ||
-        error.code == NSURLErrorNetworkConnectionLost));
+    self.productsRequest = nil;
+    BOOL isPreloadOnly = (self.pendingProductsCompletions.count == 0);
     
     dispatch_async(dispatch_get_main_queue(), ^{
-        // 预加载因网络失败：不弹窗，标记待重试，网络恢复后自动重试
-        if (isPreload && isNetworkError) {
+        if (isPreloadOnly) {
             self.preloadPendingDueToNetwork = YES;
-            NSLog(@"[IAP] 预加载因网络失败，已标记，网络恢复后将自动重试");
+            NSLog(@"[IAP] 预加载失败（无等待回调），标记待重试");
             return;
         }
         
-        // 预加载因其他原因失败：不弹窗，避免首次安装未选网络时打扰用户
-        if (isPreload) {
-            self.preloadPendingDueToNetwork = YES;
-            return;
-        }
-        
-        // 用户主动获取产品时失败，才显示弹窗
         [AIUAAlertHelper showDebugErrorAlert:errorMessage context:@"获取产品失败"];
-        
-        // 如果有待购买的产品ID，说明是购买触发的产品请求失败
-        if (self.pendingPurchaseProductID) {
-            NSString *productID = self.pendingPurchaseProductID;
-            self.pendingPurchaseProductID = nil; // 清除待购买的产品ID
-            
-            // 调用购买失败回调
-            if (self.purchaseCompletion) {
-                self.purchaseCompletion(NO, errorMessage ?: L(@"failed_to_fetch_products"));
-                self.purchaseCompletion = nil;
-                self.purchasingProductIdentifier = nil;
-            }
-        }
-        
-        // 处理产品获取回调
-        if (self.productsCompletion) {
-            self.productsCompletion(nil, errorMessage);
-            self.productsCompletion = nil;
-            self.productsCompletionWordPackFilter = nil;
-        }
+        [self drainPendingProductsCompletionsWithProducts:nil error:errorMessage];
     });
 }
+
+
 
 #pragma mark - SKPaymentTransactionObserver
 
@@ -865,18 +711,10 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
     NSString *errorMessage = error.localizedDescription ?: @"";
     NSLog(@"[IAP] 恢复购买失败: %@", errorMessage);
     
-    BOOL isNetworkError = ([errorMessage containsString:@"断开"] ||
-                           [errorMessage containsString:@"互联网"] ||
-                           [errorMessage containsString:@"网络"] ||
-                           [errorMessage containsString:@"connection"] ||
-                           [errorMessage containsString:@"Connection"] ||
-                           error.code == NSURLErrorNotConnectedToInternet ||
-                           error.code == NSURLErrorNetworkConnectionLost);
-    
     AIUAIAPRestoreCompletion completion = self.restoreCompletion;
     self.restoreCompletion = nil;
     
-    if (isNetworkError && !self.hasScheduledRestoreRetryForNetworkError && !self.isVIPMember && !self.subscriptionExpiryDate) {
+    if ([self isNetworkError:error] && !self.hasScheduledRestoreRetryForNetworkError && !self.isVIPMember && !self.subscriptionExpiryDate) {
         self.hasScheduledRestoreRetryForNetworkError = YES;
         __weak typeof(self) wself = self;
         NSLog(@"[IAP] 恢复因网络失败，5 秒后自动重试一次（用户选择网络后可能成功）");
@@ -912,137 +750,109 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
 
 #pragma mark - Transaction Processing
 
-- (void)completeTransaction:(SKPaymentTransaction *)transaction {
-    NSString *productIdentifier = transaction.payment.productIdentifier;
+- (BOOL)shouldIgnoreSubscriptionTransaction:(NSString *)productIdentifier {
     BOOL isWordPack = [self isWordPackProductId:productIdentifier];
-    
-    // 用户曾清除购买数据时，忽略队列中重放的历史订阅交易，但不拦截用户主动发起的新购买
-    // purchaseCompletion != nil 表示用户正在主动购买
+    if (isWordPack) return NO;
     BOOL userClearedPurchase = [[NSUserDefaults standardUserDefaults] boolForKey:kAIUAUserClearedPurchaseData];
-    if (!isWordPack && userClearedPurchase && !self.purchaseCompletion) {
-        NSLog(@"[IAP] 用户已清除购买数据，忽略队列中重放的订阅交易 %@，不恢复会员", productIdentifier);
-        [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
-        return;
-    }
-    
-    // 用户主动购买订阅成功，清除「已清除购买数据」标记
-    if (!isWordPack && userClearedPurchase && self.purchaseCompletion) {
-        NSLog(@"[IAP] 用户主动购买订阅 %@，清除「已清除购买数据」标记", productIdentifier);
+    return (userClearedPurchase && !self.purchaseCompletion);
+}
+
+- (void)clearUserClearedPurchaseFlagIfNeeded {
+    BOOL userClearedPurchase = [[NSUserDefaults standardUserDefaults] boolForKey:kAIUAUserClearedPurchaseData];
+    if (userClearedPurchase && self.purchaseCompletion) {
         NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
         [defaults removeObjectForKey:kAIUAUserClearedPurchaseData];
         [defaults synchronize];
     }
+}
+
+- (void)completePurchaseCallbackForTransaction:(SKPaymentTransaction *)transaction success:(BOOL)success error:(nullable NSString *)errorMessage {
+    if (!self.purchaseCompletion || !self.purchasingProductIdentifier) return;
+    if (![transaction.payment.productIdentifier isEqualToString:self.purchasingProductIdentifier]) return;
+    
+    if (success) {
+        BOOL isWordPack = [self isWordPackProductId:transaction.payment.productIdentifier];
+        BOOL userClearedPurchase = [[NSUserDefaults standardUserDefaults] boolForKey:kAIUAUserClearedPurchaseData];
+        NSString *hint = (!isWordPack && userClearedPurchase) ? AIUARestoredExistingSubscriptionHint : nil;
+        self.purchaseCompletion(YES, hint);
+    } else {
+        self.purchaseCompletion(NO, errorMessage);
+    }
+    self.purchaseCompletion = nil;
+    self.purchasingProductIdentifier = nil;
+}
+
+- (void)completeTransaction:(SKPaymentTransaction *)transaction {
+    NSString *productIdentifier = transaction.payment.productIdentifier;
+    
+    if ([self shouldIgnoreSubscriptionTransaction:productIdentifier]) {
+        NSLog(@"[IAP] 用户已清除购买数据，忽略队列中重放的订阅交易 %@", productIdentifier);
+        [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
+        return;
+    }
+    [self clearUserClearedPurchaseFlagIfNeeded];
     
     self.lastReceiptVerificationTime = nil;
     [self verifyReceipt:transaction];
     
-    if (!isWordPack) {
+    if (![self isWordPackProductId:productIdentifier]) {
         [self unlockContentForProductIdentifier:productIdentifier];
     } else {
-        NSLog(@"[IAP] 字数包购买完成: %@，不修改会员到期时间", productIdentifier);
-        // 仅刷新字数包相关展示（赠送字数等），不发送订阅状态变化
+        NSLog(@"[IAP] 字数包购买完成: %@", productIdentifier);
         [[AIUAWordPackManager sharedManager] refreshVIPGiftedWords];
     }
     
-    // 完成交易
     [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
-    
-    // 仅当交易与当前购买意图匹配时才回调，避免队列中其他交易误触发「购买成功」
-    if (self.purchaseCompletion && self.purchasingProductIdentifier &&
-        [transaction.payment.productIdentifier isEqualToString:self.purchasingProductIdentifier]) {
-        // 用户曾清除数据且收到交易：多为 Apple 检测到已有订阅直接返回，未弹窗扣款，传递提示供 UI 展示「已恢复」而非「购买成功」
-        NSString *hint = (!isWordPack && userClearedPurchase) ? AIUARestoredExistingSubscriptionHint : nil;
-        self.purchaseCompletion(YES, hint);
-        self.purchaseCompletion = nil;
-        self.purchasingProductIdentifier = nil;
-    }
+    [self completePurchaseCallbackForTransaction:transaction success:YES error:nil];
 }
 
 - (void)failedTransaction:(SKPaymentTransaction *)transaction {
     [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
-    
-    NSString *errorMessage = transaction.error.localizedDescription;
-    
-    // 用户取消不算错误
-    if (transaction.error.code == SKErrorPaymentCancelled) {
-        errorMessage = L(@"purchase_cancelled");
-    }
-    
-    if (self.purchaseCompletion && self.purchasingProductIdentifier &&
-        [transaction.payment.productIdentifier isEqualToString:self.purchasingProductIdentifier]) {
-        self.purchaseCompletion(NO, errorMessage);
-        self.purchaseCompletion = nil;
-        self.purchasingProductIdentifier = nil;
-    }
+    NSString *errorMessage = (transaction.error.code == SKErrorPaymentCancelled)
+        ? L(@"purchase_cancelled")
+        : transaction.error.localizedDescription;
+    [self completePurchaseCallbackForTransaction:transaction success:NO error:errorMessage];
 }
 
 - (void)restoreTransaction:(SKPaymentTransaction *)transaction {
     NSString *productIdentifier = transaction.payment.productIdentifier;
     NSLog(@"[IAP] 恢复交易: %@", productIdentifier);
     
-    BOOL isWordPack = [self isWordPackProductId:productIdentifier];
-    BOOL userClearedPurchase = [[NSUserDefaults standardUserDefaults] boolForKey:kAIUAUserClearedPurchaseData];
-    // 与 completeTransaction 一致：purchaseCompletion != nil 表示用户主动点击购买，Apple 可能返回 Restored（已拥有时不重复扣款）
-    if (!isWordPack && userClearedPurchase && !self.purchaseCompletion) {
-        NSLog(@"[IAP] 用户已清除购买数据，忽略队列中重放的恢复交易 %@，不恢复会员", productIdentifier);
+    if ([self shouldIgnoreSubscriptionTransaction:productIdentifier]) {
+        NSLog(@"[IAP] 用户已清除购买数据，忽略队列中重放的恢复交易 %@", productIdentifier);
         [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
         return;
     }
+    [self clearUserClearedPurchaseFlagIfNeeded];
     
-    if (userClearedPurchase && self.purchaseCompletion) {
-        NSLog(@"[IAP] 用户主动购买触发恢复交易 %@，清除「已清除购买数据」标记", productIdentifier);
-        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-        [defaults removeObjectForKey:kAIUAUserClearedPurchaseData];
-        [defaults synchronize];
-    }
-    
-    if (isWordPack) {
-        NSLog(@"[IAP] 恢复字数包产品: %@，消耗型产品不重复发放", productIdentifier);
+    if ([self isWordPackProductId:productIdentifier]) {
+        NSLog(@"[IAP] 恢复字数包: %@，消耗型不重复发放", productIdentifier);
+    } else if ([self isCurrentlyLifetimeMember] && ![self isLifetimeProductId:productIdentifier]) {
+        NSLog(@"[IAP] 当前已是永久会员，跳过有限期交易 %@", productIdentifier);
     } else {
-        BOOL isLifetimeProduct = [self isLifetimeProductId:productIdentifier];
-        // 若当前已是永久会员，则只接受永久会员交易，有限期交易不覆盖
-        BOOL isCurrentlyLifetime = NO;
-        if (self.subscriptionExpiryDate) {
-            NSTimeInterval timeInterval = [self.subscriptionExpiryDate timeIntervalSinceNow];
-            isCurrentlyLifetime = (timeInterval > 50 * 365 * 24 * 60 * 60);
-        }
-        
-        if (isCurrentlyLifetime && !isLifetimeProduct) {
-            NSLog(@"[IAP] 当前已是永久会员，跳过有限期交易 %@，保持永久会员状态", productIdentifier);
-        } else {
-            [self unlockContentForProductIdentifier:productIdentifier];
-            self.restoredPurchasesCount++;
-        }
+        [self unlockContentForProductIdentifier:productIdentifier];
+        self.restoredPurchasesCount++;
     }
     
-    // 用户点击购买时 Apple 可能直接返回 Restored（已拥有订阅不重复扣款），需回调告知成功；仅当交易与当前购买意图匹配时才回调
-    if (self.purchaseCompletion && self.purchasingProductIdentifier &&
-        [transaction.payment.productIdentifier isEqualToString:self.purchasingProductIdentifier]) {
-        // 用户曾清除数据且收到 Restored：Apple 检测到已有订阅直接返回，未弹窗扣款，传递提示供 UI 展示「已恢复」而非「购买成功」
-        NSString *hint = (!isWordPack && userClearedPurchase) ? AIUARestoredExistingSubscriptionHint : nil;
-        self.purchaseCompletion(YES, hint);
-        self.purchaseCompletion = nil;
-        self.purchasingProductIdentifier = nil;
-    }
-    
+    [self completePurchaseCallbackForTransaction:transaction success:YES error:nil];
     [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
 }
+
+- (BOOL)isCurrentlyLifetimeMember {
+    if (!self.subscriptionExpiryDate) return NO;
+    return ([self.subscriptionExpiryDate timeIntervalSinceNow] > 50 * 365 * 24 * 60 * 60);
+}
+
+
 
 #pragma mark - Content Unlocking
 
 - (void)unlockContentForProductIdentifier:(NSString *)productIdentifier {
     NSLog(@"[IAP] 解锁内容: %@", productIdentifier);
     
-    // 确定产品类型
     AIUASubscriptionProductType type = [self productTypeForIdentifier:productIdentifier];
     
-    // 若当前已是永久会员（到期>50年），不得被有限期订阅覆盖（恢复时可能先处理年付再处理永久）
-    BOOL isCurrentlyLifetime = NO;
-    if (self.subscriptionExpiryDate) {
-        NSTimeInterval interval = [self.subscriptionExpiryDate timeIntervalSinceNow];
-        isCurrentlyLifetime = (interval > 50 * 365 * 24 * 60 * 60);
-    }
-    if (isCurrentlyLifetime && type != AIUASubscriptionProductTypeLifetimeBenefits) {
+    if ([self isCurrentlyLifetimeMember] && type != AIUASubscriptionProductTypeLifetimeBenefits) {
         NSLog(@"[IAP] 当前已是永久会员，跳过有限期订阅 %@，保持永久状态", productIdentifier);
         [self saveLocalSubscriptionInfo];
         [[NSNotificationCenter defaultCenter] postNotificationName:@"AIUASubscriptionStatusChanged" object:nil];
@@ -1087,6 +897,7 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
     } else if ([identifier containsString:@"weekly"]) {
         return AIUASubscriptionProductTypeWeekly;
     }
+    NSLog(@"[IAP] ⚠️ 未识别的产品ID: %@，默认按周会员处理", identifier);
     return AIUASubscriptionProductTypeWeekly;
 }
 
@@ -1102,13 +913,8 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
     // 永久会员：不累加，直接设置为100年后
     // 如果已经是永久会员（到期时间在50年后），则保持不变
     if (type == AIUASubscriptionProductTypeLifetimeBenefits) {
-        if (self.subscriptionExpiryDate) {
-            // 检查是否已经是永久会员（到期时间在50年后）
-            NSTimeInterval timeInterval = [self.subscriptionExpiryDate timeIntervalSinceNow];
-            if (timeInterval > 50 * 365 * 24 * 60 * 60) {
-                NSLog(@"[IAP] 用户已经是永久会员，保持现有到期时间: %@", self.subscriptionExpiryDate);
-                return self.subscriptionExpiryDate;
-            }
+        if ([self isCurrentlyLifetimeMember]) {
+            return self.subscriptionExpiryDate;
         }
         components.year = 100;
         NSDate *lifetimeExpiry = [calendar dateByAddingComponents:components toDate:now options:0];
@@ -1248,159 +1054,89 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
             return NO;
         }
         
-        // 检查当前是否已是永久会员（到期时间>50年），如果是则不再从收据中覆盖
-        BOOL isCurrentlyLifetime = NO;
-        if (self.subscriptionExpiryDate) {
-            NSTimeInterval timeInterval = [self.subscriptionExpiryDate timeIntervalSinceNow];
-            isCurrentlyLifetime = (timeInterval > 50 * 365 * 24 * 60 * 60);
-        }
-        
-        if (isCurrentlyLifetime) {
-            NSLog(@"[IAP] 当前已是永久会员，跳过收据解析，保持永久会员状态");
+        if ([self isCurrentlyLifetimeMember]) {
+            NSLog(@"[IAP] 当前已是永久会员，跳过收据解析");
             return YES;
         }
         
-        // 若本地已有未过期的订阅到期时间，通常不以收据覆盖；但如果不是永久会员且距上次验证超过7天，仍需刷新以同步最新订阅
         NSDate *now = [NSDate date];
         if (self.subscriptionExpiryDate && [now compare:self.subscriptionExpiryDate] == NSOrderedAscending) {
-            BOOL isLocalLifetime = ([self.subscriptionExpiryDate timeIntervalSinceNow] > 50 * 365 * 24 * 60 * 60);
-            // 永久会员或近期刚验证过的订阅：保留本地，跳过覆盖
-            if (isLocalLifetime || (self.lastReceiptVerificationTime && [now timeIntervalSinceDate:self.lastReceiptVerificationTime] < 7 * 24 * 60 * 60)) {
-                NSLog(@"[IAP] 本地订阅未过期（到期: %@），%@，跳过从收据覆盖", self.subscriptionExpiryDate, isLocalLifetime ? @"永久会员" : @"近期刚验证");
+            if (self.lastReceiptVerificationTime && [now timeIntervalSinceDate:self.lastReceiptVerificationTime] < 7 * 24 * 60 * 60) {
+                NSLog(@"[IAP] 本地订阅未过期且近期刚验证，跳过收据覆盖");
                 return YES;
             }
-            // 非永久且距上次验证超过7天：仍走收据刷新，防止用户在其它设备订阅/升级后本地未同步
-            NSLog(@"[IAP] 本地订阅未过期但距上次验证超过7天，从收据刷新最新状态");
+            NSLog(@"[IAP] 本地订阅未过期但距上次验证超过7天，从收据刷新");
         }
         
-        // 提取订阅信息
         NSArray *inAppPurchases = receiptInfo[@"in_app"];
         NSLog(@"[IAP] 收据中共有 %lu 个购买项", (unsigned long)(inAppPurchases ? inAppPurchases.count : 0));
         
         if (inAppPurchases && inAppPurchases.count > 0) {
-            // 优先：若收据中任意一项为永久会员，直接按永久处理，避免被有限期覆盖（删除重装恢复后永久会员应显示永久有效）
+            // 单次扫描：优先找永久会员
             for (NSDictionary *purchase in inAppPurchases) {
                 NSString *pid = purchase[@"product_id"];
                 if (!pid || [self isWordPackProductId:pid]) continue;
-                BOOL isLifetime = [self isLifetimeProductId:pid];
-                if (isLifetime) {
-                    _isVIPMember = YES;
-                    self.currentSubscriptionType = AIUASubscriptionProductTypeLifetimeBenefits;
-                    NSDate *now = [NSDate date];
-                    NSCalendar *calendar = [NSCalendar currentCalendar];
-                    NSDateComponents *components = [[NSDateComponents alloc] init];
-                    components.year = 100;
-                    self.subscriptionExpiryDate = [calendar dateByAddingComponents:components toDate:now options:0];
-                    NSLog(@"[IAP] 收据中发现永久会员产品 %@，强制按永久有效处理", pid);
-                    [self saveLocalSubscriptionInfo];
+                if ([self isLifetimeProductId:pid]) {
+                    [self applyLifetimeMembership];
+                    NSLog(@"[IAP] 收据中发现永久会员产品 %@", pid);
                     return YES;
                 }
             }
             
-            // 找到最新的有效订阅
             NSDictionary *latestSubscription = [self findLatestValidSubscription:inAppPurchases];
-            
             if (latestSubscription) {
                 NSString *productId = latestSubscription[@"product_id"];
-                // 字数包与会员周期无关，不得用收据中的字数包项覆盖订阅状态
                 if ([self isWordPackProductId:productId]) {
-                    NSLog(@"[IAP] 收据中该项为字数包，跳过订阅覆盖: %@", productId);
+                    NSLog(@"[IAP] 收据中该项为字数包，跳过: %@", productId);
                 } else {
-                // 二次确认：若收据中任一项为永久会员（可能首轮未匹配到），优先按永久处理，避免恢复后误显示过期时间
-                for (NSDictionary *p in inAppPurchases) {
-                    NSString *pid = p[@"product_id"];
-                    if (pid && ![self isWordPackProductId:pid] && [self isLifetimeProductId:pid]) {
-                        _isVIPMember = YES;
-                        self.currentSubscriptionType = AIUASubscriptionProductTypeLifetimeBenefits;
-                        NSDate *now = [NSDate date];
-                        NSCalendar *calendar = [NSCalendar currentCalendar];
-                        NSDateComponents *components = [[NSDateComponents alloc] init];
-                        components.year = 100;
-                        self.subscriptionExpiryDate = [calendar dateByAddingComponents:components toDate:now options:0];
-                        NSLog(@"[IAP] 收据二次扫描发现永久会员 %@，按永久有效处理", pid);
-                        [self saveLocalSubscriptionInfo];
+                    NSDate *expiresDate = latestSubscription[@"expires_date"];
+                    NSLog(@"[IAP] 从收据中提取订阅 - 产品: %@, 到期: %@", productId, expiresDate);
+                    
+                    // 到期时间超过20年 或 产品ID识别为永久 → 永久会员
+                    AIUASubscriptionProductType productType = [self productTypeForIdentifier:productId];
+                    if (productType == AIUASubscriptionProductTypeLifetimeBenefits ||
+                        (expiresDate && [expiresDate timeIntervalSinceDate:now] > 20 * 365 * 24 * 60 * 60)) {
+                        [self applyLifetimeMembership];
+                        NSLog(@"[IAP] 识别为永久会员（产品: %@）", productId);
                         return YES;
                     }
-                }
-                NSDate *expiresDate = latestSubscription[@"expires_date"];
-                
-                NSLog(@"[IAP] 从收据中提取订阅信息 - 产品: %@, 到期: %@", productId, expiresDate);
-                
-                // 若收据中的到期时间超过 20 年，视为有效永久会员（兜底，防止产品ID未识别为 lifetime）
-                NSDate *now = [NSDate date];
-                if (expiresDate && [expiresDate timeIntervalSinceDate:now] > 20 * 365 * 24 * 60 * 60) {
-                    _isVIPMember = YES;
-                    self.currentSubscriptionType = AIUASubscriptionProductTypeLifetimeBenefits;
-                    NSCalendar *calendar = [NSCalendar currentCalendar];
-                    NSDateComponents *components = [[NSDateComponents alloc] init];
-                    components.year = 100;
-                    self.subscriptionExpiryDate = [calendar dateByAddingComponents:components toDate:now options:0];
-                    NSLog(@"[IAP] 收据到期时间超过20年，视为永久会员并设置为永久有效");
-                    [self saveLocalSubscriptionInfo];
-                    return YES;
-                }
-                
-                // 根据 product_id 确定订阅类型
-                AIUASubscriptionProductType productType = [self productTypeFromProductId:productId];
-                
-                // 如果是永久会员，直接设置为永久，忽略收据中的到期时间（避免被错误的有限期覆盖）
-                if (productType == AIUASubscriptionProductTypeLifetimeBenefits) {
-                    _isVIPMember = YES;
-                    self.currentSubscriptionType = productType;
-                    // 永久会员统一设置为100年后，不使用收据中的 expiresDate
-                    NSDate *now = [NSDate date];
-                    NSCalendar *calendar = [NSCalendar currentCalendar];
-                    NSDateComponents *components = [[NSDateComponents alloc] init];
-                    components.year = 100;
-                    self.subscriptionExpiryDate = [calendar dateByAddingComponents:components toDate:now options:0];
-                    NSLog(@"[IAP] 从收据中识别到永久会员（产品: %@），设置为永久有效（忽略收据到期时间）", productId);
-                    [self saveLocalSubscriptionInfo];
-                    return YES;
-                }
-                
-                // 更新本地缓存
-                self.currentSubscriptionType = productType;
-                
-                if (expiresDate) {
-                    self.subscriptionExpiryDate = expiresDate;
                     
-                    // 检查是否过期
-                    NSDate *now = [NSDate date];
-                    if ([now compare:expiresDate] == NSOrderedAscending) {
-                        // 未过期
-                        _isVIPMember = YES;
-                        NSLog(@"[IAP] 订阅有效，类型: %ld, 到期: %@", (long)productType, expiresDate);
+                    self.currentSubscriptionType = productType;
+                    if (expiresDate) {
+                        self.subscriptionExpiryDate = expiresDate;
+                        _isVIPMember = ([now compare:expiresDate] == NSOrderedAscending);
+                        NSLog(@"[IAP] 订阅%@，类型: %ld, 到期: %@", _isVIPMember ? @"有效" : @"已过期", (long)productType, expiresDate);
                     } else {
-                        // 已过期
-                        _isVIPMember = NO;
-                        NSLog(@"[IAP] 订阅已过期");
+                        _isVIPMember = YES;
+                        self.subscriptionExpiryDate = [self calculateExpiryDateForProductType:productType];
+                        NSLog(@"[IAP] 订阅无到期时间，从当前时间计算");
                     }
-                } else {
-                    // 非永久会员但没有到期时间，从当前时间计算
-                    _isVIPMember = YES;
-                    self.subscriptionExpiryDate = [self calculateExpiryDateForProductType:productType];
-                    NSLog(@"[IAP] 订阅无到期时间，从当前时间计算");
-                }
-                
-                // 保存更新后的信息
-                [self saveLocalSubscriptionInfo];
+                    [self saveLocalSubscriptionInfo];
                 }
             } else {
-                NSLog(@"[IAP] ⚠️ 收据中有 %lu 个购买项，但未找到有效订阅（可能都是字数包或已过期订阅）", (unsigned long)inAppPurchases.count);
+                NSLog(@"[IAP] ⚠️ 收据中有购买项但未找到有效订阅");
             }
         } else {
-            NSLog(@"[IAP] ⚠️ 收据解析成功，但没有找到任何购买项（可能是新设备或收据未同步）");
-            NSLog(@"[IAP] 💡 建议：点击「恢复购买」按钮手动同步订阅信息");
+            NSLog(@"[IAP] ⚠️ 收据中无购买项");
         }
     } else {
-        NSLog(@"[IAP] ❌ 收据解析失败，无法从收据中提取订阅信息");
+        NSLog(@"[IAP] ❌ 收据解析失败");
     }
     
-    NSLog(@"[IAP] 本地收据验证完成");
-    
-    // 注意：这只是基本验证，真正的安全性需要服务器端验证
     return YES;
 }
+
+- (void)applyLifetimeMembership {
+    _isVIPMember = YES;
+    self.currentSubscriptionType = AIUASubscriptionProductTypeLifetimeBenefits;
+    NSCalendar *calendar = [NSCalendar currentCalendar];
+    NSDateComponents *components = [[NSDateComponents alloc] init];
+    components.year = 100;
+    self.subscriptionExpiryDate = [calendar dateByAddingComponents:components toDate:[NSDate date] options:0];
+    [self saveLocalSubscriptionInfo];
+}
+
+
 
 // 解析收据中的订阅信息
 - (NSDictionary *)parseReceiptData:(NSData *)receiptData {
@@ -1824,22 +1560,6 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
     
     // 无有效订阅时不兜底返回 firstObject，避免把字数包等非订阅项当作订阅
     return nil;
-}
-
-// 根据产品ID获取订阅类型
-- (AIUASubscriptionProductType)productTypeFromProductId:(NSString *)productId {
-    if ([self isLifetimeProductId:productId]) {
-        return AIUASubscriptionProductTypeLifetimeBenefits;
-    } else if ([productId containsString:@"yearly"]) {
-        return AIUASubscriptionProductTypeYearly;
-    } else if ([productId containsString:@"monthly"]) {
-        return AIUASubscriptionProductTypeMonthly;
-    } else if ([productId containsString:@"weekly"]) {
-        return AIUASubscriptionProductTypeWeekly;
-    }
-    // 未知产品ID不应默认为永久会员，记录日志后返回周会员（最保守的订阅类型）
-    NSLog(@"[IAP] ⚠️ 未识别的产品ID: %@，默认按周会员处理", productId);
-    return AIUASubscriptionProductTypeWeekly;
 }
 
 #pragma mark - VIP Member Status
