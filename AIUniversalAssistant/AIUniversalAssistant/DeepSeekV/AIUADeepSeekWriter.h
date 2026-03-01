@@ -7,9 +7,7 @@ typedef void(^AIUAStreamHandler)(NSString *chunk, BOOL finished, NSError * _Null
 
 @interface AIUADeepSeekWriter : NSObject
 
-/// API密钥
-@property (nonatomic, copy) NSString *apiKey;
-/// API基础URL，默认为DeepSeek官方API
+/// API基础URL，默认为后端代理地址
 @property (nonatomic, copy) NSString *baseURL;
 /// 请求超时时间，默认60秒
 @property (nonatomic, assign) NSTimeInterval timeoutInterval;
@@ -17,8 +15,13 @@ typedef void(^AIUAStreamHandler)(NSString *chunk, BOOL finished, NSError * _Null
 @property (nonatomic, copy) NSString *modelName;
 
 /**
- * 初始化方法
- * @param apiKey DeepSeek API密钥
+ * 使用后端代理地址初始化
+ * @param serverURL 后端代理地址（例如 https://api.xxx.com/ai）
+ */
+- (instancetype)initWithServerURL:(NSString *)serverURL;
+
+/**
+ * 兼容旧调用方式（会忽略 apiKey，改为走后端代理）
  */
 - (instancetype)initWithAPIKey:(NSString *)apiKey;
 

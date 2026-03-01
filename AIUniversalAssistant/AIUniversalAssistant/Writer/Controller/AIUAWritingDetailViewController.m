@@ -6,6 +6,7 @@
 #import "AIUADocDetailViewController.h"
 #import "AIUAWordPackManager.h"
 #import "AIUAWordPackViewController.h"
+#import "AIUAConfigID.h"
 
 @interface AIUAWritingDetailViewController ()
 
@@ -353,7 +354,7 @@
     [self updateUIState];
     
     // 初始化写作引擎
-    self.writer = [[AIUADeepSeekWriter alloc] initWithAPIKey:self.apiKey];
+    self.writer = [[AIUADeepSeekWriter alloc] initWithServerURL:AIUA_AI_PROXY_URL];
     
     // 开始流式写作
     WeakType(self);
@@ -550,6 +551,13 @@
         return;
     }
     
+    NSString *trimmedContent = [self.finalContent stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    if (trimmedContent.length == 0) {
+        NSLog(@"正文为空，跳过自动保存");
+        return;
+    }
+    NSString *trimmedTitle = [self.finalTitle stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    
     // 如果当前有writingID，先删除旧的记录
     if (self.currentWritingID) {
         [self deleteCurrentWritingRecord];
@@ -561,21 +569,21 @@
     // 使用可变字典，避免在流式生成过程中出现不可变字典的问题
     NSMutableDictionary *writingRecord = [NSMutableDictionary dictionary];
     writingRecord[@"id"] = self.currentWritingID;
-    writingRecord[@"title"] = self.finalTitle ?: @"";
-    writingRecord[@"content"] = self.finalContent ?: @"";
+    writingRecord[@"title"] = trimmedTitle ?: @"";
+    writingRecord[@"content"] = trimmedContent ?: @"";
     writingRecord[@"prompt"] = self.prompt ?: @"";
     writingRecord[@"createTime"] = [[AIUADataManager sharedManager] currentTimeString];
     writingRecord[@"type"] = self.type ?: @"";
     // 统一字数统计口径：与扣减一致（按“标题+正文”整体统计）
     NSMutableString *fullTextForCount = [NSMutableString string];
-    if (self.finalTitle.length > 0) {
-        [fullTextForCount appendString:self.finalTitle];
+    if (trimmedTitle.length > 0) {
+        [fullTextForCount appendString:trimmedTitle];
     }
-    if (self.finalTitle.length > 0 && self.finalContent.length > 0) {
+    if (trimmedTitle.length > 0 && trimmedContent.length > 0) {
         [fullTextForCount appendString:@"\n"];
     }
-    if (self.finalContent.length > 0) {
-        [fullTextForCount appendString:self.finalContent];
+    if (trimmedContent.length > 0) {
+        [fullTextForCount appendString:trimmedContent];
     }
     writingRecord[@"wordCount"] = @([AIUAWordPackManager countWordsInText:fullTextForCount]);
     

@@ -412,7 +412,7 @@
     // 检查VIP权限
     [[AIUAVIPManager sharedManager] checkVIPPermissionWithViewController:self featureName:nil completion:^(BOOL hasPermission) {
         if (hasPermission) {
-            AIUAWritingInputViewController *writingInputVC = [[AIUAWritingInputViewController alloc] initWithTemplateItem:item categoryId:item[@"categoryId"] apiKey:APIKEY];
+            AIUAWritingInputViewController *writingInputVC = [[AIUAWritingInputViewController alloc] initWithTemplateItem:item categoryId:item[@"categoryId"] apiKey:@""];
             // 跳转到对应的写作页面
             [self.navigationController pushViewController:writingInputVC animated:YES];
         }

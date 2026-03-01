@@ -9,8 +9,12 @@
 #define AIUAConfigID_h
 
 
-// DeepSeek
-#define APIKEY               @"sk-ecdd2f67aa60478bab7cb3fdd0e83343"  //DeepSeek申请的apikey
+// 服务端地址
+#define AIUA_AI_PROXY_URL     @"https://api.hujiaofenwritingcat.top/ai"
+// 与服务端 APP_CLIENT_TOKEN 对齐；不需要时可留空
+#define AIUA_APP_CLIENT_TOKEN @""
+// 与服务端 APP_SIGNING_SECRET 对齐；启用“版本+时间戳签名”时填写
+#define AIUA_APP_SIGNING_SECRET @""
 
 // 穿山甲广告SDK配置
 // 使用说明：
@@ -41,7 +45,7 @@
 #define AIUA_AD_ENABLED          0    // 1: 开启广告并编译SDK  0: 关闭广告且不编译SDK
 
 // 会员订阅检测开关（如果不想进行会员订阅检测，设置为0，所有用户将被视为VIP）
-#define AIUA_VIP_CHECK_ENABLED   1    // 1: 开启会员检测  0: 关闭会员检测（所有用户视为VIP）
+#define AIUA_VIP_CHECK_ENABLED   0    // 1: 开启会员检测  0: 关闭会员检测（所有用户视为VIP）
 
 // 过期字数包提醒测试开关（用于测试过期提醒功能）
 #define AIUA_EXPIRING_WORDS_TEST_ENABLED   0    // 1: 开启测试数据  0: 关闭测试数据（使用真实数据）

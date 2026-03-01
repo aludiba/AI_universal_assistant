@@ -1,4 +1,6 @@
 #import "AIUADeepSeekWriter.h"
+#import "AIUAConfigID.h"
+#import <CommonCrypto/CommonDigest.h>
 
 @interface AIUADeepSeekWriter () <NSURLSessionDataDelegate, NSURLSessionStreamDelegate>
 
@@ -6,43 +8,79 @@
 @property (nonatomic, strong) NSURLSession *streamSession;
 @property (nonatomic, strong) NSURLSessionDataTask *currentTask;
 @property (nonatomic, strong) NSMutableData *streamData;
+@property (nonatomic, strong) NSMutableData *streamErrorData;
 @property (nonatomic, copy) AIUAStreamHandler currentStreamHandler;
 @property (nonatomic, strong) NSMutableString *accumulatedContent;
+@property (nonatomic, assign) NSInteger currentStreamStatusCode;
 
 @end
 
 @implementation AIUADeepSeekWriter
 
+#pragma mark - 签名辅助
+
+- (NSString *)aiua_sha256Hex:(NSString *)input {
+    NSData *data = [input dataUsingEncoding:NSUTF8StringEncoding];
+    unsigned char digest[CC_SHA256_DIGEST_LENGTH];
+    CC_SHA256(data.bytes, (CC_LONG)data.length, digest);
+    NSMutableString *hex = [NSMutableString stringWithCapacity:CC_SHA256_DIGEST_LENGTH * 2];
+    for (int i = 0; i < CC_SHA256_DIGEST_LENGTH; i++) {
+        [hex appendFormat:@"%02x", digest[i]];
+    }
+    return hex;
+}
+
+- (void)appendSecurityHeadersToRequest:(NSMutableURLRequest *)request {
+    if (AIUA_APP_CLIENT_TOKEN.length > 0) {
+        [request setValue:AIUA_APP_CLIENT_TOKEN forHTTPHeaderField:@"x-aiua-app-token"];
+    }
+    
+    // 版本 + 时间戳签名（可选）
+    if (AIUA_APP_SIGNING_SECRET.length > 0) {
+        NSString *appVersion = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];
+        if (appVersion.length == 0) {
+            appVersion = @"0.0.0";
+        }
+        long long ts = (long long)[[NSDate date] timeIntervalSince1970];
+        NSString *timestamp = [NSString stringWithFormat:@"%lld", ts];
+        NSString *path = request.URL.path.length > 0 ? request.URL.path : @"/ai";
+        NSString *raw = [NSString stringWithFormat:@"%@.%@.%@.%@", appVersion, timestamp, path, AIUA_APP_SIGNING_SECRET];
+        NSString *signature = [self aiua_sha256Hex:raw];
+        
+        [request setValue:appVersion forHTTPHeaderField:@"x-aiua-app-version"];
+        [request setValue:timestamp forHTTPHeaderField:@"x-aiua-ts"];
+        [request setValue:signature forHTTPHeaderField:@"x-aiua-sign"];
+    }
+}
+
 #pragma mark - 初始化
 
 - (instancetype)initWithAPIKey:(NSString *)apiKey {
+    // 兼容旧调用：忽略本地传入的 apiKey，统一走后端代理
+    return [self initWithServerURL:AIUA_AI_PROXY_URL];
+}
+
+- (instancetype)initWithServerURL:(NSString *)serverURL {
     self = [super init];
     if (self) {
-        _apiKey = [apiKey copy];
-        _baseURL = @"https://api.deepseek.com/v1";
+        _baseURL = serverURL.length > 0 ? [serverURL copy] : AIUA_AI_PROXY_URL;
         _timeoutInterval = 60.0;
         _modelName = @"deepseek-chat";
         
         // 配置普通请求的NSURLSession
         NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
         config.timeoutIntervalForRequest = _timeoutInterval;
-        config.HTTPAdditionalHeaders = @{
-            @"Authorization": [NSString stringWithFormat:@"Bearer %@", _apiKey],
-            @"Content-Type": @"application/json"
-        };
         _session = [NSURLSession sessionWithConfiguration:config];
         
         // 配置流式请求的NSURLSession
         NSURLSessionConfiguration *streamConfig = [NSURLSessionConfiguration defaultSessionConfiguration];
         streamConfig.timeoutIntervalForRequest = _timeoutInterval;
-        streamConfig.HTTPAdditionalHeaders = @{
-            @"Authorization": [NSString stringWithFormat:@"Bearer %@", _apiKey],
-            @"Content-Type": @"application/json"
-        };
         _streamSession = [NSURLSession sessionWithConfiguration:streamConfig delegate:self delegateQueue:[NSOperationQueue mainQueue]];
         
         _streamData = [NSMutableData data];
+        _streamErrorData = [NSMutableData data];
         _accumulatedContent = [NSMutableString string];
+        _currentStreamStatusCode = 200;
     }
     return self;
 }
@@ -195,15 +233,14 @@
                     completion:(AIUACompletionHandler _Nullable)completion
                 streamHandler:(AIUAStreamHandler _Nullable)streamHandler {
     
-    NSString *endpoint = [self.baseURL stringByAppendingString:@"/chat/completions"];
-    NSURL *url = [NSURL URLWithString:endpoint];
+    NSURL *url = [NSURL URLWithString:self.baseURL];
     
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
     request.HTTPMethod = @"POST";
     request.timeoutInterval = self.timeoutInterval;
     
-    [request setValue:[NSString stringWithFormat:@"Bearer %@", self.apiKey] forHTTPHeaderField:@"Authorization"];
     [request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
+    [self appendSecurityHeadersToRequest:request];
     
     NSError *jsonError;
     NSData *jsonData = [NSJSONSerialization dataWithJSONObject:body options:0 error:&jsonError];
@@ -242,15 +279,14 @@
         @"stream": @YES
     };
     
-    NSString *endpoint = [self.baseURL stringByAppendingString:@"/chat/completions"];
-    NSURL *url = [NSURL URLWithString:endpoint];
+    NSURL *url = [NSURL URLWithString:self.baseURL];
     
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
     request.HTTPMethod = @"POST";
     request.timeoutInterval = self.timeoutInterval;
     
-    [request setValue:[NSString stringWithFormat:@"Bearer %@", self.apiKey] forHTTPHeaderField:@"Authorization"];
     [request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
+    [self appendSecurityHeadersToRequest:request];
     
     NSError *jsonError;
     NSData *jsonData = [NSJSONSerialization dataWithJSONObject:requestBody options:0 error:&jsonError];
@@ -271,14 +307,34 @@
 
 - (void)resetStreamState {
     [self.streamData setLength:0];
+    [self.streamErrorData setLength:0];
     [self.accumulatedContent setString:@""];
+    self.currentStreamStatusCode = 200;
 }
 
 #pragma mark - NSURLSessionDataDelegate (流式处理)
 
+- (void)URLSession:(NSURLSession *)session
+          dataTask:(NSURLSessionDataTask *)dataTask
+didReceiveResponse:(NSURLResponse *)response
+ completionHandler:(void (^)(NSURLSessionResponseDisposition disposition))completionHandler {
+    if ([response isKindOfClass:[NSHTTPURLResponse class]]) {
+        NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
+        self.currentStreamStatusCode = httpResponse.statusCode;
+    } else {
+        self.currentStreamStatusCode = 200;
+    }
+    completionHandler(NSURLSessionResponseAllow);
+}
+
 - (void)URLSession:(NSURLSession *)session 
           dataTask:(NSURLSessionDataTask *)dataTask 
     didReceiveData:(NSData *)data {
+    // 非 200 响应按普通文本缓存，待完成时统一转错误回调
+    if (self.currentStreamStatusCode != 200) {
+        [self.streamErrorData appendData:data];
+        return;
+    }
     
     [self.streamData appendData:data];
     
@@ -343,10 +399,43 @@ didCompleteWithError:(NSError *)error {
         if (self.currentStreamHandler) {
             self.currentStreamHandler(@"", YES, error);
         }
+    } else if (self.currentStreamStatusCode != 200) {
+        NSString *errorMessage = [NSString stringWithFormat:@"HTTP错误: %ld", (long)self.currentStreamStatusCode];
+        if (self.streamErrorData.length > 0) {
+            NSDictionary *errorDict = [NSJSONSerialization JSONObjectWithData:self.streamErrorData options:0 error:nil];
+            if ([errorDict isKindOfClass:[NSDictionary class]]) {
+                NSString *serverError = errorDict[@"error"];
+                NSString *detail = errorDict[@"detail"];
+                if (serverError.length > 0 && detail.length > 0) {
+                    errorMessage = [NSString stringWithFormat:@"%@ (%@)", serverError, detail];
+                } else if (serverError.length > 0) {
+                    errorMessage = serverError;
+                }
+            } else {
+                NSString *raw = [[NSString alloc] initWithData:self.streamErrorData encoding:NSUTF8StringEncoding];
+                if (raw.length > 0) {
+                    errorMessage = [NSString stringWithFormat:@"HTTP错误: %ld - %@", (long)self.currentStreamStatusCode, raw];
+                }
+            }
+        }
+        
+        NSError *statusError = [NSError errorWithDomain:@"AIUADeepSeekWriter"
+                                                   code:self.currentStreamStatusCode
+                                               userInfo:@{NSLocalizedDescriptionKey: errorMessage}];
+        if (self.currentStreamHandler) {
+            self.currentStreamHandler(@"", YES, statusError);
+        }
     } else {
         // 正常完成，发送最终内容
-        if (self.currentStreamHandler && self.accumulatedContent.length > 0) {
-            self.currentStreamHandler(self.accumulatedContent, YES, nil);
+        if (self.currentStreamHandler) {
+            if (self.accumulatedContent.length > 0) {
+                self.currentStreamHandler(self.accumulatedContent, YES, nil);
+            } else {
+                NSError *emptyError = [NSError errorWithDomain:@"AIUADeepSeekWriter"
+                                                          code:-1
+                                                      userInfo:@{NSLocalizedDescriptionKey: @"流式响应为空"}];
+                self.currentStreamHandler(@"", YES, emptyError);
+            }
         }
     }
     [self resetStreamState];

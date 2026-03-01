@@ -67,7 +67,7 @@
     self.inputCell.onStartCreate = ^(NSString *text) {
         StrongType(self);
         // 自由创作入口不做会员门禁，后续由字数校验决定是否可生成
-        AIUAWritingDetailViewController *writingDetailVC = [[AIUAWritingDetailViewController alloc] initWithPrompt:text apiKey:APIKEY];
+        AIUAWritingDetailViewController *writingDetailVC = [[AIUAWritingDetailViewController alloc] initWithPrompt:text apiKey:@""];
         writingDetailVC.hidesBottomBarWhenPushed = YES;
         [strongself.navigationController pushViewController:writingDetailVC animated:YES];
     };

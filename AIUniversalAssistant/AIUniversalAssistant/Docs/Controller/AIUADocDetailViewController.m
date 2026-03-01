@@ -6,6 +6,7 @@
 #import "AIUAVIPManager.h"
 #import "AIUAWordPackManager.h"
 #import "AIUAWordPackViewController.h"
+#import "AIUAConfigID.h"
 #import "UITextView+AIUAPlaceholder.h"
 #import <Masonry/Masonry.h>
 #import <MBProgressHUD/MBProgressHUD.h>
@@ -90,14 +91,8 @@
 }
 
 - (void)setupDeepSeekWriter {
-    // 从配置或用户设置中获取API Key
-    NSString *apiKey = APIKEY;
-    if (apiKey && apiKey.length > 0) {
-        self.deepSeekWriter = [[AIUADeepSeekWriter alloc] initWithAPIKey:apiKey];
-    } else {
-        // 如果没有配置API Key，创建一个空的writer，会在使用时提示
-        self.deepSeekWriter = nil;
-    }
+    // 使用后端代理，不在客户端保存第三方 API Key
+    self.deepSeekWriter = [[AIUADeepSeekWriter alloc] initWithServerURL:AIUA_AI_PROXY_URL];
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
@@ -981,18 +976,6 @@
             return;
         }
         
-        // 检查DeepSeek配置
-        if (!self.deepSeekWriter) {
-            [AIUAAlertHelper showAlertWithTitle:L(@"config_error")
-                                       message:L(@"please_configure_deepseek_api_key_first")
-                                 cancelBtnText:nil
-                                confirmBtnText:L(@"confirm")
-                                  inController:self
-                                  cancelAction:nil
-                                 confirmAction:nil];
-            return;
-        }
-        
         for (int i = 0; i < self.toolbarButtonsArray.count; i++) {
             UIButton *button = self.toolbarButtonsArray[i];
             if (sender.tag == button.tag) {
@@ -1555,11 +1538,24 @@
     if (!self.hasUserEdited) {
         return;
     }
+    
+    NSString *trimmedCurrentContent = [self.currentContent stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    if (trimmedCurrentContent.length == 0) {
+        NSLog(@"ℹ️ saveDocumentIfNeeded: 正文为空，跳过自动保存");
+        return;
+    }
+    
     [self updateWritingItem];
     
     // 安全检查：确保 writingItem 不为 nil
     if (!self.writingItem || ![self.writingItem isKindOfClass:[NSDictionary class]]) {
         NSLog(@"❌ saveDocumentIfNeeded: writingItem 为 nil 或不是有效的字典");
+        return;
+    }
+    
+    NSString *savedContent = [self.writingItem[@"content"] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    if (savedContent.length == 0) {
+        NSLog(@"ℹ️ saveDocumentIfNeeded: writingItem 正文为空，跳过自动保存");
         return;
     }
     
