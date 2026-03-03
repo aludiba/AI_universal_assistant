@@ -28,7 +28,7 @@ static NSString * const kAIUAConsumedWords = @"kAIUAConsumedWords";
 static NSString * const kAIUAWordPackPurchases = @"kAIUAWordPackPurchases";
 
 // iCloud Keys
-static NSString * const kAIUAiCloudWordPackData = @"AIUAWordPackData";
+static NSString * const kAIUAiCloudWordPackDataPrefix = @"AIUAWordPackData";
 
 // VIP赠送字数常量
 static const NSInteger kVIPOneTimeGiftWords = 500000; // 订阅后一次性赠送50万字
@@ -43,6 +43,7 @@ static NSString * kProductIDWordPack6M = nil;
 @property (nonatomic, strong) NSUbiquitousKeyValueStore *iCloudStore;
 @property (nonatomic, assign) BOOL iCloudSyncEnabled;
 @property (nonatomic, strong) AIUAKeychainManager *keychainManager;
+@property (nonatomic, copy) NSString *storageNamespace;
 
 @end
 
@@ -65,6 +66,8 @@ static NSString * kProductIDWordPack6M = nil;
         _iCloudStore = [NSUbiquitousKeyValueStore defaultStore];
         _iCloudSyncEnabled = NO;
         _keychainManager = [AIUAKeychainManager sharedManager];
+        _storageNamespace = [self currentStoreEnvironmentTag];
+        NSLog(@"[WordPack] 存储命名空间: %@", _storageNamespace);
 
         // 移除危险的兜底重置逻辑
         // 原因：初始化时VIP状态可能还未加载完成，错误地清除赠送字数会导致用户损失
@@ -82,28 +85,67 @@ static NSString * kProductIDWordPack6M = nil;
 
 #pragma mark - 本地存储辅助方法（使用Keychain）
 
+- (NSString *)currentStoreEnvironmentTag {
+#if DEBUG
+    // Xcode 调试安装包始终落到 debug 命名空间，避免与 App Store 生产数据混用
+    return @"debug";
+#else
+    NSURL *receiptURL = [[NSBundle mainBundle] appStoreReceiptURL];
+    NSString *lastPath = receiptURL.lastPathComponent.lowercaseString ?: @"";
+    if ([lastPath containsString:@"sandboxreceipt"]) {
+        return @"sandbox";
+    }
+    if ([lastPath isEqualToString:@"receipt"]) {
+        return @"production";
+    }
+    return @"unknown";
+#endif
+}
+
+- (NSString *)scopedKey:(NSString *)key {
+    NSString *ns = [self activeStorageNamespace];
+    return [NSString stringWithFormat:@"%@.%@", key, ns];
+}
+
+- (NSString *)scopediCloudWordPackKey {
+    NSString *ns = [self activeStorageNamespace];
+    return [NSString stringWithFormat:@"%@.%@", kAIUAiCloudWordPackDataPrefix, ns];
+}
+
+- (NSString *)activeStorageNamespace {
+    NSString *latest = [self currentStoreEnvironmentTag];
+    if (latest.length == 0) {
+        latest = @"unknown";
+    }
+    if (!self.storageNamespace || ![self.storageNamespace isEqualToString:latest]) {
+        NSLog(@"[WordPack] 存储命名空间更新: %@ -> %@", self.storageNamespace ?: @"nil", latest);
+        self.storageNamespace = latest;
+    }
+    return self.storageNamespace;
+}
+
 - (void)setLocalInteger:(NSInteger)value forKey:(NSString *)key {
-    [self.keychainManager setInteger:value forKey:key];
+    [self.keychainManager setInteger:value forKey:[self scopedKey:key]];
 }
 
 - (NSInteger)localIntegerForKey:(NSString *)key {
-    return [self.keychainManager integerForKey:key];
+    return [self.keychainManager integerForKey:[self scopedKey:key]];
 }
 
 - (void)setLocalBool:(BOOL)value forKey:(NSString *)key {
-    [self.keychainManager setInteger:value ? 1 : 0 forKey:key];
+    [self.keychainManager setInteger:value ? 1 : 0 forKey:[self scopedKey:key]];
 }
 
 - (BOOL)localBoolForKey:(NSString *)key {
-    return [self.keychainManager integerForKey:key] != 0;
+    return [self.keychainManager integerForKey:[self scopedKey:key]] != 0;
 }
 
 - (void)setLocalObject:(id)object forKey:(NSString *)key {
-    [self.keychainManager setObject:object forKey:key];
+    [self.keychainManager setObject:object forKey:[self scopedKey:key]];
 }
 
 - (id)localObjectForKey:(NSString *)key {
-    return [self.keychainManager objectForKey:key];
+    return [self.keychainManager objectForKey:[self scopedKey:key]];
 }
 
 #pragma mark - 字数查询
@@ -830,7 +872,7 @@ static NSString * kProductIDWordPack6M = nil;
     
     NSLog(@"[WordPack] 从iCloud同步数据");
     
-    NSDictionary *iCloudData = [self.iCloudStore dictionaryForKey:kAIUAiCloudWordPackData];
+    NSDictionary *iCloudData = [self.iCloudStore dictionaryForKey:[self scopediCloudWordPackKey]];
     if (!iCloudData) {
         NSLog(@"[WordPack] iCloud中没有数据");
         return;
@@ -895,7 +937,7 @@ static NSString * kProductIDWordPack6M = nil;
     data[@"consumedWords"] = @([self localIntegerForKey:kAIUAConsumedWords]);
     
     // 上传到iCloud
-    [self.iCloudStore setDictionary:data forKey:kAIUAiCloudWordPackData];
+    [self.iCloudStore setDictionary:data forKey:[self scopediCloudWordPackKey]];
     [self.iCloudStore synchronize];
     
     NSLog(@"[WordPack] iCloud上传完成");
@@ -1069,21 +1111,23 @@ static NSString * kProductIDWordPack6M = nil;
 - (void)clearAllWordPackData {
     NSLog(@"[WordPack] ⚠️ 开始清除所有字数包数据...");
     
-    // 清除VIP赠送字数
-    [self.keychainManager removeObjectForKey:kAIUAVIPGiftedWords];
-    [self.keychainManager removeObjectForKey:kAIUAVIPGiftAwarded];
-    [self.keychainManager removeObjectForKey:kAIUAVIPGiftedWordsLastRefreshDate];
-    
-    // 清除购买记录
-    [self.keychainManager removeObjectForKey:kAIUAWordPackPurchases];
-    [self.keychainManager removeObjectForKey:kAIUAPurchasedWords];
-    
-    // 清除消耗记录
-    [self.keychainManager removeObjectForKey:kAIUAConsumedWords];
+    NSArray<NSString *> *allKeys = @[
+        kAIUAVIPGiftedWords,
+        kAIUAVIPGiftAwarded,
+        kAIUAVIPGiftedWordsLastRefreshDate,
+        kAIUAWordPackPurchases,
+        kAIUAPurchasedWords,
+        kAIUAConsumedWords
+    ];
+    // 同时清理命名空间 key 与历史未隔离 key，避免旧数据残留
+    for (NSString *key in allKeys) {
+        [self.keychainManager removeObjectForKey:[self scopedKey:key]];
+        [self.keychainManager removeObjectForKey:key];
+    }
     
     // 清除iCloud数据
     if (self.iCloudSyncEnabled && [self isiCloudAvailable]) {
-        [self.iCloudStore removeObjectForKey:kAIUAiCloudWordPackData];
+        [self.iCloudStore removeObjectForKey:[self scopediCloudWordPackKey]];
         [self.iCloudStore synchronize];
         NSLog(@"[WordPack] 已清除iCloud字数包数据");
     }

@@ -55,6 +55,7 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
 
 // 预加载因网络等原因失败，待 applicationDidBecomeActive 时自动重试
 @property (nonatomic, assign) BOOL preloadPendingDueToNetwork;
+@property (nonatomic, copy) NSString *storageNamespace;
 
 @end
 
@@ -77,9 +78,46 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
         _productsCache = [NSMutableDictionary dictionary];
         _pendingProductsCompletions = [NSMutableArray array];
         _paymentObserverRefCount = 0;
+        _storageNamespace = [self currentStoreEnvironmentTag];
+        NSLog(@"[IAP] 存储命名空间: %@", _storageNamespace);
         [self loadLocalSubscriptionInfo];
     }
     return self;
+}
+
+#pragma mark - Storage Namespace
+
+- (NSString *)currentStoreEnvironmentTag {
+#if DEBUG
+    // Xcode 调试安装包始终落到 debug 命名空间，避免与 App Store 生产数据混用
+    return @"debug";
+#else
+    NSURL *receiptURL = [[NSBundle mainBundle] appStoreReceiptURL];
+    NSString *lastPath = receiptURL.lastPathComponent.lowercaseString ?: @"";
+    if ([lastPath containsString:@"sandboxreceipt"]) {
+        return @"sandbox";
+    }
+    if ([lastPath isEqualToString:@"receipt"]) {
+        return @"production";
+    }
+    return @"unknown";
+#endif
+}
+
+- (NSString *)activeStorageNamespace {
+    NSString *latest = [self currentStoreEnvironmentTag];
+    if (latest.length == 0) {
+        latest = @"unknown";
+    }
+    if (!self.storageNamespace || ![self.storageNamespace isEqualToString:latest]) {
+        NSLog(@"[IAP] 存储命名空间更新: %@ -> %@", self.storageNamespace ?: @"nil", latest);
+        self.storageNamespace = latest;
+    }
+    return self.storageNamespace;
+}
+
+- (NSString *)scopedDefaultsKey:(NSString *)key {
+    return [NSString stringWithFormat:@"%@.%@", key, [self activeStorageNamespace]];
 }
 
 #pragma mark - Product ID Helpers
@@ -354,7 +392,7 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
 - (void)beginLaunchRestoreWindow {
     // 用户若曾主动清除购买数据，不再开启自动恢复窗口，避免清除后随便操作又恢复
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    if ([defaults boolForKey:kAIUAUserClearedPurchaseData]) {
+    if ([defaults boolForKey:[self scopedDefaultsKey:kAIUAUserClearedPurchaseData]]) {
         NSLog(@"[IAP] 检测到用户曾清除购买数据，不开启冷启动恢复窗口");
         return;
     }
@@ -391,7 +429,7 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
     NSDate *now = [NSDate date];
     BOOL hasNoLocalSubscription = (!self.subscriptionExpiryDate && !_isVIPMember);
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    BOOL userClearedPurchase = [defaults boolForKey:kAIUAUserClearedPurchaseData];
+    BOOL userClearedPurchase = [defaults boolForKey:[self scopedDefaultsKey:kAIUAUserClearedPurchaseData]];
     // 用户曾清除购买时，不允许通过收据重新填充订阅，避免「清除后随便操作又恢复」
     if (hasNoLocalSubscription && userClearedPurchase) {
         NSLog(@"[IAP] 用户曾清除购买数据，跳过收据验证，不自动恢复");
@@ -464,7 +502,7 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
     [self saveLocalSubscriptionInfo];
     
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    [defaults removeObjectForKey:kAIUAHasSubscriptionHistory];
+    [defaults removeObjectForKey:[self scopedDefaultsKey:kAIUAHasSubscriptionHistory]];
     [defaults synchronize];
     
     NSLog(@"[IAP] 清除订阅信息");
@@ -489,7 +527,7 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
     self.autoRestoreInProgress = NO;
     // 6. 标记「用户已清除购买」，后续不根据收据自动恢复，直到用户点击恢复购买且成功
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    [defaults setBool:YES forKey:kAIUAUserClearedPurchaseData];
+    [defaults setBool:YES forKey:[self scopedDefaultsKey:kAIUAUserClearedPurchaseData]];
     [defaults synchronize];
     
     // 7. 发送通知，更新UI
@@ -670,7 +708,7 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
     // 用户主动点击恢复且成功，清除「用户曾清除购买」标记，允许后续冷启动时再根据收据恢复
     if (self.restoredPurchasesCount > 0) {
         NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-        [defaults removeObjectForKey:kAIUAUserClearedPurchaseData];
+        [defaults removeObjectForKey:[self scopedDefaultsKey:kAIUAUserClearedPurchaseData]];
         [defaults synchronize];
     }
     
@@ -753,15 +791,15 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
 - (BOOL)shouldIgnoreSubscriptionTransaction:(NSString *)productIdentifier {
     BOOL isWordPack = [self isWordPackProductId:productIdentifier];
     if (isWordPack) return NO;
-    BOOL userClearedPurchase = [[NSUserDefaults standardUserDefaults] boolForKey:kAIUAUserClearedPurchaseData];
+    BOOL userClearedPurchase = [[NSUserDefaults standardUserDefaults] boolForKey:[self scopedDefaultsKey:kAIUAUserClearedPurchaseData]];
     return (userClearedPurchase && !self.purchaseCompletion);
 }
 
 - (void)clearUserClearedPurchaseFlagIfNeeded {
-    BOOL userClearedPurchase = [[NSUserDefaults standardUserDefaults] boolForKey:kAIUAUserClearedPurchaseData];
+    BOOL userClearedPurchase = [[NSUserDefaults standardUserDefaults] boolForKey:[self scopedDefaultsKey:kAIUAUserClearedPurchaseData]];
     if (userClearedPurchase && self.purchaseCompletion) {
         NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-        [defaults removeObjectForKey:kAIUAUserClearedPurchaseData];
+        [defaults removeObjectForKey:[self scopedDefaultsKey:kAIUAUserClearedPurchaseData]];
         [defaults synchronize];
     }
 }
@@ -772,7 +810,7 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
     
     if (success) {
         BOOL isWordPack = [self isWordPackProductId:transaction.payment.productIdentifier];
-        BOOL userClearedPurchase = [[NSUserDefaults standardUserDefaults] boolForKey:kAIUAUserClearedPurchaseData];
+        BOOL userClearedPurchase = [[NSUserDefaults standardUserDefaults] boolForKey:[self scopedDefaultsKey:kAIUAUserClearedPurchaseData]];
         NSString *hint = (!isWordPack && userClearedPurchase) ? AIUARestoredExistingSubscriptionHint : nil;
         self.purchaseCompletion(YES, hint);
     } else {
@@ -871,7 +909,7 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
     
     // 保存订阅记录
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    [defaults setBool:YES forKey:kAIUAHasSubscriptionHistory];
+    [defaults setBool:YES forKey:[self scopedDefaultsKey:kAIUAHasSubscriptionHistory]];
     [defaults synchronize];
     
     // 保存到本地
@@ -1581,15 +1619,16 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
 - (void)loadLocalSubscriptionInfo {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     
-    _isVIPMember = [defaults boolForKey:kAIUAIsVIPMember];
-    self.currentSubscriptionType = [defaults integerForKey:kAIUASubscriptionType];
-    self.subscriptionExpiryDate = [defaults objectForKey:kAIUASubscriptionExpiryDate];
+    _isVIPMember = [defaults boolForKey:[self scopedDefaultsKey:kAIUAIsVIPMember]];
+    self.currentSubscriptionType = [defaults integerForKey:[self scopedDefaultsKey:kAIUASubscriptionType]];
+    self.subscriptionExpiryDate = [defaults objectForKey:[self scopedDefaultsKey:kAIUASubscriptionExpiryDate]];
     
 #if AIUA_VIP_CHECK_ENABLED
     if (!self.subscriptionExpiryDate && !_isVIPMember) {
         NSLog(@"[IAP] 本地无订阅信息（可能是首次安装或删除重装），将从收据恢复");
     } else {
-        NSLog(@"[IAP] 加载本地订阅信息 - VIP: %d, Type: %ld, 到期: %@", _isVIPMember, (long)self.currentSubscriptionType, self.subscriptionExpiryDate);
+        NSLog(@"[IAP] 加载本地订阅信息[%@] - VIP: %d, Type: %ld, 到期: %@",
+              [self activeStorageNamespace], _isVIPMember, (long)self.currentSubscriptionType, self.subscriptionExpiryDate);
     }
 #else
     NSLog(@"[IAP] 会员检测已关闭，所有用户视为VIP");
@@ -1601,12 +1640,13 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
     // 只有在开启会员检测时才保存VIP状态
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     
-    [defaults setBool:_isVIPMember forKey:kAIUAIsVIPMember];
-    [defaults setInteger:self.currentSubscriptionType forKey:kAIUASubscriptionType];
-    [defaults setObject:self.subscriptionExpiryDate forKey:kAIUASubscriptionExpiryDate];
+    [defaults setBool:_isVIPMember forKey:[self scopedDefaultsKey:kAIUAIsVIPMember]];
+    [defaults setInteger:self.currentSubscriptionType forKey:[self scopedDefaultsKey:kAIUASubscriptionType]];
+    [defaults setObject:self.subscriptionExpiryDate forKey:[self scopedDefaultsKey:kAIUASubscriptionExpiryDate]];
     [defaults synchronize];
     
-    NSLog(@"[IAP] 保存本地订阅信息 - VIP: %d, Type: %ld", _isVIPMember, (long)self.currentSubscriptionType);
+    NSLog(@"[IAP] 保存本地订阅信息[%@] - VIP: %d, Type: %ld",
+          [self activeStorageNamespace], _isVIPMember, (long)self.currentSubscriptionType);
 #else
     // 关闭会员检测时，不保存VIP状态
     NSLog(@"[IAP] 会员检测已关闭，跳过保存VIP状态");
