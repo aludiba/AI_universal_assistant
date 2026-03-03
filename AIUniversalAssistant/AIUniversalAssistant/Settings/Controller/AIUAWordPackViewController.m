@@ -489,6 +489,8 @@
 - (void)updateWordsDisplay {
     AIUAWordPackManager *manager = [AIUAWordPackManager sharedManager];
     BOOL isVIP = [[AIUAIAPManager sharedManager] isVIPMember];
+    // 兜底：每次进入页面刷新显示前，确保VIP赠送字数已按当前订阅状态同步
+    [manager refreshVIPGiftedWords];
     
     NSInteger vipWords = [manager vipGiftedWords];
     NSInteger purchasedWords = [manager purchasedWords];

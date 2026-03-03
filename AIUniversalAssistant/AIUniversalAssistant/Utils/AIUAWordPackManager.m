@@ -72,6 +72,10 @@ static NSString * kProductIDWordPack6M = nil;
         // 移除危险的兜底重置逻辑
         // 原因：初始化时VIP状态可能还未加载完成，错误地清除赠送字数会导致用户损失
         // VIP状态的变化由通知机制处理（subscriptionStatusChanged）
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(subscriptionStatusChanged:)
+                                                     name:@"AIUASubscriptionStatusChanged"
+                                                   object:nil];
         
         // 启动时清除已过期的购买记录
         [self cleanExpiredPurchases];
@@ -81,6 +85,11 @@ static NSString * kProductIDWordPack6M = nil;
 
 - (void)dealloc {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
+- (void)subscriptionStatusChanged:(NSNotification *)notification {
+    NSLog(@"[WordPack] 收到订阅状态变化通知，刷新VIP赠送字数");
+    [self refreshVIPGiftedWords];
 }
 
 #pragma mark - 本地存储辅助方法（使用Keychain）
