@@ -14,7 +14,8 @@ const AI_BODY_LIMIT = process.env.AI_BODY_LIMIT || "512kb";
 const APP_CLIENT_TOKEN = process.env.APP_CLIENT_TOKEN || "";
 const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || 60_000);
 const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX || 30);
-const UPSTREAM_TIMEOUT_MS = Number(process.env.UPSTREAM_TIMEOUT_MS || 45_000);
+// 上游 DeepSeek 等待超时（毫秒），流式/长文生成建议 120s+，可通过 UPSTREAM_TIMEOUT_MS 覆盖
+const UPSTREAM_TIMEOUT_MS = Number(process.env.UPSTREAM_TIMEOUT_MS || 120_000);
 const APP_SIGNING_SECRET = process.env.APP_SIGNING_SECRET || "";
 const SIGN_MAX_SKEW_SEC = Number(process.env.SIGN_MAX_SKEW_SEC || 300);
 

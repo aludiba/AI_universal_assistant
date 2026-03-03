@@ -12,10 +12,23 @@
 @property (nonatomic, copy) AIUAStreamHandler currentStreamHandler;
 @property (nonatomic, strong) NSMutableString *accumulatedContent;
 @property (nonatomic, assign) NSInteger currentStreamStatusCode;
+@property (nonatomic, assign) BOOL streamDidReceiveDone;
+@property (nonatomic, assign) NSUInteger streamChunkCount;
+@property (nonatomic, strong) NSDate *streamStartAt;
 
 @end
 
 @implementation AIUADeepSeekWriter
+
+#ifndef AIUA_STREAM_DEBUG_LOG
+#define AIUA_STREAM_DEBUG_LOG 1
+#endif
+
+#if AIUA_STREAM_DEBUG_LOG
+#define AIUAStreamLog(fmt, ...) NSLog((@"[DeepSeekStream] " fmt), ##__VA_ARGS__)
+#else
+#define AIUAStreamLog(fmt, ...)
+#endif
 
 #pragma mark - 签名辅助
 
@@ -64,7 +77,7 @@
     self = [super init];
     if (self) {
         _baseURL = serverURL.length > 0 ? [serverURL copy] : AIUA_AI_PROXY_URL;
-        _timeoutInterval = 60.0;
+        _timeoutInterval = 120.0; // 流式/长文生成需更长时间，与服务端 UPSTREAM_TIMEOUT_MS 协调
         _modelName = @"deepseek-chat";
         
         // 配置普通请求的NSURLSession
@@ -300,6 +313,9 @@
     
     self.currentStreamHandler = streamHandler;
     [self resetStreamState];
+    self.streamStartAt = [NSDate date];
+    AIUAStreamLog(@"start request. timeout=%.1fs, maxTokens=%ld, promptLen=%ld",
+                  self.timeoutInterval, (long)maxTokens, (long)prompt.length);
     
     self.currentTask = [self.streamSession dataTaskWithRequest:request];
     [self.currentTask resume];
@@ -310,6 +326,9 @@
     [self.streamErrorData setLength:0];
     [self.accumulatedContent setString:@""];
     self.currentStreamStatusCode = 200;
+    self.streamDidReceiveDone = NO;
+    self.streamChunkCount = 0;
+    self.streamStartAt = nil;
 }
 
 #pragma mark - NSURLSessionDataDelegate (流式处理)
@@ -324,6 +343,7 @@ didReceiveResponse:(NSURLResponse *)response
     } else {
         self.currentStreamStatusCode = 200;
     }
+    AIUAStreamLog(@"didReceiveResponse status=%ld", (long)self.currentStreamStatusCode);
     completionHandler(NSURLSessionResponseAllow);
 }
 
@@ -333,6 +353,7 @@ didReceiveResponse:(NSURLResponse *)response
     // 非 200 响应按普通文本缓存，待完成时统一转错误回调
     if (self.currentStreamStatusCode != 200) {
         [self.streamErrorData appendData:data];
+        AIUAStreamLog(@"non-200 body chunk bytes=%lu", (unsigned long)data.length);
         return;
     }
     
@@ -348,12 +369,12 @@ didReceiveResponse:(NSURLResponse *)response
     for (NSString *line in lines) {
         if ([line hasPrefix:@"data: "]) {
             if ([line isEqualToString:@"data: [DONE]"]) {
-                // 流式传输完成
-                if (self.currentStreamHandler) {
-                    self.currentStreamHandler(@"", YES, nil);
-                }
-                [self resetStreamState];
-                return;
+                // 标记收到 DONE，由 didCompleteWithError 统一收尾，避免重复回调和状态被提前清空
+                self.streamDidReceiveDone = YES;
+                AIUAStreamLog(@"received [DONE], accumulatedLen=%lu, chunkCount=%lu",
+                              (unsigned long)self.accumulatedContent.length,
+                              (unsigned long)self.streamChunkCount);
+                continue;
             } else {
                 NSString *jsonStr = [line substringFromIndex:6];
                 if (jsonStr.length > 0) {
@@ -383,17 +404,32 @@ didReceiveResponse:(NSURLResponse *)response
     if (!jsonError) {
         NSString *chunkContent = [self extractContentFromResponse:chunkDict];
         if (chunkContent && chunkContent.length > 0) {
+            self.streamChunkCount += 1;
             [self.accumulatedContent appendString:chunkContent];
+            AIUAStreamLog(@"chunk #%lu len=%lu totalLen=%lu",
+                          (unsigned long)self.streamChunkCount,
+                          (unsigned long)chunkContent.length,
+                          (unsigned long)self.accumulatedContent.length);
             if (self.currentStreamHandler) {
                 self.currentStreamHandler(chunkContent, NO, nil);
             }
         }
+    } else {
+        AIUAStreamLog(@"chunk json parse failed: %@", jsonError.localizedDescription);
     }
 }
 
 - (void)URLSession:(NSURLSession *)session 
               task:(NSURLSessionTask *)task 
 didCompleteWithError:(NSError *)error {
+    NSTimeInterval elapsed = self.streamStartAt ? [[NSDate date] timeIntervalSinceDate:self.streamStartAt] : 0;
+    AIUAStreamLog(@"didComplete error=%@ status=%ld done=%d chunkCount=%lu totalLen=%lu elapsed=%.2fs",
+                  error.localizedDescription ?: @"nil",
+                  (long)self.currentStreamStatusCode,
+                  self.streamDidReceiveDone,
+                  (unsigned long)self.streamChunkCount,
+                  (unsigned long)self.accumulatedContent.length,
+                  elapsed);
     
     if (error) {
         if (self.currentStreamHandler) {
@@ -431,9 +467,13 @@ didCompleteWithError:(NSError *)error {
             if (self.accumulatedContent.length > 0) {
                 self.currentStreamHandler(self.accumulatedContent, YES, nil);
             } else {
+                NSString *debugDetail = [NSString stringWithFormat:@"(status=%ld, done=%@, chunks=%lu)",
+                                         (long)self.currentStreamStatusCode,
+                                         self.streamDidReceiveDone ? @"YES" : @"NO",
+                                         (unsigned long)self.streamChunkCount];
                 NSError *emptyError = [NSError errorWithDomain:@"AIUADeepSeekWriter"
                                                           code:-1
-                                                      userInfo:@{NSLocalizedDescriptionKey: @"流式响应为空"}];
+                                                      userInfo:@{NSLocalizedDescriptionKey: [NSString stringWithFormat:@"流式响应为空，可能是响应超时或服务暂时无返回，请稍后重试 %@", debugDetail]}];
                 self.currentStreamHandler(@"", YES, emptyError);
             }
         }

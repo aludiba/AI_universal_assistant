@@ -1227,12 +1227,18 @@
     
     // 使用流式生成
     WeakType(self);
+    NSLog(@"[DocDetail] 开始流式编辑 type=%ld promptLen=%ld", (long)type, (long)prompt.length);
     [self.deepSeekWriter generateFullStreamWritingWithPrompt:prompt
                                                    wordCount:0
                                               streamHandler:^(NSString *chunk, BOOL finished, NSError * _Nullable error) {
         
         dispatch_async(dispatch_get_main_queue(), ^{
             StrongType(self);
+            NSLog(@"[DocDetail] stream callback finished=%d error=%@ chunkLen=%ld currentLen=%ld",
+                  finished,
+                  error.localizedDescription ?: @"nil",
+                  (long)chunk.length,
+                  (long)strongself.generatedContent.length);
             if (error) {
                 [AIUAMBProgressManager hideHUD:strongself.view];
                 strongself.isGenerating = NO;
@@ -1253,9 +1259,11 @@
                 [strongself setUIEnabled:YES];
                 
                 if (error.code == NSURLErrorCancelled) {
+                    NSLog(@"[DocDetail] 用户主动停止生成");
                     return;
                 }
                 
+                NSLog(@"[DocDetail] 生成失败，展示弹窗：%@", error.localizedDescription);
                 [AIUAAlertHelper showAlertWithTitle:L(@"generation_failed")
                                            message:error.localizedDescription
                                      cancelBtnText:nil
@@ -1277,6 +1285,7 @@
             if (finished) {
                 [AIUAMBProgressManager hideHUD:strongself.view];
                 strongself.isGenerating = NO;
+                NSLog(@"[DocDetail] 流式完成，总输出长度=%ld", (long)strongself.generatedContent.length);
                 // 隐藏停止生成按钮，显示buttonStack
                 strongself.stopButton.hidden = YES;
                 if (strongself.currentButtonStack) {
