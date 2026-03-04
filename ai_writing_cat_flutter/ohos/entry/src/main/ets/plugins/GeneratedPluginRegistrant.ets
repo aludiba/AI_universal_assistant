@@ -1,4 +1,5 @@
 import { FlutterEngine, Log } from '@ohos/flutter_ohos';
+import FluwxPlugin from 'fluwx';
 
 /**
  * Generated file. Do not edit.
@@ -12,6 +13,7 @@ export class GeneratedPluginRegistrant {
 
   static registerWith(flutterEngine: FlutterEngine) {
     try {
+      flutterEngine.getPlugins()?.add(new FluwxPlugin());
     } catch (e) {
       Log.e(
         TAG,

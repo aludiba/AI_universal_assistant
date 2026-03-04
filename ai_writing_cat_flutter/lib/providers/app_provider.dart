@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import '../config/app_config.dart';
 import '../services/data_manager.dart';
-import '../services/iap_service.dart';
+import '../services/payment_service.dart';
 import '../models/subscription_model.dart';
 import '../models/word_pack_model.dart';
 
 /// 应用全局状态管理
 class AppProvider with ChangeNotifier {
   final _dataManager = DataManager();
-  final _iapService = IAPService();
+  final _paymentService = PaymentService();
   
   ThemeMode _themeMode = ThemeMode.system;
   Locale? _locale;
@@ -46,12 +46,15 @@ class AppProvider with ChangeNotifier {
     // 加载字数包统计
     _wordPackStats = _dataManager.getWordPackStats();
     
-    // 先把 UI 起起来，再尝试初始化 IAP（失败不阻塞启动）
+    // 先把 UI 起起来，再尝试初始化支付服务（失败不阻塞启动）
     try {
-      await _iapService.init();
+      await _paymentService.init();
+      await _paymentService.syncBillingState();
+      _subscription = _dataManager.getSubscription();
+      _wordPackStats = _dataManager.getWordPackStats();
     } catch (e) {
       // ignore: avoid_print
-      print('IAP init failed (ignored): $e');
+      print('Payment init failed (ignored): $e');
     }
     
     notifyListeners();
@@ -103,10 +106,13 @@ class AppProvider with ChangeNotifier {
     return remainingWords >= required;
   }
   
-  /// 购买产品
-  Future<bool> purchaseProduct(String productId) async {
+  /// 购买产品（微信/支付宝）
+  Future<bool> purchaseProduct(String productId, {required PayChannel channel}) async {
     try {
-      final success = await _iapService.purchaseProduct(productId);
+      final success = await _paymentService.purchaseProduct(
+        sku: productId,
+        channel: channel,
+      );
       if (success) {
         await refreshSubscription();
         await refreshWordPackStats();
@@ -117,9 +123,9 @@ class AppProvider with ChangeNotifier {
     }
   }
   
-  /// 恢复购买
+  /// 同步服务端权益
   Future<void> restorePurchases() async {
-    await _iapService.restorePurchases();
+    await _paymentService.syncBillingState();
     await refreshSubscription();
     await refreshWordPackStats();
   }

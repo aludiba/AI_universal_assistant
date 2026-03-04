@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 import '../config/app_config.dart';
 
@@ -13,10 +14,36 @@ class DeepSeekService {
   String _lineBuffer = '';
   bool _streamCancelled = false;
 
-  String get _baseUrl => AppConfig.deepseekBaseUrl;
-  String get _apiKey => AppConfig.deepseekApiKey;
+  String get _baseUrl => AppConfig.aiProxyUrl;
   String get _modelName => AppConfig.deepseekModel;
   Duration get _timeout => AppConfig.apiTimeout;
+
+  Map<String, String> _buildSecurityHeaders() {
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+    };
+
+    final appToken = AppConfig.appClientToken;
+    if (appToken.isNotEmpty) {
+      headers['x-aiua-app-token'] = appToken;
+    }
+
+    // 版本 + 时间戳签名（可选），与 iOS AIUADeepSeekWriter 保持一致
+    final signingSecret = AppConfig.appSigningSecret;
+    if (signingSecret.isNotEmpty) {
+      final appVersion = AppConfig.appVersion.isNotEmpty ? AppConfig.appVersion : '0.0.0';
+      final timestamp = (DateTime.now().millisecondsSinceEpoch ~/ 1000).toString();
+      final uri = Uri.parse(_baseUrl);
+      final path = uri.path.isNotEmpty ? uri.path : '/ai';
+      final raw = '$appVersion.$timestamp.$path.$signingSecret';
+      final signature = sha256.convert(utf8.encode(raw)).toString();
+      headers['x-aiua-app-version'] = appVersion;
+      headers['x-aiua-ts'] = timestamp;
+      headers['x-aiua-sign'] = signature;
+    }
+
+    return headers;
+  }
 
   /// iOS 对齐：估算 token
   int estimatedTokensForWordCount(int wordCount) {
@@ -215,11 +242,8 @@ class DeepSeekService {
     try {
       final response = await _currentClient!
           .post(
-            Uri.parse('$_baseUrl/chat/completions'),
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer $_apiKey',
-            },
+            Uri.parse(_baseUrl),
+            headers: _buildSecurityHeaders(),
             body: jsonEncode({
               'model': _modelName,
               'messages': messages,
@@ -269,13 +293,10 @@ class DeepSeekService {
     try {
       final request = http.Request(
         'POST',
-        Uri.parse('$_baseUrl/chat/completions'),
+        Uri.parse(_baseUrl),
       );
 
-      request.headers.addAll({
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $_apiKey',
-      });
+      request.headers.addAll(_buildSecurityHeaders());
 
       request.body = jsonEncode({
         'model': _modelName,

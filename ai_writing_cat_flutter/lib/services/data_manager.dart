@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'dart:ui' show Locale, PlatformDispatcher;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -67,6 +68,17 @@ class DataManager {
 
   /// 清空所有数据
   Future<bool> _clear() => _storage.clear();
+
+  /// 获取或创建客户端用户ID（用于服务端支付与权益归属）
+  Future<String> getOrCreateClientUserId() async {
+    const key = 'client_user_id';
+    final existing = _getString(key);
+    if (existing != null && existing.isNotEmpty) return existing;
+    final randomPart = Random().nextInt(1 << 30).toString();
+    final value = 'u_${DateTime.now().microsecondsSinceEpoch}_$randomPart';
+    await _setString(key, value);
+    return value;
+  }
 
   // ==================== 数据库相关 ====================
 

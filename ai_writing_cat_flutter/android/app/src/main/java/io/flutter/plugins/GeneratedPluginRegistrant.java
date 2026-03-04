@@ -16,6 +16,16 @@ public final class GeneratedPluginRegistrant {
   private static final String TAG = "GeneratedPluginRegistrant";
   public static void registerWith(@NonNull FlutterEngine flutterEngine) {
     try {
+      flutterEngine.getPlugins().add(new io.github.v7lin.alipay_kit.AlipayKitPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin alipay_kit_android, io.github.v7lin.alipay_kit.AlipayKitPlugin", e);
+    }
+    try {
+      flutterEngine.getPlugins().add(new com.jarvan.fluwx.FluwxPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin fluwx, com.jarvan.fluwx.FluwxPlugin", e);
+    }
+    try {
       flutterEngine.getPlugins().add(new io.flutter.plugins.inapppurchase.InAppPurchasePlugin());
     } catch (Exception e) {
       Log.e(TAG, "Error registering plugin in_app_purchase_android, io.flutter.plugins.inapppurchase.InAppPurchasePlugin", e);

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../providers/app_provider.dart';
 import '../../config/app_config.dart';
 import '../../constants/app_styles.dart';
+import '../../services/payment_service.dart';
 
 /// 字数包页面
 class WordPackScreen extends StatelessWidget {
@@ -246,7 +247,9 @@ class WordPackScreen extends StatelessWidget {
               final appProvider = rootContext.read<AppProvider>();
               
               try {
-                await appProvider.purchaseProduct(productId);
+                final channel = await _selectPayChannel(rootContext);
+                if (channel == null) return;
+                await appProvider.purchaseProduct(productId, channel: channel);
                 if (rootContext.mounted) {
                   ScaffoldMessenger.of(rootContext).showSnackBar(
                     SnackBar(content: Text('购买成功！已获得 ${_formatNumber(words)} 字')),
@@ -270,6 +273,29 @@ class WordPackScreen extends StatelessWidget {
   String _formatNumber(int number) {
     final formatter = NumberFormat('#,###');
     return formatter.format(number);
+  }
+
+  Future<PayChannel?> _selectPayChannel(BuildContext context) {
+    return showDialog<PayChannel>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('选择支付方式'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, PayChannel.wechat),
+            child: const Text('微信支付'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, PayChannel.alipay),
+            child: const Text('支付宝'),
+          ),
+        ],
+      ),
+    );
   }
 }
 

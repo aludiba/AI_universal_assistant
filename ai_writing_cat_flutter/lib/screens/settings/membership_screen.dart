@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
 import '../../config/app_config.dart';
 import '../../constants/app_styles.dart';
+import '../../services/payment_service.dart';
 
 /// 会员页面
 class MembershipScreen extends StatelessWidget {
@@ -177,7 +178,7 @@ class MembershipScreen extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: AppStyles.paddingMedium),
       child: InkWell(
         onTap: () {
-          // TODO: 选择该方案
+          _purchase(context, productId: productId, planTitle: title);
         },
         borderRadius: BorderRadius.circular(AppStyles.radiusMedium),
         child: Padding(
@@ -238,7 +239,11 @@ class MembershipScreen extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: () => _purchase(context),
+        onPressed: () => _purchase(
+          context,
+          productId: AppConfig.iapProductLifetime,
+          planTitle: '永久会员',
+        ),
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 16),
         ),
@@ -258,7 +263,11 @@ class MembershipScreen extends StatelessWidget {
     );
   }
   
-  void _purchase(BuildContext context) {
+  void _purchase(
+    BuildContext context, {
+    required String productId,
+    required String planTitle,
+  }) {
     final appProvider = context.read<AppProvider>();
     final rootContext = context;
     
@@ -266,7 +275,7 @@ class MembershipScreen extends StatelessWidget {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('确认购买'),
-        content: const Text('确定要购买会员吗？'),
+        content: Text('确定要购买$planTitle吗？'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
@@ -276,8 +285,9 @@ class MembershipScreen extends StatelessWidget {
             onPressed: () async {
               Navigator.pop(dialogContext);
               try {
-                // TODO: 实现实际的购买逻辑
-                await appProvider.purchaseProduct(AppConfig.iapProductLifetime);
+                final channel = await _selectPayChannel(rootContext);
+                if (channel == null) return;
+                await appProvider.purchaseProduct(productId, channel: channel);
                 if (rootContext.mounted) {
                   ScaffoldMessenger.of(rootContext).showSnackBar(
                     const SnackBar(content: Text('购买成功！')),
@@ -293,6 +303,29 @@ class MembershipScreen extends StatelessWidget {
               }
             },
             child: const Text('确定'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<PayChannel?> _selectPayChannel(BuildContext context) {
+    return showDialog<PayChannel>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('选择支付方式'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, PayChannel.wechat),
+            child: const Text('微信支付'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, PayChannel.alipay),
+            child: const Text('支付宝'),
           ),
         ],
       ),

@@ -1,8 +1,19 @@
 /// 应用配置
 class AppConfig {
-  // DeepSeek API配置
-  static const String deepseekApiKey = 'sk-ecdd2f67aa60478bab7cb3fdd0e83343';
-  static const String deepseekBaseUrl = 'https://api.deepseek.com/v1';
+  // AI 代理服务配置（与 iOS AIUAConfigID.h 对齐）
+  static const String aiProxyUrl = 'https://api.hujiaofenwritingcat.top/ai';
+  // 与服务端 APP_CLIENT_TOKEN 对齐；不需要时可留空
+  static const String appClientToken = '';
+  // 与服务端 APP_SIGNING_SECRET 对齐；启用“版本+时间戳签名”时填写
+  static const String appSigningSecret = '';
+  static const String billingBaseUrl = 'https://api.hujiaofenwritingcat.top';
+  static const String billingApiPath = '/v1/billing';
+  static const String billingAppToken = '';
+  static const String wechatAppId = '';
+
+  // 兼容旧字段：不再使用客户端直连 DeepSeek Key
+  static const String deepseekApiKey = '';
+  static const String deepseekBaseUrl = aiProxyUrl;
   static const String deepseekModel = 'deepseek-chat';
   
   // 应用配置
@@ -16,15 +27,15 @@ class AppConfig {
   static const bool vipCheckEnabled = false;
   
   // IAP产品ID配置
-  static const String iapProductLifetime = 'com.hujiaofen.writingCat.lifetimeBenefits';
-  static const String iapProductYearly = 'com.hujiaofen.writingCat.yearly';
-  static const String iapProductMonthly = 'com.hujiaofen.writingCat.monthly';
-  static const String iapProductWeekly = 'com.hujiaofen.writingCat.weekly';
+  static const String iapProductLifetime = 'membership.lifetime';
+  static const String iapProductYearly = 'membership.yearly';
+  static const String iapProductMonthly = 'membership.monthly';
+  static const String iapProductWeekly = 'membership.weekly';
   
   // 字数包产品ID
-  static const String iapWordPack500k = 'com.hujiaofen.writingCat.wordpack.500k';
-  static const String iapWordPack2m = 'com.hujiaofen.writingCat.wordpack.2m';
-  static const String iapWordPack6m = 'com.hujiaofen.writingCat.wordpack.6m';
+  static const String iapWordPack500k = 'wordpack.500k';
+  static const String iapWordPack2m = 'wordpack.2m';
+  static const String iapWordPack6m = 'wordpack.6m';
   
   // 字数配置
   static const int subscriptionGiftWords = 500000; // 订阅赠送50万字
@@ -36,7 +47,7 @@ class AppConfig {
   static const int maxTrialCount = 3; // 最多试用3次
   
   // API超时配置
-  static const Duration apiTimeout = Duration(seconds: 60);
+  static const Duration apiTimeout = Duration(seconds: 120);
   
   // 缓存配置
   static const int maxCacheSize = 100 * 1024 * 1024; // 100MB
