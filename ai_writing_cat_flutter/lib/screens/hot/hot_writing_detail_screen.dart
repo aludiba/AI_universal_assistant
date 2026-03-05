@@ -58,6 +58,10 @@ class _HotWritingDetailScreenState extends State<HotWritingDetailScreen> {
   bool _isGenerating = true;
   bool _userStoppedCreation = false;
 
+  /// 用于合并高频 delta 的帧节流 timer
+  Timer? _uiFlushTimer;
+  bool _uiDirty = false;
+
   @override
   void initState() {
     super.initState();
@@ -66,6 +70,7 @@ class _HotWritingDetailScreenState extends State<HotWritingDetailScreen> {
 
   @override
   void dispose() {
+    _uiFlushTimer?.cancel();
     _streamSub?.cancel();
     _writer.cancelCurrentRequest();
     _scrollController.dispose();
@@ -119,6 +124,15 @@ class _HotWritingDetailScreenState extends State<HotWritingDetailScreen> {
 
   void _handleStreamChunk(String chunk) {
     _rawText += chunk;
+    _uiDirty = true;
+    // 用帧级节流（~16ms）合并密集 delta，避免逐 token setState 卡顿
+    _uiFlushTimer ??= Timer(const Duration(milliseconds: 16), _flushUI);
+  }
+
+  void _flushUI() {
+    _uiFlushTimer = null;
+    if (!mounted || !_uiDirty) return;
+    _uiDirty = false;
     final processed = _removeMarkdownSymbols(_rawText);
     final parsed = _parseTitleAndBody(processed, isFinal: false);
     setState(() {
@@ -130,6 +144,8 @@ class _HotWritingDetailScreenState extends State<HotWritingDetailScreen> {
 
   Future<void> _finalizeWriting() async {
     if (!_isGenerating) return;
+    _uiFlushTimer?.cancel();
+    _uiFlushTimer = null;
 
     final l10n = AppLocalizations.of(context)!;
     final processed = _removeMarkdownSymbols(_rawText).trim();

@@ -1,8 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../config/app_config.dart';
+
+/// 流式输出调试日志前缀，便于 logcat/console 过滤
+const String _kStreamLogTag = '[DeepSeek Stream]';
 
 /// DeepSeek AI服务（对齐 iOS `AIUADeepSeekWriter` 能力）
 class DeepSeekService {
@@ -226,6 +230,7 @@ class DeepSeekService {
 
   /// 取消当前请求（用户点击停止时调用，流式迭代会正常结束不抛错）
   void cancelCurrentRequest() {
+    debugPrint('$_kStreamLogTag 用户取消请求');
     _streamCancelled = true;
     _closeClient();
   }
@@ -290,6 +295,9 @@ class DeepSeekService {
     _currentClient = http.Client();
     _lineBuffer = '';
 
+    final maxTok = (maxTokens ?? 1000).clamp(1, 4000);
+    debugPrint('$_kStreamLogTag 开始请求 url=$_baseUrl model=$_modelName max_tokens=$maxTok stream=true');
+
     try {
       final request = http.Request(
         'POST',
@@ -301,7 +309,7 @@ class DeepSeekService {
       request.body = jsonEncode({
         'model': _modelName,
         'messages': messages,
-        'max_tokens': (maxTokens ?? 1000).clamp(1, 4000),
+        'max_tokens': maxTok,
         'temperature': temperature.clamp(0.0, 1.5),
         'stream': true,
       });
@@ -309,6 +317,10 @@ class DeepSeekService {
       final streamedResponse = await _currentClient!.send(request);
 
       if (streamedResponse.statusCode == 200) {
+        debugPrint('$_kStreamLogTag 连接成功 status=200，开始接收流');
+        int chunkCount = 0;
+        int totalYieldedLength = 0;
+
         await for (final chunk in streamedResponse.stream.transform(utf8.decoder)) {
           _lineBuffer += chunk;
           final lines = _lineBuffer.split('\n');
@@ -320,26 +332,40 @@ class DeepSeekService {
 
             final data = line.substring(5).trim();
             if (data.isEmpty) continue;
-            if (data == '[DONE]') return;
+            if (data == '[DONE]') {
+              debugPrint('$_kStreamLogTag 结束 [DONE] chunks=$chunkCount totalYielded=$totalYieldedLength');
+              return;
+            }
 
             try {
               final json = jsonDecode(data) as Map<String, dynamic>;
               final content = _extractContentFromResponse(json);
               if (content.isNotEmpty) {
+                chunkCount++;
+                totalYieldedLength += content.length;
+                if (kDebugMode && content.length <= 200) {
+                  debugPrint('$_kStreamLogTag delta#$chunkCount len=${content.length} "$content"');
+                } else if (kDebugMode) {
+                  debugPrint('$_kStreamLogTag delta#$chunkCount len=${content.length} "${content.substring(0, 80)}..."');
+                }
                 yield content;
               }
-            } catch (_) {
-              // 忽略单条 SSE 解析错误，继续处理后续分片
+            } catch (e) {
+              if (kDebugMode) debugPrint('$_kStreamLogTag 忽略无效行: ${data.length > 100 ? "${data.substring(0, 100)}..." : data} error=$e');
             }
           }
         }
+        debugPrint('$_kStreamLogTag 流关闭 chunks=$chunkCount totalYielded=$totalYieldedLength');
       } else {
         final body = await streamedResponse.stream.bytesToString();
+        debugPrint('$_kStreamLogTag 请求失败 status=${streamedResponse.statusCode} body=${body.length > 200 ? "${body.substring(0, 200)}..." : body}');
         throw Exception('流式请求失败(${streamedResponse.statusCode}): $body');
       }
     } on TimeoutException {
+      debugPrint('$_kStreamLogTag 超时 cancelled=$_streamCancelled');
       if (!_streamCancelled) throw Exception('请求超时，请检查网络连接');
-    } catch (e) {
+    } catch (e, st) {
+      if (kDebugMode) debugPrint('$_kStreamLogTag 异常: $e\n$st');
       if (!_streamCancelled) rethrow;
     } finally {
       _closeClient();

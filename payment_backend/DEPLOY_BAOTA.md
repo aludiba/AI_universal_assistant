@@ -412,7 +412,7 @@ include /www/server/panel/vhost/nginx/proxy/api.hujiaofenwritingcat.top/*.conf;
 内容：
 
 ```nginx
-# DeepSeek 代理（同域名 /ai）
+# DeepSeek 代理（同域名 /ai）— 流式 SSE 优化
 location = /ai {
     proxy_pass http://127.0.0.1:3000;
     proxy_http_version 1.1;
@@ -421,9 +421,11 @@ location = /ai {
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
 
-    # 流式输出（SSE）建议
+    # 禁用所有缓冲，逐块透传 SSE 流
     proxy_buffering off;
     proxy_cache off;
+    chunked_transfer_encoding on;
+    tcp_nodelay on;
     proxy_read_timeout 600s;
     proxy_send_timeout 600s;
 }
@@ -438,6 +440,8 @@ location ^~ /ai/ {
 
     proxy_buffering off;
     proxy_cache off;
+    chunked_transfer_encoding on;
+    tcp_nodelay on;
     proxy_read_timeout 600s;
     proxy_send_timeout 600s;
 }
@@ -480,6 +484,8 @@ location = /ai {
     proxy_set_header X-Forwarded-Proto $scheme;
     proxy_buffering off;
     proxy_cache off;
+    chunked_transfer_encoding on;
+    tcp_nodelay on;
     proxy_read_timeout 600s;
     proxy_send_timeout 600s;
 }
@@ -493,6 +499,8 @@ location ^~ /ai/ {
     proxy_set_header X-Forwarded-Proto $scheme;
     proxy_buffering off;
     proxy_cache off;
+    chunked_transfer_encoding on;
+    tcp_nodelay on;
     proxy_read_timeout 600s;
     proxy_send_timeout 600s;
 }
@@ -558,6 +566,8 @@ location = /ai {
     proxy_set_header X-Forwarded-Proto $scheme;
     proxy_buffering off;
     proxy_cache off;
+    chunked_transfer_encoding on;
+    tcp_nodelay on;
     proxy_read_timeout 600s;
     proxy_send_timeout 600s;
 }
@@ -571,6 +581,8 @@ location ^~ /ai/ {
     proxy_set_header X-Forwarded-Proto $scheme;
     proxy_buffering off;
     proxy_cache off;
+    chunked_transfer_encoding on;
+    tcp_nodelay on;
     proxy_read_timeout 600s;
     proxy_send_timeout 600s;
 }

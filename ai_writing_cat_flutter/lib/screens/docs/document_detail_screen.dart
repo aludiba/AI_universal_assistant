@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -97,6 +99,9 @@ class DocumentDetailUiState {
 }
 
 class DocumentDetailUiNotifier extends Notifier<DocumentDetailUiState> {
+  String _pendingChunks = '';
+  Timer? _flushTimer;
+
   @override
   DocumentDetailUiState build() {
     return DocumentDetailUiState.initial();
@@ -148,15 +153,26 @@ class DocumentDetailUiNotifier extends Notifier<DocumentDetailUiState> {
     );
   }
 
-  /// 流式输出时追加内容（对齐 iOS）
+  /// 流式输出时追加内容，帧级节流（~16ms）合并密集 delta
   void appendGeneratedContent(String chunk) {
     if (chunk.isEmpty) return;
+    _pendingChunks += chunk;
+    _flushTimer ??= Timer(const Duration(milliseconds: 16), _flushPending);
+  }
+
+  void _flushPending() {
+    _flushTimer = null;
+    if (_pendingChunks.isEmpty) return;
     state = state.copyWith(
-      generatedContent: state.generatedContent + chunk,
+      generatedContent: state.generatedContent + _pendingChunks,
     );
+    _pendingChunks = '';
   }
 
   void finishGenerating(String content) {
+    _flushTimer?.cancel();
+    _flushTimer = null;
+    _pendingChunks = '';
     state = state.copyWith(
       isGenerating: false,
       panel: DocumentBottomPanel.generation,

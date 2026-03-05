@@ -146,7 +146,6 @@ app.post("/ai", aiJsonParser, async (req, res) => {
     const isStream = payload.stream === true;
 
     if (isStream) {
-      // 将 DeepSeek 的 SSE 流透传给客户端（iOS 端依赖此行为做流式显示）
       res.status(upstream.status);
       res.setHeader(
         "Content-Type",
@@ -154,6 +153,10 @@ app.post("/ai", aiJsonParser, async (req, res) => {
       );
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
+      // 告诉 Nginx 不要缓冲此响应，逐块透传
+      res.setHeader("X-Accel-Buffering", "no");
+      // 立即刷出 HTTP 头，让客户端尽早开始接收
+      res.flushHeaders();
 
       if (!upstream.body) {
         return res.end();
@@ -167,7 +170,14 @@ app.post("/ai", aiJsonParser, async (req, res) => {
         }
       });
 
-      upstream.body.pipe(res);
+      // 逐块写入并立即 flush，避免 Node.js 内部缓冲合并小块
+      upstream.body.on("data", (chunk) => {
+        res.write(chunk);
+        if (typeof res.flush === "function") res.flush();
+      });
+      upstream.body.on("end", () => {
+        res.end();
+      });
       return;
     }
 
