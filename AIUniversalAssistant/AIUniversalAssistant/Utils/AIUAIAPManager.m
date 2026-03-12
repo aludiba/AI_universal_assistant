@@ -868,8 +868,11 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
     } else if ([self isCurrentlyLifetimeMember] && ![self isLifetimeProductId:productIdentifier]) {
         NSLog(@"[IAP] 当前已是永久会员，跳过有限期交易 %@", productIdentifier);
     } else {
-        [self unlockContentForProductIdentifier:productIdentifier];
+        // 恢复购买不走 unlockContentForProductIdentifier（会累加到期时间），
+        // 仅标记已恢复；真实到期时间由 paymentQueueRestoreCompletedTransactionsFinished
+        // 调用 checkSubscriptionStatus → verifyReceiptLocally 从收据中提取。
         self.restoredPurchasesCount++;
+        NSLog(@"[IAP] 恢复交易已计数，到期时间将从收据中提取: %@", productIdentifier);
     }
     
     [self completePurchaseCallbackForTransaction:transaction success:YES error:nil];
@@ -901,11 +904,20 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
     _isVIPMember = YES;
     self.currentSubscriptionType = type;
     
-    // 计算过期时间（支持累加）
-    NSDate *expiryDate = [self calculateExpiryDateForProductType:type withAccumulation:YES];
-    self.subscriptionExpiryDate = expiryDate;
+    // 优先从收据中提取真实到期时间，避免从"今天"重新计算
+    self.lastReceiptVerificationTime = nil; // 强制刷新收据
+    [self verifyReceiptLocally];
     
-    NSLog(@"[IAP] ✓ 已设置VIP状态 - 类型: %ld, 到期: %@", (long)type, expiryDate);
+    // 如果收据验证后仍没有到期时间（首次购买、收据未生成等），则兜底从当前时间计算
+    if (!self.subscriptionExpiryDate) {
+        NSDate *expiryDate = [self calculateExpiryDateForProductType:type withAccumulation:NO];
+        self.subscriptionExpiryDate = expiryDate;
+        NSLog(@"[IAP] 收据中未提取到到期时间，兜底计算: %@", expiryDate);
+    } else {
+        NSLog(@"[IAP] ✓ 使用收据中的到期时间: %@", self.subscriptionExpiryDate);
+    }
+    
+    NSLog(@"[IAP] ✓ 已设置VIP状态 - 类型: %ld, 到期: %@", (long)type, self.subscriptionExpiryDate);
     
     // 保存订阅记录
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
@@ -920,8 +932,7 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
     
     NSLog(@"[IAP] ✓ 已发送订阅状态变化通知");
 
-    // 关键修复：不依赖"字数包页面是否已打开/WordPackManager是否已初始化"
-    // 购买成功后立刻触发一次赠送字数入账，确保字数包页面能立刻显示 50 万字
+    // 购买成功后立刻触发一次赠送字数入账
     [[AIUAWordPackManager sharedManager] refreshVIPGiftedWords];
 }
 
