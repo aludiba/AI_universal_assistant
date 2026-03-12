@@ -830,10 +830,15 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
     }
     [self clearUserClearedPurchaseFlagIfNeeded];
     
+    // 保存当前到期时间，verifyReceipt 可能用收据中单笔购买的到期时间覆盖它
+    NSDate *previousExpiryDate = self.subscriptionExpiryDate;
+    
     self.lastReceiptVerificationTime = nil;
     [self verifyReceipt:transaction];
     
     if (![self isWordPackProductId:productIdentifier]) {
+        // 恢复原有到期时间，让 unlockContent 基于此做累加计算
+        self.subscriptionExpiryDate = previousExpiryDate;
         [self unlockContentForProductIdentifier:productIdentifier];
     } else {
         NSLog(@"[IAP] 字数包购买完成: %@", productIdentifier);
@@ -900,39 +905,33 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
         return;
     }
     
-    // 设置会员状态
     _isVIPMember = YES;
     self.currentSubscriptionType = type;
     
-    // 优先从收据中提取真实到期时间，避免从"今天"重新计算
-    self.lastReceiptVerificationTime = nil; // 强制刷新收据
-    [self verifyReceiptLocally];
+    // 新购买时使用累加计算：若已有未过期订阅，新订阅时长累加到已有到期时间之上；
+    // 若无订阅或已过期，则从当前时间开始计算。
+    // 注意：恢复购买不走此方法，其到期时间由 verifyReceiptLocally 从收据中提取。
+    NSDate *previousExpiry = self.subscriptionExpiryDate;
+    NSDate *expiryDate = [self calculateExpiryDateForProductType:type withAccumulation:YES];
+    self.subscriptionExpiryDate = expiryDate;
     
-    // 如果收据验证后仍没有到期时间（首次购买、收据未生成等），则兜底从当前时间计算
-    if (!self.subscriptionExpiryDate) {
-        NSDate *expiryDate = [self calculateExpiryDateForProductType:type withAccumulation:NO];
-        self.subscriptionExpiryDate = expiryDate;
-        NSLog(@"[IAP] 收据中未提取到到期时间，兜底计算: %@", expiryDate);
+    if (previousExpiry && [[NSDate date] compare:previousExpiry] == NSOrderedAscending) {
+        NSLog(@"[IAP] ✓ 已有未过期订阅（到期: %@），累加后新到期: %@", previousExpiry, expiryDate);
     } else {
-        NSLog(@"[IAP] ✓ 使用收据中的到期时间: %@", self.subscriptionExpiryDate);
+        NSLog(@"[IAP] ✓ 无有效订阅或已过期，从当前时间计算到期: %@", expiryDate);
     }
     
     NSLog(@"[IAP] ✓ 已设置VIP状态 - 类型: %ld, 到期: %@", (long)type, self.subscriptionExpiryDate);
     
-    // 保存订阅记录
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     [defaults setBool:YES forKey:[self scopedDefaultsKey:kAIUAHasSubscriptionHistory]];
     [defaults synchronize];
     
-    // 保存到本地
     [self saveLocalSubscriptionInfo];
     
-    // 发送通知（字数包管理器会监听此通知并刷新赠送字数）
     [[NSNotificationCenter defaultCenter] postNotificationName:@"AIUASubscriptionStatusChanged" object:nil];
-    
     NSLog(@"[IAP] ✓ 已发送订阅状态变化通知");
 
-    // 购买成功后立刻触发一次赠送字数入账
     [[AIUAWordPackManager sharedManager] refreshVIPGiftedWords];
 }
 
@@ -1007,6 +1006,18 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
     
     // 不需要累加或没有现有订阅，从当前时间开始计算
     return [calendar dateByAddingComponents:components toDate:now options:0];
+}
+
+- (NSDate *)inferPurchaseDateFromExpiry:(NSDate *)expiryDate productType:(AIUASubscriptionProductType)type {
+    NSCalendar *cal = [NSCalendar currentCalendar];
+    NSDateComponents *comp = [[NSDateComponents alloc] init];
+    switch (type) {
+        case AIUASubscriptionProductTypeYearly: comp.year = -1; break;
+        case AIUASubscriptionProductTypeMonthly: comp.month = -1; break;
+        case AIUASubscriptionProductTypeWeekly: comp.day = -7; break;
+        default: comp.day = -7; break;
+    }
+    return [cal dateByAddingComponents:comp toDate:expiryDate options:0];
 }
 
 #pragma mark - Receipt Verification
@@ -1132,36 +1143,96 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
                 }
             }
             
-            NSDictionary *latestSubscription = [self findLatestValidSubscription:inAppPurchases];
-            if (latestSubscription) {
-                NSString *productId = latestSubscription[@"product_id"];
-                if ([self isWordPackProductId:productId]) {
-                    NSLog(@"[IAP] 收据中该项为字数包，跳过: %@", productId);
-                } else {
-                    NSDate *expiresDate = latestSubscription[@"expires_date"];
-                    NSLog(@"[IAP] 从收据中提取订阅 - 产品: %@, 到期: %@", productId, expiresDate);
-                    
-                    // 到期时间超过20年 或 产品ID识别为永久 → 永久会员
-                    AIUASubscriptionProductType productType = [self productTypeForIdentifier:productId];
-                    if (productType == AIUASubscriptionProductTypeLifetimeBenefits ||
-                        (expiresDate && [expiresDate timeIntervalSinceDate:now] > 20 * 365 * 24 * 60 * 60)) {
+            // 收集所有有期限订阅（排除字数包、永久会员）
+            NSMutableArray *timedSubscriptions = [NSMutableArray array];
+            NSDictionary *fallbackSubscription = nil;
+            
+            for (NSDictionary *purchase in inAppPurchases) {
+                NSString *pid = purchase[@"product_id"];
+                if (!pid || [self isWordPackProductId:pid] || [self isLifetimeProductId:pid]) continue;
+                
+                AIUASubscriptionProductType pType = [self productTypeForIdentifier:pid];
+                if (pType == AIUASubscriptionProductTypeLifetimeBenefits) continue;
+                
+                NSDate *expiresDate = purchase[@"expires_date"];
+                if (expiresDate) {
+                    if ([expiresDate timeIntervalSinceDate:now] > 20 * 365 * 24 * 60 * 60) {
                         [self applyLifetimeMembership];
-                        NSLog(@"[IAP] 识别为永久会员（产品: %@）", productId);
+                        NSLog(@"[IAP] 识别为永久会员（产品: %@，到期超20年）", pid);
                         return YES;
                     }
-                    
-                    self.currentSubscriptionType = productType;
-                    if (expiresDate) {
-                        self.subscriptionExpiryDate = expiresDate;
-                        _isVIPMember = ([now compare:expiresDate] == NSOrderedAscending);
-                        NSLog(@"[IAP] 订阅%@，类型: %ld, 到期: %@", _isVIPMember ? @"有效" : @"已过期", (long)productType, expiresDate);
-                    } else {
-                        _isVIPMember = YES;
-                        self.subscriptionExpiryDate = [self calculateExpiryDateForProductType:productType];
-                        NSLog(@"[IAP] 订阅无到期时间，从当前时间计算");
-                    }
-                    [self saveLocalSubscriptionInfo];
+                    [timedSubscriptions addObject:@{
+                        @"product_id": pid,
+                        @"expires_date": expiresDate,
+                        @"type": @(pType)
+                    }];
+                } else if (!fallbackSubscription) {
+                    fallbackSubscription = @{@"product_id": pid, @"type": @(pType)};
                 }
+            }
+            
+            if (timedSubscriptions.count > 0) {
+                NSCalendar *cal = [NSCalendar currentCalendar];
+                
+                // 按推算的购买日期（到期时间 - 订阅时长）升序排列
+                [timedSubscriptions sortUsingComparator:^NSComparisonResult(NSDictionary *a, NSDictionary *b) {
+                    NSDate *pa = [self inferPurchaseDateFromExpiry:a[@"expires_date"] productType:[a[@"type"] integerValue]];
+                    NSDate *pb = [self inferPurchaseDateFromExpiry:b[@"expires_date"] productType:[b[@"type"] integerValue]];
+                    return [pa compare:pb];
+                }];
+                
+                // 逐笔累加：若购买时前一笔尚未过期，则新订阅时长从前一笔到期时间开始叠加
+                NSDate *accumulatedExpiry = nil;
+                AIUASubscriptionProductType lastType = AIUASubscriptionProductTypeWeekly;
+                
+                for (NSDictionary *sub in timedSubscriptions) {
+                    NSDate *subExpiry = sub[@"expires_date"];
+                    AIUASubscriptionProductType subType = [sub[@"type"] integerValue];
+                    
+                    if (!accumulatedExpiry) {
+                        accumulatedExpiry = subExpiry;
+                    } else {
+                        NSDate *inferredPurchase = [self inferPurchaseDateFromExpiry:subExpiry productType:subType];
+                        NSDate *baseDate;
+                        
+                        if ([inferredPurchase compare:accumulatedExpiry] != NSOrderedDescending) {
+                            baseDate = accumulatedExpiry;
+                        } else {
+                            baseDate = inferredPurchase;
+                        }
+                        
+                        NSDateComponents *comp = [[NSDateComponents alloc] init];
+                        switch (subType) {
+                            case AIUASubscriptionProductTypeYearly: comp.year = 1; break;
+                            case AIUASubscriptionProductTypeMonthly: comp.month = 1; break;
+                            case AIUASubscriptionProductTypeWeekly: comp.day = 7; break;
+                            default: comp.day = 7; break;
+                        }
+                        accumulatedExpiry = [cal dateByAddingComponents:comp toDate:baseDate options:0];
+                    }
+                    lastType = subType;
+                }
+                
+                self.currentSubscriptionType = lastType;
+                self.subscriptionExpiryDate = accumulatedExpiry;
+                _isVIPMember = ([now compare:accumulatedExpiry] == NSOrderedAscending);
+                
+                if (timedSubscriptions.count > 1) {
+                    NSLog(@"[IAP] 累加 %lu 笔订阅，到期: %@，%@",
+                          (unsigned long)timedSubscriptions.count, accumulatedExpiry,
+                          _isVIPMember ? @"有效" : @"已过期");
+                } else {
+                    NSLog(@"[IAP] 订阅%@，类型: %ld, 到期: %@",
+                          _isVIPMember ? @"有效" : @"已过期", (long)lastType, accumulatedExpiry);
+                }
+                [self saveLocalSubscriptionInfo];
+            } else if (fallbackSubscription) {
+                AIUASubscriptionProductType productType = [fallbackSubscription[@"type"] integerValue];
+                _isVIPMember = YES;
+                self.currentSubscriptionType = productType;
+                self.subscriptionExpiryDate = [self calculateExpiryDateForProductType:productType];
+                NSLog(@"[IAP] 订阅无到期时间，从当前时间计算");
+                [self saveLocalSubscriptionInfo];
             } else {
                 NSLog(@"[IAP] ⚠️ 收据中有购买项但未找到有效订阅");
             }
