@@ -43,13 +43,16 @@
     nw_path_monitor_set_update_handler(self.monitor, ^(nw_path_t  _Nonnull path) {
         nw_path_status_t status = nw_path_get_status(path);
         if (status == nw_path_status_satisfied) {
+            NSLog(@"[穿山甲][Splash] 网络状态可用，开始加载开屏广告");
             [weakSelf loadInitialPage];
         } else {
+            NSLog(@"[穿山甲][Splash] 网络状态不可用，3秒后跳过开屏广告");
             // 网络不可用，如果需要可以弹窗提示，这里简单处理为等待或直接进入主页
             // 如果没有网络，可能会一直停留在开屏页（或者显示Alert）
             // 这里为了用户体验，如果网络不可用，延迟一小段时间后如果还没网就直接进主页
             dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
                 if (!weakSelf.hasLoaded) {
+                     NSLog(@"[穿山甲][Splash] 网络仍不可用，跳过开屏广告进入主界面");
                      [weakSelf enterMainUI];
                 }
             });
@@ -145,4 +148,3 @@
 #endif
 
 @end
-

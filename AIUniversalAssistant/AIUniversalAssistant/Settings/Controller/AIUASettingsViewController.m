@@ -348,6 +348,7 @@
         [weakSelf.tableView reloadData];
     } failed:^(NSError *error) {
         [MBProgressHUD hideHUDForView:weakSelf.view animated:YES];
+        NSLog(@"[Reward] 激励视频失败: domain=%@ code=%ld desc=%@", error.domain, (long)error.code, error.localizedDescription);
         [weakSelf showAlertWithTitle:L(@"reward_failed_title") message:error.localizedDescription ?: @"加载失败"];
     }];
 }

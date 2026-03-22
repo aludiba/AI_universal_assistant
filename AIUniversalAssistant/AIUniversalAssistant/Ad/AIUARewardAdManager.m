@@ -10,6 +10,58 @@
 #import <BUAdSDK/BUAdSDK.h>
 #endif
 
+static NSError *AIUAFindUnderlyingNetworkError(NSError *error) {
+    if (!error) {
+        return nil;
+    }
+    if ([error.domain isEqualToString:NSURLErrorDomain]) {
+        switch (error.code) {
+            case NSURLErrorNotConnectedToInternet:
+            case NSURLErrorNetworkConnectionLost:
+            case NSURLErrorTimedOut:
+            case NSURLErrorCannotFindHost:
+            case NSURLErrorCannotConnectToHost:
+            case NSURLErrorDNSLookupFailed:
+                return error;
+            default:
+                break;
+        }
+    }
+    NSError *underlying = error.userInfo[NSUnderlyingErrorKey];
+    if ([underlying isKindOfClass:[NSError class]]) {
+        return AIUAFindUnderlyingNetworkError(underlying);
+    }
+    return nil;
+}
+
+static NSString *AIUAReadableRewardErrorMessage(NSError *error) {
+    NSError *networkError = AIUAFindUnderlyingNetworkError(error) ?: ([error.domain isEqualToString:NSURLErrorDomain] ? error : nil);
+    if (networkError) {
+        return @"当前网络不可用，广告请求被拦截。请检查网络连接，或关闭/调整 VPN、代理后重试。";
+    }
+    
+    NSString *desc = error.localizedDescription ?: @"加载失败";
+    NSString *lowerDesc = desc.lowercaseString;
+    if ([lowerDesc containsString:@"data analysis error"] || [lowerDesc containsString:@"parse"]) {
+        return @"广告数据解析失败，请确认代码位已生效，并检查网络是否可访问穿山甲广告服务。";
+    }
+    return desc;
+}
+
+static void AIUALogRewardError(NSError *error) {
+    if (!error) {
+        return;
+    }
+    NSLog(@"❌ [穿山甲][Reward] 加载失败 - domain=%@, code=%ld, desc=%@", error.domain, (long)error.code, error.localizedDescription);
+    NSError *underlying = error.userInfo[NSUnderlyingErrorKey];
+    NSInteger level = 1;
+    while ([underlying isKindOfClass:[NSError class]] && level <= 3) {
+        NSLog(@"   ↳ underlying[%ld] domain=%@, code=%ld, desc=%@", (long)level, underlying.domain, (long)underlying.code, underlying.localizedDescription);
+        underlying = underlying.userInfo[NSUnderlyingErrorKey];
+        level += 1;
+    }
+}
+
 @interface AIUARewardAdManager ()
 
 @property (nonatomic, weak) UIViewController *presentingVC;
@@ -84,6 +136,8 @@
         [self cleanup];
         return;
     }
+    
+    NSLog(@"[穿山甲][Reward] 开始加载激励视频，AppID=%@, SlotID=%@", AIUA_APPID, AIUA_REWARD_AD_SLOT_ID);
 
     BURewardedVideoModel *model = [[BURewardedVideoModel alloc] init];
     model.userId = @"aiua_user"; // 可按需设置
@@ -104,10 +158,12 @@
 #pragma mark - BUNativeExpressRewardedVideoAdDelegate
 
 - (void)nativeExpressRewardedVideoAdDidLoad:(BUNativeExpressRewardedVideoAd *)rewardedVideoAd {
+    NSLog(@"[穿山甲][Reward] 激励视频素材加载完成");
     if (self.onLoaded) self.onLoaded();
 }
 
 - (void)nativeExpressRewardedVideoAdDidDownLoadVideo:(BUNativeExpressRewardedVideoAd *)rewardedVideoAd {
+    NSLog(@"[穿山甲][Reward] 激励视频缓存完成，准备展示");
     if (self.presentingVC && self.rewardAd) {
         [self.rewardAd showAdFromRootViewController:self.presentingVC];
     }
@@ -117,16 +173,28 @@
 - (void)nativeExpressRewardedVideoAdDidClick:(BUNativeExpressRewardedVideoAd *)rewardedVideoAd {}
 
 - (void)nativeExpressRewardedVideoAdDidClose:(BUNativeExpressRewardedVideoAd *)rewardedVideoAd {
+    NSLog(@"[穿山甲][Reward] 激励视频已关闭");
     if (self.onClosed) self.onClosed();
     [self cleanup];
 }
 
 - (void)nativeExpressRewardedVideoAd:(BUNativeExpressRewardedVideoAd *)rewardedVideoAd didFailWithError:(NSError *)error {
-    if (self.onFailed) self.onFailed(error ?: [NSError errorWithDomain:@"AIUAReward" code:-5 userInfo:@{NSLocalizedDescriptionKey: @"未知错误"}]);
+    NSError *rawError = error ?: [NSError errorWithDomain:@"AIUAReward" code:-5 userInfo:@{NSLocalizedDescriptionKey: @"未知错误"}];
+    AIUALogRewardError(rawError);
+    
+    NSError *finalError = rawError;
+    NSString *message = AIUAReadableRewardErrorMessage(rawError);
+    if (message.length > 0 && ![message isEqualToString:rawError.localizedDescription]) {
+        NSMutableDictionary *userInfo = [rawError.userInfo mutableCopy] ?: [NSMutableDictionary dictionary];
+        userInfo[NSLocalizedDescriptionKey] = message;
+        finalError = [NSError errorWithDomain:rawError.domain code:rawError.code userInfo:userInfo];
+    }
+    if (self.onFailed) self.onFailed(finalError);
     [self cleanup];
 }
 
 - (void)nativeExpressRewardedVideoAdServerRewardDidSucceed:(BUNativeExpressRewardedVideoAd *)rewardedVideoAd verify:(BOOL)verify {
+    NSLog(@"[穿山甲][Reward] 服务端奖励校验回调，verify=%d", verify);
     if (verify && self.onEarned) self.onEarned();
 }
 
