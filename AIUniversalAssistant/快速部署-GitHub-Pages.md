@@ -29,7 +29,7 @@ git init
 git add .
 
 # 提交
-git commit -m "Initial commit: AI创作喵官网"
+git commit -m "Initial commit: 喵墨官网"
 
 # 添加远程仓库（替换 yourusername 为您的 GitHub 用户名）
 git remote add origin https://github.com/yourusername/ai-writing-cat-website.git

@@ -2,7 +2,7 @@
 
 ## 🎯 目标
 
-将 AI创作喵官网部署到类似 `freemeapp.lovin.cloud` 的子域名结构。
+将 喵墨官网部署到类似 `freemeapp.lovin.cloud` 的子域名结构。
 
 ## 📋 前置要求
 
@@ -27,7 +27,7 @@ git init
 git add .
 
 # 提交
-git commit -m "AI创作喵官网 - 初始版本"
+git commit -m "喵墨官网 - 初始版本"
 
 # 在 GitHub 创建新仓库后，添加远程仓库
 git remote add origin https://github.com/yourusername/ai-writing-cat-website.git

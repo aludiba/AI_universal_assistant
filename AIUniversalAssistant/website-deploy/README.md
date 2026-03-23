@@ -1,4 +1,4 @@
-# AI创作喵网站部署文件
+# 喵墨网站部署文件
 
 本目录包含部署到 `hujiaofenwritingcat.top` 所需的所有文件。
 
