@@ -154,13 +154,14 @@
 "lifetime_member" = "永久会员";
 "lifetime_desc" = "一次购买，永久使用";
 "yearly_plan" = "年度会员";
-"yearly_desc" = "约0.5元/天";
+"yearly_desc" = "首周免费，随后约0.5元/天";
 "monthly_plan" = "月度会员";
-"monthly_desc" = "短期创作首选";
+"monthly_desc" = "首周免费，短期创作首选";
 "weekly_plan" = "周度会员";
-"weekly_desc" = "体验AI写作";
+"weekly_desc" = "首周免费，随后按周续费";
 "recommended" = "推荐";
-"auto_renew_notice" = "自动续费，可随时取消";
+"free_trial_badge" = "首周免费";
+"auto_renew_notice" = "周/月/年会员符合资格可享1周免费试用；试用结束后将按所选周期自动续费，可随时取消。同一订阅组通常仅可享受一次免费试用。";
 "agree_to_terms" = "同意《用户协议》《隐私政策》和《自动续费服务协议》";
 "auto_renew_agreement" = "自动续费服务协议";
 "activate_now" = "立即开通";
@@ -171,6 +172,7 @@
 "please_agree_to_terms" = "请先同意用户协议、隐私政策和自动续费服务协议";
 "confirm_purchase" = "确认购买";
 "confirm_purchase_plan" = "确认购买 %@ ¥%@？";
+"confirm_purchase_plan_with_trial" = "确认购买 %@ ¥%@？如您符合资格，可先享1周免费试用；试用结束后将按所选周期自动续费，可随时在Apple ID订阅中取消。";
 "subscription_success" = "订阅成功";
 "enjoy_vip_benefits" = "恭喜成为VIP会员，尽享所有权益！";
 "subscription_restored_existing" = "已恢复订阅";

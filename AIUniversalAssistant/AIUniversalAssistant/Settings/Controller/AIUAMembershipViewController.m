@@ -374,7 +374,7 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
         return footerView;
     }
     
-    CGFloat footerHeight = 300;
+    CGFloat footerHeight = 330;
     UIView *footerView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, AIUAScreenWidth, footerHeight)];
     footerView.backgroundColor = AIUA_BACK_COLOR; // 使用系统背景色，自动适配暗黑模式
     
@@ -405,9 +405,9 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
     // 订阅方案数据
     NSArray *plans = @[
         @{@"type": @(AIUASubscriptionPlanLifetimeBenefits), @"name": L(@"lifetime_member"), @"price": @"198", @"desc": L(@"lifetime_desc"), @"badge": L(@"recommended")},
-        @{@"type": @(AIUASubscriptionPlanYearly), @"name": L(@"yearly_plan"), @"price": @"168", @"desc": L(@"yearly_desc"), @"badge": @""},
-        @{@"type": @(AIUASubscriptionPlanMonthly), @"name": L(@"monthly_plan"), @"price": @"28", @"desc": L(@"monthly_desc"), @"badge": @""},
-        @{@"type": @(AIUASubscriptionPlanWeekly), @"name": L(@"weekly_plan"), @"price": @"6", @"desc": L(@"weekly_desc"), @"badge": @""}
+        @{@"type": @(AIUASubscriptionPlanYearly), @"name": L(@"yearly_plan"), @"price": @"168", @"desc": L(@"yearly_desc"), @"badge": L(@"free_trial_badge")},
+        @{@"type": @(AIUASubscriptionPlanMonthly), @"name": L(@"monthly_plan"), @"price": @"28", @"desc": L(@"monthly_desc"), @"badge": L(@"free_trial_badge")},
+        @{@"type": @(AIUASubscriptionPlanWeekly), @"name": L(@"weekly_plan"), @"price": @"6", @"desc": L(@"weekly_desc"), @"badge": L(@"free_trial_badge")}
     ];
     
     self.planCards = [NSMutableArray array];
@@ -439,11 +439,13 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
     autoRenewLabel.font = AIUAUIFontSystem(11);
     autoRenewLabel.textColor = AIUA_SECONDARY_LABEL_COLOR; // 使用系统二级标签颜色，自动适配暗黑模式
     autoRenewLabel.textAlignment = NSTextAlignmentCenter;
+    autoRenewLabel.numberOfLines = 0;
     [footerView addSubview:autoRenewLabel];
     
     [autoRenewLabel mas_makeConstraints:^(MASConstraintMaker *make) {
         make.top.equalTo(plansScrollView.mas_bottom).offset(8);
-        make.centerX.equalTo(footerView);
+        make.left.equalTo(footerView).offset(20);
+        make.right.equalTo(footerView).offset(-20);
     }];
     
     // 协议勾选
@@ -843,7 +845,12 @@ typedef NS_ENUM(NSInteger, AIUAMembershipSection) {
     NSString *planName = [self getPlanName:self.selectedPlan];
     NSString *planPrice = [self getPlanPrice:self.selectedPlan];
     
-    NSString *message = [NSString stringWithFormat:L(@"confirm_purchase_plan"), planName, planPrice];
+    NSString *message;
+    if (self.selectedPlan == AIUASubscriptionPlanLifetimeBenefits) {
+        message = [NSString stringWithFormat:L(@"confirm_purchase_plan"), planName, planPrice];
+    } else {
+        message = [NSString stringWithFormat:L(@"confirm_purchase_plan_with_trial"), planName, planPrice];
+    }
     
     [AIUAAlertHelper showAlertWithTitle:L(@"confirm_purchase")
                                 message:message
