@@ -23,6 +23,9 @@
 #endif
 @property (nonatomic, strong) nw_path_monitor_t monitor;
 @property (nonatomic, assign) BOOL hasLoaded;
+@property (nonatomic, assign) BOOL networkTimeoutFired;
+@property (nonatomic, assign) BOOL hasEnteredMainUI;
+@property (nonatomic, assign) NSInteger adLoadRetryCount;
 
 @end
 
@@ -32,34 +35,39 @@
     [super viewDidLoad];
     self.view.backgroundColor = [UIColor whiteColor];
     self.hasLoaded = NO;
+    self.hasEnteredMainUI = NO;
+    self.adLoadRetryCount = 0;
     [self setupNetworkMonitor];
 }
 
 - (void)setupNetworkMonitor {
     self.monitor = nw_path_monitor_create();
     nw_path_monitor_set_queue(self.monitor, dispatch_get_main_queue());
+    self.networkTimeoutFired = NO;
     
     __weak typeof(self) weakSelf = self;
     nw_path_monitor_set_update_handler(self.monitor, ^(nw_path_t  _Nonnull path) {
         nw_path_status_t status = nw_path_get_status(path);
         if (status == nw_path_status_satisfied) {
             NSLog(@"[穿山甲][Splash] 网络状态可用，开始加载开屏广告");
+            weakSelf.networkTimeoutFired = NO;
             [weakSelf loadInitialPage];
         } else {
-            NSLog(@"[穿山甲][Splash] 网络状态不可用，3秒后跳过开屏广告");
-            // 网络不可用，如果需要可以弹窗提示，这里简单处理为等待或直接进入主页
-            // 如果没有网络，可能会一直停留在开屏页（或者显示Alert）
-            // 这里为了用户体验，如果网络不可用，延迟一小段时间后如果还没网就直接进主页
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                if (!weakSelf.hasLoaded) {
-                     NSLog(@"[穿山甲][Splash] 网络仍不可用，跳过开屏广告进入主界面");
-                     [weakSelf enterMainUI];
-                }
-            });
+            NSLog(@"[穿山甲][Splash] 网络状态不可用，等待用户授权网络（最长 %d 秒）", 20);
         }
     });
     
     nw_path_monitor_start(self.monitor);
+    
+    // 首次安装时 iOS 会弹出网络授权弹窗，用户需要时间操作；
+    // 给足 20 秒等待用户选择网络权限 + 广告重试，超时后再跳过
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(20.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        if (!weakSelf.hasEnteredMainUI) {
+            weakSelf.networkTimeoutFired = YES;
+            NSLog(@"[穿山甲][Splash] 等待网络超时（20秒），跳过开屏广告进入主界面");
+            [weakSelf enterMainUI];
+        }
+    });
 }
 
 - (void)loadInitialPage {
@@ -105,6 +113,14 @@
 }
 
 - (void)enterMainUI {
+    if (self.hasEnteredMainUI) return;
+    self.hasEnteredMainUI = YES;
+    
+    if (self.monitor) {
+        nw_path_monitor_cancel(self.monitor);
+        self.monitor = nil;
+    }
+    
     AppDelegate *appDelegate = (AppDelegate *)[[UIApplication sharedApplication] delegate];
     if ([appDelegate respondsToSelector:@selector(enterMainUI)]) {
         [appDelegate enterMainUI];
@@ -121,10 +137,25 @@
 }
 
 - (void)splashAdLoadFail:(BUSplashAd *)splashAd error:(BUAdError *)error {
-    NSLog(@"❌ [穿山甲] 开屏广告加载失败");
+    NSLog(@"❌ [穿山甲] 开屏广告加载失败（第 %ld 次）", (long)(self.adLoadRetryCount + 1));
     NSLog(@"错误码: %ld", (long)error.code);
     NSLog(@"错误描述: %@", error.localizedDescription);
-    [self enterMainUI];
+    
+    // 首次安装时，iOS 网络权限弹窗可能尚未消失导致第一次加载失败；
+    // 最多重试 2 次，每次间隔 3 秒，给用户足够时间完成网络授权
+    if (self.adLoadRetryCount < 2 && !self.hasEnteredMainUI) {
+        self.adLoadRetryCount++;
+        NSLog(@"[穿山甲][Splash] 将在 3 秒后重试加载开屏广告（第 %ld 次重试）", (long)self.adLoadRetryCount);
+        __weak typeof(self) weakSelf = self;
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            if (!weakSelf.hasEnteredMainUI) {
+                [weakSelf buildAd];
+                [weakSelf loadAdData];
+            }
+        });
+    } else {
+        [self enterMainUI];
+    }
 }
 
 // 广告点击

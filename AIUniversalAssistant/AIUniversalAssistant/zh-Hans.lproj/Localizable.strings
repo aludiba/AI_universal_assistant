@@ -251,9 +251,10 @@
 "error" = "错误";
 
 // 激励视频
-"watch_reward_title" = "看激励视频 +5万字（4次/天）";
+"watch_reward_title" = "看激励视频领字数";
 "watch_reward_desc" = "观看完整广告即可领取奖励";
 "watch_reward_progress" = "今日进度：%ld/%ld 次";
+"watch_reward_progress_unlimited" = "今日进度：%ld/不限";
 "limit_reached_title" = "已达上限";
 "reward_daily_limit_reached" = "今天的观看次数已用完，请明天再来";
 "reward_failed_title" = "加载失败";

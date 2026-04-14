@@ -32,6 +32,27 @@
 
 @implementation AIUASettingsViewController
 
+- (NSInteger)rewardDailyLimit {
+    return AIUA_REWARD_DAILY_LIMIT;
+}
+
+- (BOOL)isRewardDailyLimitEnabled {
+    return [self rewardDailyLimit] > 0;
+}
+
+- (NSInteger)currentRewardWatchCountToday {
+    NSUserDefaults *ud = NSUserDefaults.standardUserDefaults;
+    NSDateFormatter *fmt = [[NSDateFormatter alloc] init];
+    fmt.dateFormat = @"yyyy-MM-dd";
+    NSString *today = [fmt stringFromDate:[NSDate date]];
+    NSString *savedDate = [ud stringForKey:@"AIUARewardWatchDate"];
+    NSInteger count = [ud integerForKey:@"AIUARewardWatchCount"];
+    if (savedDate == nil || ![savedDate isEqualToString:today]) {
+        return 0;
+    }
+    return count;
+}
+
 - (void)viewDidLoad {
     [super viewDidLoad];
     
@@ -133,11 +154,15 @@
     [menuItems addObject:@{@"title": L(@"rate_app"), @"icon": @"star.fill", @"color": @"#EF4444", @"action": @"rateApp"}];
     [menuItems addObject:@{@"title": L(@"share_app"), @"icon": @"square.and.arrow.up.fill", @"color": @"#06B6D4", @"action": @"shareApp"}];
     
-    // 有订阅或字数包权益且开启广告时才显示看激励视频入口
+    // 激励视频入口对所有用户开放（与会员并行）
     #if AIUA_AD_ENABLED
-    if (isVIP) {
-        [menuItems addObject:@{@"title": L(@"watch_reward_title"), @"icon": @"play.rectangle.on.rectangle.fill", @"color": @"#22C55E", @"action": @"watchReward"}];
+    NSString *rewardTitle = nil;
+    if ([self isRewardDailyLimitEnabled]) {
+        rewardTitle = [NSString stringWithFormat:@"%@（%ld次/天）", L(@"watch_reward_title"), (long)[self rewardDailyLimit]];
+    } else {
+        rewardTitle = [NSString stringWithFormat:@"%@（不限）", L(@"watch_reward_title")];
     }
+    [menuItems addObject:@{@"title": rewardTitle, @"icon": @"play.rectangle.on.rectangle.fill", @"color": @"#22C55E", @"action": @"watchReward"}];
     #endif
     
     [menuItems addObject:@{@"title": L(@"contact_us"), @"icon": @"envelope.fill", @"color": @"#F59E0B", @"action": @"contactUs"}];
@@ -178,16 +203,12 @@
         subtitle = [self getCacheSizeText];
     } else if ([action isEqualToString:@"watchReward"]) {
         // 展示今日已观看次数
-        NSUserDefaults *ud = NSUserDefaults.standardUserDefaults;
-        NSDateFormatter *fmt = [[NSDateFormatter alloc] init];
-        fmt.dateFormat = @"yyyy-MM-dd";
-        NSString *today = [fmt stringFromDate:[NSDate date]];
-        NSString *savedDate = [ud stringForKey:@"AIUARewardWatchDate"];
-        NSInteger count = [ud integerForKey:@"AIUARewardWatchCount"];
-        if (savedDate == nil || ![savedDate isEqualToString:today]) {
-            count = 0;
+        NSInteger count = [self currentRewardWatchCountToday];
+        if ([self isRewardDailyLimitEnabled]) {
+            subtitle = [NSString stringWithFormat:L(@"watch_reward_progress"), (long)count, (long)[self rewardDailyLimit]];
+        } else {
+            subtitle = [NSString stringWithFormat:L(@"watch_reward_progress_unlimited"), (long)count];
         }
-        subtitle = [NSString stringWithFormat:L(@"watch_reward_progress"), (long)count, (long)4];
     }
     
     [cell configureWithIcon:icon title:title subtitle:subtitle];
@@ -220,7 +241,6 @@
     } else if ([action isEqualToString:@"shareApp"]) {
         [self shareApp];
     } else if ([action isEqualToString:@"watchReward"]) {
-        if (![self ensureVIPOrPrompt]) return; // 非VIP禁止观看
         [self watchReward];
     } else if ([action isEqualToString:@"contactUs"]) {
         [self showContactUs];
@@ -294,15 +314,11 @@
     [self.navigationController pushViewController:vc animated:YES];
 }
 
-#pragma mark - 激励视频（每日4次，每次+5万字）
+#pragma mark - 激励视频（次数可配，支持不限）
 
 - (void)watchReward {
-    // VIP 门禁
-    if (![[AIUAVIPManager sharedManager] isVIPUser]) {
-        [self showAlertWithTitle:L(@"vip_unlock_required") message:L(@"vip_general_locked_message")];
-        return;
-    }
-    NSInteger dailyLimit = 4;
+    NSInteger dailyLimit = [self rewardDailyLimit];
+    NSInteger rewardWords = AIUA_REWARD_WORDS_PER_WATCH;
     NSString *dateKey = @"AIUARewardWatchDate";
     NSString *countKey = @"AIUARewardWatchCount";
     NSUserDefaults *ud = NSUserDefaults.standardUserDefaults;
@@ -320,7 +336,7 @@
         [ud setInteger:count forKey:countKey];
         [ud synchronize];
     }
-    if (count >= dailyLimit) {
+    if (dailyLimit > 0 && count >= dailyLimit) {
         [self showAlertWithTitle:L(@"limit_reached_title") message:L(@"reward_daily_limit_reached")];
         return;
     }
@@ -330,8 +346,8 @@
     [[AIUARewardAdManager sharedManager] loadAndShowFromViewController:self loaded:^{
         NSLog(@"[Reward] 激励视频已加载");
     } earnedReward:^{
-        // 发放5万字（90天有效）
-        [[AIUAWordPackManager sharedManager] awardBonusWords:50000 validDays:90 completion:^{
+        // 发放奖励字数（90天有效）
+        [[AIUAWordPackManager sharedManager] awardBonusWords:rewardWords validDays:90 completion:^{
             // 刷新显示
             dispatch_async(dispatch_get_main_queue(), ^{
                 [weakSelf.tableView reloadData];
@@ -341,7 +357,7 @@
         [ud setObject:today forKey:dateKey];
         [ud setInteger:newCount forKey:countKey];
         [ud synchronize];
-        NSLog(@"[Reward] 已发放50000字，今日第 %ld 次", (long)newCount);
+        NSLog(@"[Reward] 已发放%ld字，今日第 %ld 次", (long)rewardWords, (long)newCount);
     } closed:^{
         [MBProgressHUD hideHUDForView:weakSelf.view animated:YES];
         // 刷新该行显示今日次数
