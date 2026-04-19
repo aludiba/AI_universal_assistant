@@ -32,6 +32,36 @@
 
 #pragma mark - 签名辅助
 
+- (NSError *)aiua_errorWithCode:(NSInteger)code message:(NSString *)message {
+    return [NSError errorWithDomain:@"AIUADeepSeekWriter"
+                               code:code
+                           userInfo:@{NSLocalizedDescriptionKey: message ?: @"请求失败"}];
+}
+
+- (NSString *)normalizedPrompt:(NSString *)prompt {
+    if (![prompt isKindOfClass:[NSString class]]) {
+        return @"";
+    }
+    return [prompt stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+}
+
+- (NSURL *)validatedBaseURLWithCompletion:(AIUACompletionHandler _Nullable)completion
+                            streamHandler:(AIUAStreamHandler _Nullable)streamHandler {
+    NSURL *url = [NSURL URLWithString:self.baseURL ?: @""];
+    if (url.scheme.length > 0 && url.host.length > 0) {
+        return url;
+    }
+    
+    NSError *urlError = [self aiua_errorWithCode:-1000 message:@"AI服务地址无效，请检查代理服务配置"];
+    if (completion) {
+        completion(nil, urlError);
+    }
+    if (streamHandler) {
+        streamHandler(@"", YES, urlError);
+    }
+    return nil;
+}
+
 - (NSString *)aiua_sha256Hex:(NSString *)input {
     NSData *data = [input dataUsingEncoding:NSUTF8StringEncoding];
     unsigned char digest[CC_SHA256_DIGEST_LENGTH];
@@ -112,9 +142,16 @@
                         maxTokens:(NSInteger)maxTokens
                       temperature:(CGFloat)temperature
                        completion:(AIUACompletionHandler)completion {
+    NSString *safePrompt = [self normalizedPrompt:prompt];
+    if (safePrompt.length == 0) {
+        if (completion) {
+            completion(nil, [self aiua_errorWithCode:-1001 message:@"写作提示不能为空"]);
+        }
+        return;
+    }
     
     NSArray *messages = @[
-        @{@"role": @"user", @"content": prompt}
+        @{@"role": @"user", @"content": safePrompt}
     ];
     
     [self generateWritingWithMessages:messages
@@ -164,9 +201,16 @@
                                  wordCount:(NSInteger)wordCount
                             streamHandler:(AIUAStreamHandler)streamHandler {
     
-    NSString *finalPrompt = prompt;
+    NSString *finalPrompt = [self normalizedPrompt:prompt];
+    if (finalPrompt.length == 0) {
+        if (streamHandler) {
+            streamHandler(@"", YES, [self aiua_errorWithCode:-1001 message:@"写作提示不能为空"]);
+        }
+        return;
+    }
+    
     if (wordCount > 0) {
-        finalPrompt = [self addWordCountRequirementToPrompt:prompt wordCount:wordCount];
+        finalPrompt = [self addWordCountRequirementToPrompt:finalPrompt wordCount:wordCount];
     }
     
     NSInteger maxTokens = wordCount > 0 ? [self estimatedTokensForWordCount:wordCount] : 1000;
@@ -213,6 +257,12 @@
                           maxTokens:(NSInteger)maxTokens
                         temperature:(CGFloat)temperature
                          completion:(AIUACompletionHandler)completion {
+    if (![messages isKindOfClass:[NSArray class]] || messages.count == 0) {
+        if (completion) {
+            completion(nil, [self aiua_errorWithCode:-1002 message:@"消息内容不能为空"]);
+        }
+        return;
+    }
     
     NSDictionary *requestBody = @{
         @"model": self.modelName,
@@ -229,6 +279,12 @@
                                 maxTokens:(NSInteger)maxTokens
                               temperature:(CGFloat)temperature
                            streamHandler:(AIUAStreamHandler)streamHandler {
+    if (![messages isKindOfClass:[NSArray class]] || messages.count == 0) {
+        if (streamHandler) {
+            streamHandler(@"", YES, [self aiua_errorWithCode:-1002 message:@"消息内容不能为空"]);
+        }
+        return;
+    }
     
     NSDictionary *requestBody = @{
         @"model": self.modelName,
@@ -246,7 +302,10 @@
                     completion:(AIUACompletionHandler _Nullable)completion
                 streamHandler:(AIUAStreamHandler _Nullable)streamHandler {
     
-    NSURL *url = [NSURL URLWithString:self.baseURL];
+    NSURL *url = [self validatedBaseURLWithCompletion:completion streamHandler:streamHandler];
+    if (!url) {
+        return;
+    }
     
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
     request.HTTPMethod = @"POST";
@@ -292,7 +351,10 @@
         @"stream": @YES
     };
     
-    NSURL *url = [NSURL URLWithString:self.baseURL];
+    NSURL *url = [self validatedBaseURLWithCompletion:nil streamHandler:streamHandler];
+    if (!url) {
+        return;
+    }
     
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
     request.HTTPMethod = @"POST";

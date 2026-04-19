@@ -15,6 +15,24 @@
 
 @implementation AIUAVIPManager
 
+- (void)presentAlertSafely:(UIAlertController *)alert onViewController:(UIViewController *)viewController {
+    if (!alert || !viewController) {
+        return;
+    }
+    
+    UIViewController *presentingViewController = viewController;
+    while (presentingViewController.presentedViewController) {
+        presentingViewController = presentingViewController.presentedViewController;
+    }
+    
+    if ([presentingViewController isKindOfClass:[UIAlertController class]]) {
+        NSLog(@"[VIP] 当前已有弹窗展示中，跳过重复提示");
+        return;
+    }
+    
+    [presentingViewController presentViewController:alert animated:YES completion:nil];
+}
+
 #pragma mark - Singleton
 
 + (instancetype)sharedManager {
@@ -125,17 +143,16 @@
     NSString *message;
     
     if (hasTrialRemaining) {
-        // 还有试用次数，提示试用次数已用完
-        title = L(@"trial_expired_title");
-        message = L(@"trial_expired_message");
-    } else {
-        // 没有试用次数，提示开通会员
+        // 还有试用次数时，按会员功能提示；真正用完时才展示“试用结束”。
         title = L(@"vip_unlock_required");
         if (featureName && featureName.length > 0) {
             message = [NSString stringWithFormat:L(@"vip_feature_locked_message"), featureName];
         } else {
             message = L(@"vip_general_locked_message");
         }
+    } else {
+        title = L(@"trial_expired_title");
+        message = L(@"trial_expired_message");
     }
     
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:title
@@ -165,7 +182,7 @@
     [alert addAction:cancelAction];
     [alert addAction:activateAction];
     
-    [viewController presentViewController:alert animated:YES completion:nil];
+    [self presentAlertSafely:alert onViewController:viewController];
 }
 
 - (void)showTrialExpiredAlertWithViewController:(UIViewController *)viewController
@@ -205,7 +222,7 @@
     [alert addAction:cancelAction];
     [alert addAction:activateAction];
     
-    [viewController presentViewController:alert animated:YES completion:nil];
+    [self presentAlertSafely:alert onViewController:viewController];
 }
 
 - (void)navigateToMembershipPageFromViewController:(UIViewController *)viewController {

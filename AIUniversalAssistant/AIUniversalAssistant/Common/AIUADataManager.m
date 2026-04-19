@@ -13,7 +13,41 @@
 // 缓存清理完成通知
 NSString * const AIUACacheClearedNotification = @"AIUACacheClearedNotification";
 
+static NSString * const kAIUAFavoritesFileName = @"AIUAFavorites.plist";
+static NSString * const kAIUARecentUsedFileName = @"AIUARecentUsed.plist";
+static NSString * const kAIUASearchHistoryFileName = @"SearchHistory.plist";
+static NSString * const kAIUAWritingsFileName = @"AIUAWritings.plist";
+
 @implementation AIUADataManager
+
+- (NSArray *)safeArrayFromFile:(NSString *)filePath {
+    if (filePath.length == 0 || ![[NSFileManager defaultManager] fileExistsAtPath:filePath]) {
+        return @[];
+    }
+    
+    id object = [NSArray arrayWithContentsOfFile:filePath];
+    if ([object isKindOfClass:[NSArray class]]) {
+        return object;
+    }
+    
+    NSLog(@"[DataManager] 无法读取数组文件: %@", filePath);
+    return @[];
+}
+
+- (NSArray *)safeArrayWithContentsOfBundleResource:(NSString *)resourceName {
+    if (resourceName.length == 0) {
+        return @[];
+    }
+    
+    NSString *path = [[NSBundle mainBundle] pathForResource:resourceName ofType:@"plist"];
+    if (path.length == 0) {
+        NSLog(@"[DataManager] %@.plist 文件未找到", resourceName);
+        return @[];
+    }
+    
+    NSLog(@"加载资源文件: %@", path);
+    return [self safeArrayFromFile:path];
+}
 
 + (instancetype)sharedManager {
     static AIUADataManager *sharedInstance = nil;
@@ -28,55 +62,41 @@ NSString * const AIUACacheClearedNotification = @"AIUACacheClearedNotification";
 
 // "热门"模块数据
 - (NSArray *)loadHotCategories {
-    // pathForResource:ofType:会自动根据系统语言选择对应的.lproj目录中的文件
-    NSString *path = [[NSBundle mainBundle] pathForResource:@"AIUAHotCategories" ofType:@"plist"];
-    if (!path) {
-        NSLog(@"AIUAHotCategories.plist 文件未找到");
-        return @[];
-    }
-    
-    // 记录加载的文件路径（用于调试，可以看到加载的是哪个语言版本）
-    NSLog(@"加载热门分类文件: %@", path);
-    
-    NSArray *categories = [NSArray arrayWithContentsOfFile:path];
-    if (!categories) {
-        NSLog(@"无法解析 AIUAHotCategories.plist 文件");
-        return @[];
-    }
-    
-    return categories;
+    return [self safeArrayWithContentsOfBundleResource:@"AIUAHotCategories"];
 }
 
 // 获取收藏文件路径
 - (NSString *)favoritesFilePath {
-    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-    NSString *documentsDirectory = [paths firstObject];
-    return [documentsDirectory stringByAppendingPathComponent:@"AIUAFavorites.plist"];
+    return [self getPlistFilePath:kAIUAFavoritesFileName];
 }
 
 // 获取最近使用文件路径
 - (NSString *)recentUsedFilePath {
-    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-    NSString *documentsDirectory = [paths firstObject];
-    return [documentsDirectory stringByAppendingPathComponent:@"AIUARecentUsed.plist"];
+    return [self getPlistFilePath:kAIUARecentUsedFileName];
 }
 
 #pragma mark - 收藏功能
 
 - (NSArray *)loadFavorites {
-    NSString *filePath = [self favoritesFilePath];
-    if ([[NSFileManager defaultManager] fileExistsAtPath:filePath]) {
-        return [NSArray arrayWithContentsOfFile:filePath];
-    }
-    return @[];
+    return [self safeArrayFromFile:[self favoritesFilePath]];
 }
 
 - (void)addFavorite:(NSDictionary *)item {
+    if (![item isKindOfClass:[NSDictionary class]] || item.count == 0) {
+        return;
+    }
+    
     NSMutableArray *favorites = [[self loadFavorites] mutableCopy];
     
     // 检查是否已经收藏
     NSString *itemId = [self getItemId:item];
-    for (NSDictionary *favItem in favorites) {
+    if (itemId.length == 0) {
+        return;
+    }
+    for (id favItem in favorites) {
+        if (![favItem isKindOfClass:[NSDictionary class]]) {
+            continue;
+        }
         if ([[self getItemId:favItem] isEqualToString:itemId]) {
             return; // 已经收藏，直接返回
         }
@@ -91,10 +111,17 @@ NSString * const AIUACacheClearedNotification = @"AIUACacheClearedNotification";
 }
 
 - (void)removeFavorite:(NSString *)itemId {
+    if (itemId.length == 0) {
+        return;
+    }
+    
     NSMutableArray *favorites = [[self loadFavorites] mutableCopy];
     NSMutableArray *itemsToRemove = [NSMutableArray array];
     
-    for (NSDictionary *item in favorites) {
+    for (id item in favorites) {
+        if (![item isKindOfClass:[NSDictionary class]]) {
+            continue;
+        }
         if ([[self getItemId:item] isEqualToString:itemId]) {
             [itemsToRemove addObject:item];
         }
@@ -105,8 +132,15 @@ NSString * const AIUACacheClearedNotification = @"AIUACacheClearedNotification";
 }
 
 - (BOOL)isFavorite:(NSString *)itemId {
+    if (itemId.length == 0) {
+        return NO;
+    }
+    
     NSArray *favorites = [self loadFavorites];
-    for (NSDictionary *item in favorites) {
+    for (id item in favorites) {
+        if (![item isKindOfClass:[NSDictionary class]]) {
+            continue;
+        }
         if ([[self getItemId:item] isEqualToString:itemId]) {
             return YES;
         }
@@ -117,20 +151,26 @@ NSString * const AIUACacheClearedNotification = @"AIUACacheClearedNotification";
 #pragma mark - 最近使用功能
 
 - (NSArray *)loadRecentUsed {
-    NSString *filePath = [self recentUsedFilePath];
-    if ([[NSFileManager defaultManager] fileExistsAtPath:filePath]) {
-        return [NSArray arrayWithContentsOfFile:filePath];
-    }
-    return @[];
+    return [self safeArrayFromFile:[self recentUsedFilePath]];
 }
 
 - (void)addRecentUsed:(NSDictionary *)item {
+    if (![item isKindOfClass:[NSDictionary class]] || item.count == 0) {
+        return;
+    }
+    
     NSMutableArray *recentUsed = [[self loadRecentUsed] mutableCopy];
     
     // 检查是否已经存在
     NSString *itemId = [self getItemId:item];
+    if (itemId.length == 0) {
+        return;
+    }
     NSMutableArray *itemsToRemove = [NSMutableArray array];
-    for (NSDictionary *recentItem in recentUsed) {
+    for (id recentItem in recentUsed) {
+        if (![recentItem isKindOfClass:[NSDictionary class]]) {
+            continue;
+        }
         if ([[self getItemId:recentItem] isEqualToString:itemId]) {
             [itemsToRemove addObject:recentItem];
         }
@@ -157,15 +197,21 @@ NSString * const AIUACacheClearedNotification = @"AIUACacheClearedNotification";
 
 #pragma mark - 搜索
 - (NSArray *)loadSearchCategoriesData {
-    // pathForResource:ofType:会自动根据系统语言选择对应的.lproj目录中的文件
-    NSString *path = [[NSBundle mainBundle] pathForResource:@"AIUAHotCategories" ofType:@"plist"];
-    NSArray *categoriesArray = [NSArray arrayWithContentsOfFile:path];
+    NSArray *categoriesArray = [self loadHotCategories];
     
     NSMutableArray *allItems = [NSMutableArray array];
-    for (NSDictionary *category in categoriesArray) {
+    for (id category in categoriesArray) {
+        if (![category isKindOfClass:[NSDictionary class]]) {
+            continue;
+        }
         NSArray *items = category[@"items"];
-        for (NSDictionary *item in items) {
-            [allItems addObject:item];
+        if (![items isKindOfClass:[NSArray class]]) {
+            continue;
+        }
+        for (id item in items) {
+            if ([item isKindOfClass:[NSDictionary class]]) {
+                [allItems addObject:item];
+            }
         }
     }
     
@@ -176,21 +222,12 @@ NSString * const AIUACacheClearedNotification = @"AIUACacheClearedNotification";
 }
 
 - (NSArray *)loadSearchHistorySearches {
-    NSString *documentsPath = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject;
-    NSString *historyPath = [documentsPath stringByAppendingPathComponent:@"SearchHistory.plist"];
-    
-    if ([[NSFileManager defaultManager] fileExistsAtPath:historyPath]) {
-        NSArray *history = [NSArray arrayWithContentsOfFile:historyPath];
-        return history;
-    }
-    return @[];
+    return [self safeArrayFromFile:[self getPlistFilePath:kAIUASearchHistoryFileName]];
 }
 
 - (void)saveHistorySearches:(NSArray *)datas {
-    NSString *documentsPath = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject;
-    NSString *historyPath = [documentsPath stringByAppendingPathComponent:@"SearchHistory.plist"];
-    
-    [datas writeToFile:historyPath atomically:YES];
+    NSArray *safeHistory = [datas isKindOfClass:[NSArray class]] ? datas : @[];
+    [safeHistory writeToFile:[self getPlistFilePath:kAIUASearchHistoryFileName] atomically:YES];
 }
 
 - (BOOL)isFavoriteCategory:(NSDictionary *)category {
@@ -200,30 +237,22 @@ NSString * const AIUACacheClearedNotification = @"AIUACacheClearedNotification";
 #pragma mark - 写作
 
 - (NSArray *)loadWritingCategories {
-    // pathForResource:ofType:会自动根据系统语言选择对应的.lproj目录中的文件
-    NSString *path = [[NSBundle mainBundle] pathForResource:@"AIUAWritingCategories" ofType:@"plist"];
-    if (!path) {
-        NSLog(@"AIUAWritingCategories.plist 文件未找到");
-        return @[];
-    }
-    
-    // 记录加载的文件路径（用于调试，可以看到加载的是哪个语言版本）
-    NSLog(@"加载写作分类文件: %@", path);
-    
-    NSArray *categories = [NSArray arrayWithContentsOfFile:path];
-    if (!categories) {
-        NSLog(@"无法解析 AIUAWritingCategories.plist 文件");
-        return @[];
-    }
-    
-    return categories;
+    return [self safeArrayWithContentsOfBundleResource:@"AIUAWritingCategories"];
 }
 
 - (NSArray *)getItemsForCategory:(NSString *)categoryId {
+    if (categoryId.length == 0) {
+        return @[];
+    }
+    
     NSArray *categories = [self loadHotCategories];
-    for (NSDictionary *category in categories) {
+    for (id category in categories) {
+        if (![category isKindOfClass:[NSDictionary class]]) {
+            continue;
+        }
         if ([category[@"id"] isEqualToString:categoryId]) {
-            return category[@"items"] ?: @[];
+            NSArray *items = category[@"items"];
+            return [items isKindOfClass:[NSArray class]] ? items : @[];
         }
     }
     return @[];
@@ -241,8 +270,7 @@ NSString * const AIUACacheClearedNotification = @"AIUACacheClearedNotification";
     
     NSLog(@"saveWritingToPlist-writingRecord:%@", writingRecord[@"content"]);
     // 获取沙盒Documents目录
-    NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
-    NSString *plistPath = [documentsPath stringByAppendingPathComponent:@"AIUAWritings.plist"];
+    NSString *plistPath = [self getPlistFilePath:kAIUAWritingsFileName];
     
     // 读取现有的写作记录
     NSMutableArray *writingsArray = [NSMutableArray array];
@@ -289,14 +317,10 @@ NSString * const AIUACacheClearedNotification = @"AIUACacheClearedNotification";
 
 // 提供类方法用于读取所有写作记录
 - (NSArray *)loadAllWritings {
-    NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
-    NSString *plistPath = [documentsPath stringByAppendingPathComponent:@"AIUAWritings.plist"];
+    NSString *plistPath = [self getPlistFilePath:kAIUAWritingsFileName];
+    NSArray *writings = [self safeArrayFromFile:plistPath];
     
-    if ([[NSFileManager defaultManager] fileExistsAtPath:plistPath]) {
-        NSArray *writings = [NSArray arrayWithContentsOfFile:plistPath];
-        if (!writings || ![writings isKindOfClass:[NSArray class]]) {
-            return @[];
-        }
+    if (writings.count > 0) {
         
         // 兼容性修复：历史版本可能用 NSString.length 作为 wordCount，导致与“字数包扣减口径”不一致。
         // 这里统一为 AIUAWordPackManager 的统计规则（与扣减一致），并回写到 plist。
@@ -377,8 +401,11 @@ NSString * const AIUACacheClearedNotification = @"AIUACacheClearedNotification";
 
 // 根据ID删除写作记录
 - (BOOL)deleteWritingWithID:(NSString *)writingID {
-    NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
-    NSString *plistPath = [documentsPath stringByAppendingPathComponent:@"AIUAWritings.plist"];
+    if (writingID.length == 0) {
+        return NO;
+    }
+    
+    NSString *plistPath = [self getPlistFilePath:kAIUAWritingsFileName];
     
     NSMutableArray *writingsArray = [NSMutableArray arrayWithArray:[self loadAllWritings]];
     
@@ -536,6 +563,10 @@ NSString * const AIUACacheClearedNotification = @"AIUACacheClearedNotification";
 #pragma mark - 辅助方法
 
 - (NSString *)getItemId:(NSDictionary *)item {
+    if (![item isKindOfClass:[NSDictionary class]]) {
+        return @"";
+    }
+    
     // 使用 type + title 作为唯一标识
     NSString *type = item[@"type"] ?: @"";
     NSString *title = item[@"title"] ?: @"";
@@ -555,6 +586,10 @@ NSString * const AIUACacheClearedNotification = @"AIUACacheClearedNotification";
 
 // 获取plist文件路径
 - (NSString *)getPlistFilePath:(NSString *)fileName {
+    if (fileName.length == 0) {
+        return @"";
+    }
+    
     NSString *documentsPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
     return [documentsPath stringByAppendingPathComponent:fileName];
 }
@@ -611,18 +646,16 @@ NSString * const AIUACacheClearedNotification = @"AIUACacheClearedNotification";
 - (unsigned long long)calculateCacheSize {
     unsigned long long totalSize = 0;
     NSFileManager *fileManager = [NSFileManager defaultManager];
-    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-    NSString *documentsDirectory = [paths firstObject];
     
     // 需要计算大小的文件列表
     NSArray *cacheFiles = @[
-        @"AIUARecentUsed.plist",
-        @"SearchHistory.plist",
-        @"AIUAWritings.plist"
+        kAIUARecentUsedFileName,
+        kAIUASearchHistoryFileName,
+        kAIUAWritingsFileName
     ];
     
     for (NSString *fileName in cacheFiles) {
-        NSString *filePath = [documentsDirectory stringByAppendingPathComponent:fileName];
+        NSString *filePath = [self getPlistFilePath:fileName];
         if ([fileManager fileExistsAtPath:filePath]) {
             NSDictionary *attributes = [fileManager attributesOfItemAtPath:filePath error:nil];
             if (attributes) {
@@ -658,20 +691,18 @@ NSString * const AIUACacheClearedNotification = @"AIUACacheClearedNotification";
 
 - (void)clearCacheWithCompletion:(void(^)(BOOL success, NSString * _Nullable errorMessage))completion {
     NSFileManager *fileManager = [NSFileManager defaultManager];
-    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-    NSString *documentsDirectory = [paths firstObject];
     
     // 需要清除的文件列表
     NSArray *cacheFiles = @[
-        @"AIUARecentUsed.plist",
-        @"SearchHistory.plist",
-        @"AIUAWritings.plist"
+        kAIUARecentUsedFileName,
+        kAIUASearchHistoryFileName,
+        kAIUAWritingsFileName
     ];
     
     NSMutableArray *errors = [NSMutableArray array];
     
     for (NSString *fileName in cacheFiles) {
-        NSString *filePath = [documentsDirectory stringByAppendingPathComponent:fileName];
+        NSString *filePath = [self getPlistFilePath:fileName];
         if ([fileManager fileExistsAtPath:filePath]) {
             NSError *error = nil;
             BOOL success = [fileManager removeItemAtPath:filePath error:&error];
