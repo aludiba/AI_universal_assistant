@@ -17,6 +17,7 @@
 static NSString * const kAIUAIsVIPMember = @"kAIUAIsVIPMember";
 static NSString * const kAIUASubscriptionType = @"kAIUASubscriptionType";
 static NSString * const kAIUASubscriptionExpiryDate = @"kAIUASubscriptionExpiryDate";
+static NSString * const kAIUAHasLifetimeEntitlement = @"kAIUAHasLifetimeEntitlement";
 static NSString * const kAIUAHasSubscriptionHistory = @"hasSubscriptionHistory";
 /// 用户主动清除购买数据后置为 YES，仅在用户点击「恢复购买」且恢复成功时清除，用于避免清除后冷启动/收据验证再次自动恢复
 static NSString * const kAIUAUserClearedPurchaseData = @"AIUAUserClearedPurchaseData";
@@ -505,6 +506,7 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
     [self saveLocalSubscriptionInfo];
     
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    [defaults removeObjectForKey:[self scopedDefaultsKey:kAIUAHasLifetimeEntitlement]];
     [defaults removeObjectForKey:[self scopedDefaultsKey:kAIUAHasSubscriptionHistory]];
     [defaults synchronize];
     
@@ -911,6 +913,13 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
 }
 
 - (BOOL)isCurrentlyLifetimeMember {
+    if (self.currentSubscriptionType == AIUASubscriptionProductTypeLifetimeBenefits) {
+        return YES;
+    }
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    if ([defaults boolForKey:[self scopedDefaultsKey:kAIUAHasLifetimeEntitlement]]) {
+        return YES;
+    }
     if (!self.subscriptionExpiryDate) return NO;
     return ([self.subscriptionExpiryDate timeIntervalSinceNow] > 50 * 365 * 24 * 60 * 60);
 }
@@ -1182,10 +1191,10 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
                 
                 NSDate *expiresDate = purchase[@"expires_date"];
                 if (expiresDate) {
-                    if ([expiresDate timeIntervalSinceDate:now] > 20 * 365 * 24 * 60 * 60) {
-                        [self applyLifetimeMembership];
-                        NSLog(@"[IAP] 识别为永久会员（产品: %@，到期超20年）", pid);
-                        return YES;
+                    if (![self isReasonableExpiryDate:expiresDate forProductType:pType referenceDate:now]) {
+                        NSLog(@"[IAP] 忽略异常到期时间（产品: %@, 类型: %ld, 到期: %@）",
+                              pid, (long)pType, expiresDate);
+                        continue;
                     }
                     [timedSubscriptions addObject:@{
                         @"product_id": pid,
@@ -1198,6 +1207,11 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
             }
             
             if (timedSubscriptions.count > 0) {
+                if ([self isCurrentlyLifetimeMember]) {
+                    NSLog(@"[IAP] 当前或历史状态已标记为永久会员，跳过有限期订阅覆盖");
+                    [self applyLifetimeMembership];
+                    return YES;
+                }
                 // Apple 收据中的 expires_date 已经是该次续订后的最终到期时间。
                 // 这里不能再把多笔续订记录按时长二次累加，否则周/月订阅会被错误延长。
                 NSDictionary *latestSubscription = nil;
@@ -1218,12 +1232,6 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
                 
                 NSDate *latestExpiry = latestSubscription[@"expires_date"];
                 AIUASubscriptionProductType latestType = [latestSubscription[@"type"] integerValue];
-                
-                if (latestExpiry && [latestExpiry timeIntervalSinceDate:now] > 10 * 365 * 24 * 60 * 60) {
-                    NSLog(@"[IAP] 收据最新到期时间超过10年（%@），识别为永久会员", latestExpiry);
-                    [self applyLifetimeMembership];
-                    return YES;
-                }
                 
                 self.currentSubscriptionType = latestType;
                 self.subscriptionExpiryDate = latestExpiry;
@@ -1265,6 +1273,9 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
     NSDateComponents *components = [[NSDateComponents alloc] init];
     components.year = 100;
     self.subscriptionExpiryDate = [calendar dateByAddingComponents:components toDate:[NSDate date] options:0];
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    [defaults setBool:YES forKey:[self scopedDefaultsKey:kAIUAHasLifetimeEntitlement]];
+    [defaults synchronize];
     [self saveLocalSubscriptionInfo];
 }
 
@@ -1373,7 +1384,7 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
     if (offset + 50 > length) return nil;
     
     // 查找可能的产品ID（收据中可能为 lifetimeBenefits 或 LifetimeBenefits）
-    NSArray *productTypes = @[@"lifetimeBenefits", @"LifetimeBenefits", @"yearly", @"monthly", @"weekly"];
+    NSArray *productTypes = @[@"lifetimeBenefits", @"LifetimeBenefits", @"lifetimebenefits", @"lifetime", @"yearly", @"monthly", @"weekly"];
     
     for (NSString *type in productTypes) {
         const char *typeStr = [type UTF8String];
@@ -1445,6 +1456,38 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
     
     NSLog(@"[IAP] 未能从收据中提取过期时间");
     return nil;
+}
+
+- (BOOL)isReasonableExpiryDate:(NSDate *)expiryDate
+                forProductType:(AIUASubscriptionProductType)type
+                 referenceDate:(NSDate *)referenceDate {
+    if (!expiryDate) {
+        return NO;
+    }
+    
+    NSDate *now = referenceDate ?: [NSDate date];
+    NSTimeInterval interval = [expiryDate timeIntervalSinceDate:now];
+    
+    // 允许较久以前的订阅记录参与过期判断，但限制“未来太久”的异常值，
+    // 避免把 PKCS#7 证书时间等无关字段误当成订阅到期时间。
+    NSTimeInterval minPastInterval = -5 * 365 * 24 * 60 * 60;
+    NSTimeInterval maxFutureInterval = 0;
+    
+    switch (type) {
+        case AIUASubscriptionProductTypeWeekly:
+            maxFutureInterval = 60 * 24 * 60 * 60;
+            break;
+        case AIUASubscriptionProductTypeMonthly:
+            maxFutureInterval = 120 * 24 * 60 * 60;
+            break;
+        case AIUASubscriptionProductTypeYearly:
+            maxFutureInterval = 2 * 365 * 24 * 60 * 60;
+            break;
+        case AIUASubscriptionProductTypeLifetimeBenefits:
+            return YES;
+    }
+    
+    return (interval >= minPastInterval && interval <= maxFutureInterval);
 }
 
 // 查找 ISO 8601 格式的时间戳 (YYYY-MM-DDTHH:MM:SSZ)
@@ -1716,6 +1759,18 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
     _isVIPMember = [defaults boolForKey:[self scopedDefaultsKey:kAIUAIsVIPMember]];
     self.currentSubscriptionType = [defaults integerForKey:[self scopedDefaultsKey:kAIUASubscriptionType]];
     self.subscriptionExpiryDate = [defaults objectForKey:[self scopedDefaultsKey:kAIUASubscriptionExpiryDate]];
+    BOOL hasLifetimeEntitlement = [defaults boolForKey:[self scopedDefaultsKey:kAIUAHasLifetimeEntitlement]];
+    if (hasLifetimeEntitlement) {
+        _isVIPMember = YES;
+        self.currentSubscriptionType = AIUASubscriptionProductTypeLifetimeBenefits;
+        if (!self.subscriptionExpiryDate || [self.subscriptionExpiryDate timeIntervalSinceNow] <= 50 * 365 * 24 * 60 * 60) {
+            NSCalendar *calendar = [NSCalendar currentCalendar];
+            NSDateComponents *components = [[NSDateComponents alloc] init];
+            components.year = 100;
+            self.subscriptionExpiryDate = [calendar dateByAddingComponents:components toDate:[NSDate date] options:0];
+            NSLog(@"[IAP] 检测到永久会员标记，已修正本地到期时间");
+        }
+    }
     
 #if AIUA_VIP_CHECK_ENABLED
     if (!self.subscriptionExpiryDate && !_isVIPMember) {
@@ -1734,6 +1789,10 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
     // 只有在开启会员检测时才保存VIP状态
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     
+    if (self.currentSubscriptionType == AIUASubscriptionProductTypeLifetimeBenefits ||
+        (self.subscriptionExpiryDate && [self.subscriptionExpiryDate timeIntervalSinceNow] > 50 * 365 * 24 * 60 * 60)) {
+        [defaults setBool:YES forKey:[self scopedDefaultsKey:kAIUAHasLifetimeEntitlement]];
+    }
     [defaults setBool:_isVIPMember forKey:[self scopedDefaultsKey:kAIUAIsVIPMember]];
     [defaults setInteger:self.currentSubscriptionType forKey:[self scopedDefaultsKey:kAIUASubscriptionType]];
     [defaults setObject:self.subscriptionExpiryDate forKey:[self scopedDefaultsKey:kAIUASubscriptionExpiryDate]];
@@ -1835,4 +1894,3 @@ NSString * const AIUARestoredExistingSubscriptionHint = @"AIUA_RESTORED_EXISTING
 }
 
 @end
-
