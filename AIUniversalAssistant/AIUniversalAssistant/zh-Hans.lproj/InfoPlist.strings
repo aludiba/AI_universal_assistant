@@ -5,6 +5,5 @@
   App名称本地化 - 简体中文
 */
 
-"CFBundleDisplayName" = "喵墨";
-"CFBundleName" = "喵墨";
-
+"CFBundleDisplayName" = "AI创作喵";
+"CFBundleName" = "AI创作喵";
