@@ -1,0 +1,50 @@
+AI情感陪伴App · SVG设计稿使用指南
+==========================================
+
+【文件清单】
+  00-图标集.svg       → 全部矢量图标，可导出任意尺寸
+  01-引导页.svg       → Onboarding 引导页
+  02-角色选择.svg     → 选择AI伴侣角色
+  05-主聊天页.svg     → 核心聊天界面（最重要）
+  06-角色状态页.svg   → 关系进度和互动数据
+  07-每日问候.svg     → 每日早安/晚安问候页
+  12-会员订阅.svg     → 会员Paywall（变现核心）
+  14-解锁弹窗.svg     → 消息耗尽时的弹窗
+  15-个人中心.svg     → 含激励视频入口
+  design-tokens.json  → 设计Token（颜色/字号/间距）
+
+【尺寸】
+  390 × 844 px（iPhone 14 标准，@1x）
+  设计时建议在 Figma 中放大至 @2x 操作
+
+【导入 Figma 方法（3步）】
+  1. 打开 Figma → 新建文件
+  2. 菜单 File → Place image → 选择所有 .svg 文件（支持多选）
+     或直接把 .svg 文件拖入 Figma 画布
+  3. 双击进入 SVG 组 → 所有元素（矩形/文字/路径/图标）均可单独编辑
+
+【图标使用】
+  - 打开 00-图标集.svg，进入 Figma 后可右键 → Ungroup 得到独立图标
+  - 每个图标为矢量路径，支持随意缩放和改色
+  - 建议在 Figma 中创建 Component，统一管理
+
+【Design Tokens 导入 Figma】
+  1. 安装 Figma 插件：Tokens Studio for Figma（免费）
+  2. 插件内 → Import → 选择 design-tokens.json
+  3. 所有颜色/字号/圆角/间距一键同步到 Figma Styles
+
+【颜色系统】
+  主色 (Primary)    #FF6B9D  ← 所有按钮/高亮/角色色
+  主色浅 (Light)    #FFE0EC  ← 气泡/标签/背景填充
+  主文字            #1A1A2E
+  次文字            #565C7A
+  提示文字          #9CA3AF
+  背景              #FFFFFF / #FFF8FA（浅粉）
+  边框              #F0E4EA
+
+【注意事项】
+  - SVG 内的"角色立绘区域"需由设计师替换为实际角色插图
+  - 所有文字图层可在 Figma 中直接编辑
+  - 图标路径已针对 iOS 规范设计，建议导出 @2x/@3x PNG
+
+作者：AI辅助生成  版本：v1.0  日期：2026.04

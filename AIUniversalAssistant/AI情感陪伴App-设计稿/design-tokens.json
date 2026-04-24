@@ -1,0 +1,54 @@
+{
+  "global": {
+    "color": {
+      "primary":        { "value": "#FF6B9D", "type": "color", "description": "主色 / 粉红" },
+      "primary-dark":   { "value": "#E54D82", "type": "color", "description": "主色深" },
+      "primary-light":  { "value": "#FFE0EC", "type": "color", "description": "主色浅" },
+      "bg":             { "value": "#FFFFFF", "type": "color", "description": "主背景" },
+      "bg-soft":        { "value": "#FFF8FA", "type": "color", "description": "浅粉背景" },
+      "card":           { "value": "#FFFFFF", "type": "color", "description": "卡片背景" },
+      "border":         { "value": "#F0E4EA", "type": "color", "description": "边框" },
+      "text-primary":   { "value": "#1A1A2E", "type": "color", "description": "主文字" },
+      "text-secondary": { "value": "#565C7A", "type": "color", "description": "次文字" },
+      "text-hint":      { "value": "#9CA3AF", "type": "color", "description": "提示文字" },
+      "text-on-primary":{ "value": "#FFFFFF", "type": "color", "description": "主色上文字" },
+      "bubble-her":     { "value": "#FFF0F5", "type": "color", "description": "对方气泡" },
+      "bubble-me":      { "value": "#FF6B9D", "type": "color", "description": "我的气泡" },
+      "input-bg":       { "value": "#F8F0F4", "type": "color", "description": "输入框背景" },
+      "success":        { "value": "#34C759", "type": "color", "description": "在线/成功" },
+      "nav-bg":         { "value": "#FDFAFA", "type": "color", "description": "导航栏背景" }
+    },
+    "fontSize": {
+      "xs":     { "value": "11", "type": "fontSizes" },
+      "sm":     { "value": "12", "type": "fontSizes" },
+      "body":   { "value": "14", "type": "fontSizes" },
+      "md":     { "value": "15", "type": "fontSizes" },
+      "lg":     { "value": "17", "type": "fontSizes" },
+      "xl":     { "value": "20", "type": "fontSizes" },
+      "2xl":    { "value": "24", "type": "fontSizes" },
+      "3xl":    { "value": "28", "type": "fontSizes" }
+    },
+    "borderRadius": {
+      "sm":   { "value": "8",  "type": "borderRadius" },
+      "md":   { "value": "12", "type": "borderRadius" },
+      "lg":   { "value": "16", "type": "borderRadius" },
+      "xl":   { "value": "20", "type": "borderRadius" },
+      "pill": { "value": "999","type": "borderRadius" }
+    },
+    "spacing": {
+      "xs": { "value": "4",  "type": "spacing" },
+      "sm": { "value": "8",  "type": "spacing" },
+      "md": { "value": "16", "type": "spacing" },
+      "lg": { "value": "24", "type": "spacing" },
+      "xl": { "value": "32", "type": "spacing" }
+    },
+    "component": {
+      "button-height":   { "value": "52", "type": "sizing" },
+      "nav-bar-height":  { "value": "50", "type": "sizing" },
+      "tab-bar-height":  { "value": "83", "type": "sizing" },
+      "status-bar-height":{ "value": "44","type": "sizing" },
+      "input-height":    { "value": "48", "type": "sizing" },
+      "card-radius":     { "value": "16", "type": "borderRadius" }
+    }
+  }
+}
